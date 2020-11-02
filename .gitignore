@@ -1,4 +1,4 @@
 *.pyc
-server/portal.pid
-server/server.pid
-server/evennia.db3
+*.pid
+*.db3
+

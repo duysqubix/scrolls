@@ -1,11 +1,6 @@
-20-10-31 04:31:11  |Portal| Loading /home/ubuntu/evennia/evennia/server/portal/portal.py...
-20-10-31 04:31:11  |Portal| Loaded.
-20-10-31 04:31:11  |Portal| twistd 20.3.0 (/home/ubuntu/ev/bin/python3 3.8.5) starting up.
-20-10-31 04:31:11  |Portal| reactor class: twisted.internet.epollreactor.EPollReactor.
-20-10-31 04:31:11  |Portal| AMP starting on 4006
-20-10-31 04:31:11  |Portal| Telnet starting on 4040
-20-10-31 04:31:11  |Portal| Websocket starting on 4002
-20-10-31 04:31:11  |Portal| Webserver-proxy starting on 4001
-20-10-31 04:31:12  |Portal| Portal starting server ... 
-20-10-31 04:31:14  |Portal| Portal starting server ... 
-20-10-31 04:36:45  |Portal| Portal starting server ... 
+20-11-02 14:18:31  |Portal| (TCP Port 4001 Closed)
+20-11-02 14:18:31  |Portal| (TCP Port 4002 Closed)
+20-11-02 14:18:31  |Portal| (TCP Port 4040 Closed)
+20-11-02 14:18:31  |Portal| (TCP Port 4006 Closed)
+20-11-02 14:18:31  |Portal| Main loop terminated.
+20-11-02 14:18:31  |Portal| Server Shut Down.

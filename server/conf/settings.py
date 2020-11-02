@@ -52,11 +52,12 @@ GLOBAL_SCRIPTS = {
         'persistent': True,
         'desc': 'storage for room data'
     },
-    # 'skillsdb': {
-    #     'typeclass': 'typeclasses.scripts.SkillsDB',
-    #     'persistent': True,
-    #     'desc': 'storage for skill information'
-    # }
+    'skillsdb':{
+        'typeclass': 'world.skills.SkillDB',
+        'persistent': True,
+        'desc': 'storage for mud-wide skills'
+    }
+
 }
 
 ######################################################################

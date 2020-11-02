@@ -100,6 +100,3 @@ class EntityDB(Script):
         return self.db.vnum
 
 
-class SkillSet(Script):
-    def at_object_creation(self):
-        self.db.skills = {'acrobatics': ("str", "agi")}

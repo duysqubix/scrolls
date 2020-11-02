@@ -9,29 +9,10 @@ creation commands.
 """
 from evennia import DefaultCharacter
 from world.globals import GOD_LVL, WIZ_LVL, Size
+from world.characteristics import CHARACTERISTICS
+from world.skills import Skill
 from evennia.utils.utils import lazy_property
-
-
-class StorageHandler:
-    __attr_name__ = ""
-
-    def __init__(self, caller):
-        self.caller = caller
-        self.integrity_check()
-
-    def __setattr__(self, name, value):
-        self.__dict__[name] = value
-        attr = self.caller.attributes.get(self.__attr_name__, dict())
-        attr[name] = value
-
-    def all(self):
-        return [x for x in self.__dict__.keys() if x not in ['caller']]
-
-    def integrity_check(self):
-        for k, v in self.caller.attributes.get(self.__attr_name__,
-                                               dict()).items():
-            setattr(self, k, v)
-
+from world.storagehandler import StorageHandler
 
 class SkillHandler(StorageHandler):
     __attr_name__ = "skills"
@@ -41,12 +22,8 @@ class SkillHandler(StorageHandler):
             return self.__dict__[key]
         return None
 
-
-class Stat:
-    def __init__(self, name):
-        self.name = name
-        self.value = 0
-
+    def add(self, skill: Skill):
+        setattr(self, skill.name, skill)
 
 class StatHandler(StorageHandler):
     __attr_name__ = "characteristics"
@@ -62,7 +39,7 @@ class AttrHandler(StorageHandler):
 
     @property
     def stamina(self):
-        return self.caller.stats.eb.value
+        return self.caller.stats.end.bonus
 
     @property
     def magicka(self):
@@ -70,30 +47,30 @@ class AttrHandler(StorageHandler):
 
     @property
     def linguistics(self):
-        return self.caller.stats.ib.value // 2 + 1
+        return self.caller.stats.int.bonus // 2 + 1
 
     @property
     def initiative(self):
-        ab = self.caller.stats.ab.value
-        ib = self.caller.stats.ib.value
-        pcb = self.caller.stats.pcb.value
+        ab = self.caller.stats.agi.bonus
+        ib = self.caller.stats.int.bonus
+        pcb = self.caller.stats.prs.bonus
         return ab + ib + pcb
 
     @property
     def speed(self):
-        sb = self.caller.stats.sb.value
-        ab = self.caller.stats.ab.value
+        sb = self.caller.stats.str.bonus
+        ab = self.caller.stats.agi.bonus
         return sb + (2 * ab)
 
     @property
     def carry_rating(self):
-        sb = self.caller.stats.sb.value
-        eb = self.caller.stats.eb.value
+        sb = self.caller.stats.str.bonus
+        eb = self.caller.stats.end.bonus
         return (4 * sb) + (2 * eb)
 
     @property
     def luck(self):
-        return self.caller.stats.lkb.value
+        return self.caller.stats.lck.bonus
 
 
 class Character(DefaultCharacter):
@@ -130,27 +107,25 @@ class Character(DefaultCharacter):
 
     def at_object_creation(self):
 
-        # level
-        if self.db.level is None:
-            if self.is_superuser and self.id == 1:
-                self.db.level = GOD_LVL
 
-            elif self.is_superuser:
-                self.db.level = WIZ_LVL
-            else:
-                self.db.level = 1
 
         # characteristics
-        stats_x = [
-            'str', 'sb', 'end', 'eb', 'agi', 'ab', 'int', 'ib', 'wp', 'wb',
-            'prc', 'pcb', 'prs', 'psb', 'lck', 'lkb'
-        ]
-        stats_y = [Stat(x) for x in stats_x]
+        stats_x = [x.short for x in CHARACTERISTICS]
+        stats_y = CHARACTERISTICS
         self.db.characteristics = dict(zip(stats_x, stats_y))
 
+
+        # level
+        level = None
+        if self.db.superuser and self.id == 1:
+            level = GOD_LVL
+
+        elif self.db.superuser:
+            level = WIZ_LVL
+        else:
+            level = 1
         # attributes
-        self.db.attrs = {'size': Size.standard(), 'action_points': 3, 'exp': 0}
+        self.db.attrs = {'action_points': 3, 'exp': 0, 'level': level}
 
         # skills
-        # skills are stored as {name: vnum_skill}
-        self.db.skills = {}
+        self.db.skills = dict()
