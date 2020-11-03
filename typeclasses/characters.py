@@ -107,8 +107,6 @@ class Character(DefaultCharacter):
 
     def at_object_creation(self):
 
-
-
         # characteristics
         stats_x = [x.short for x in CHARACTERISTICS]
         stats_y = CHARACTERISTICS
