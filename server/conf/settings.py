@@ -56,6 +56,11 @@ GLOBAL_SCRIPTS = {
         'typeclass': 'world.skills.SkillDB',
         'persistent': True,
         'desc': 'storage for mud-wide skills'
+    },
+    'racesdb':{
+        'typeclass': 'world.race.RaceInfo',
+        'persistent': True,
+        'desc': 'storage for race information'
     }
 
 }
