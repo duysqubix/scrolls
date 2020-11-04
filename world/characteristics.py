@@ -4,8 +4,9 @@ class Characteristic:
     def __init__(self, name, short):
         self.name = str(name)
         self.short = short
-        self.value = 0
+        self.base = 0
         self.bonus = 0
+        self.favored = False
 
     def __str__(self):
         return f"Characteristic: <{self.short}>"

@@ -62,6 +62,40 @@ class CmdLook(Command):
                 return
         self.msg((ch.at_look(target), {"type": "look"}), options=None)
 
+
+class CmdScore(Command):
+    """
+    show information about yourself
+
+    Usage:
+        score
+    """
+
+    key = 'score'
+    locks = "cmd:all()"
+
+    def func(self):
+        ch = self.caller
+        # characteristcs
+        stats = ch.stats.all()
+        stats_list = list()
+        for stat in stats:
+            attr = ch.stats.get(stat)
+            stats_list.append(attr.name.capitalize())
+            stats_list.append(attr.base)
+            stats_list.append(attr.bonus)
+        msg = """
+   +----------------------------------------------+
+   |                   {:<20}       |
+   +----------------------------------------------+
+   | {:>10}: {:>3}({:>3})  {:>12}: {:>3}({:>3}) |
+   | {:>10}: {:>3}({:>3})  {:>12}: {:>3}({:>3}) |
+   | {:>10}: {:>3}({:>3})  {:>12}: {:>3}({:>3}) |
+   | {:>10}: {:>3}({:>3})  {:>12}: {:>3}({:>3}) |
+   +----------------------------------------------+
+        """.format(ch.name.capitalize(), *stats_list)
+        ch.msg(msg)
+
 # -------------------------------------------------------------
 #
 # The default commands inherit from

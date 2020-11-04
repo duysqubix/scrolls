@@ -28,49 +28,59 @@ class SkillHandler(StorageHandler):
 class StatHandler(StorageHandler):
     __attr_name__ = "characteristics"
 
+    def update(self, stat_name, **kwargs):
+        """
+        update stat in object.attributes, using kwargs as field names and values
+
+        ex:
+        update_info = {'base': 34}
+        self.update_stat('str', update_info)
+        """
+
+        cur_stat = self.get(stat_name)
+
+        for attr, value in kwargs.items():
+            if attr in cur_stat.__dict__:
+                cur_stat.__dict__[attr] = value
+
+
+
 
 class AttrHandler(StorageHandler):
     __attr_name__ = "attrs"
 
-    @property
-    def max_health(self):
-        end = self.caller.stats.end.value
-        return end // 2 + 1
+    def init(self):
+        # max health
+        self.max_health = self.caller.stats.end.value // 2 + 1
 
-    @property
-    def stamina(self):
-        return self.caller.stats.end.bonus
+        # stamina
+        self.stamina = self.caller.stats.end.bonus
 
-    @property
-    def magicka(self):
-        return self.caller.stats.int.value
+        # magicka
+        self.magicka = self.caller.stats.int.value
 
-    @property
-    def linguistics(self):
-        return self.caller.stats.int.bonus // 2 + 1
+        # linguistics
+        self.linguistics = self.caller.stats.int.bonus // 2 + 1
 
-    @property
-    def initiative(self):
+        # initiative
         ab = self.caller.stats.agi.bonus
         ib = self.caller.stats.int.bonus
         pcb = self.caller.stats.prs.bonus
-        return ab + ib + pcb
+        self.initiative = ab + ib + pcb
 
-    @property
-    def speed(self):
+        # speed
         sb = self.caller.stats.str.bonus
         ab = self.caller.stats.agi.bonus
-        return sb + (2 * ab)
+        self.speed = sb + (2 * ab)
 
-    @property
-    def carry_rating(self):
+        # carry rating
         sb = self.caller.stats.str.bonus
         eb = self.caller.stats.end.bonus
-        return (4 * sb) + (2 * eb)
+        self.carry_rating = (4 * sb) + (2 * eb)
 
-    @property
-    def luck(self):
-        return self.caller.stats.lck.bonus
+        # luck
+        self.luck = self.caller.stats.lck.bonus
+
 
 
 class Character(DefaultCharacter):
@@ -123,7 +133,7 @@ class Character(DefaultCharacter):
         else:
             level = 1
         # attributes
-        self.db.attrs = {'action_points': 3, 'exp': 0, 'level': level}
+        self.db.attrs = {'action_points': 3, 'exp': 0, 'level': level, 'birthsign': None}
 
         # skills
         self.db.skills = dict()
