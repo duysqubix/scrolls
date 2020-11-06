@@ -33,6 +33,7 @@ class Command(BaseCommand):
 
     pass
 
+
 class CmdLook(Command):
     """
     Look at location of object
@@ -78,23 +79,33 @@ class CmdScore(Command):
         ch = self.caller
         # characteristcs
         stats = ch.stats.all()
-        stats_list = list()
-        for stat in stats:
-            attr = ch.stats.get(stat)
-            stats_list.append(attr.name.capitalize())
-            stats_list.append(attr.base)
-            stats_list.append(attr.bonus)
+
         msg = """
+   +-----------------------------------------------+
+   |{0: >20}          |
+   +-----------------------------------------------+
+   | {1} Birthsign: {2: <10} |
+   | {3} Level    : {4: <8}|
+   | {5}   |
+   | {6}
+   | {7}
+   | {8}
+   | {9}
    +----------------------------------------------+
-   |                   {:<20}       |
-   +----------------------------------------------+
-   | {:>10}: {:>3}({:>3})  {:>12}: {:>3}({:>3}) |
-   | {:>10}: {:>3}({:>3})  {:>12}: {:>3}({:>3}) |
-   | {:>10}: {:>3}({:>3})  {:>12}: {:>3}({:>3}) |
-   | {:>10}: {:>3}({:>3})  {:>12}: {:>3}({:>3}) |
-   +----------------------------------------------+
-        """.format(ch.name.capitalize(), *stats_list)
+        """.format(ch.name.capitalize(),
+                   ch.stats.str.format(),
+                   ch.attrs.birthsign,
+                   ch.stats.end.format(),
+                   ch.attrs.level,
+                   ch.stats.agi.format(),
+                   ch.stats.int.format(),
+                   ch.stats.wp.format(),
+                   ch.stats.prc.format(),
+                   ch.stats.prs.format(),
+                   ch.stats.lck.format(),
+                   fill=' ')
         ch.msg(msg)
+
 
 # -------------------------------------------------------------
 #

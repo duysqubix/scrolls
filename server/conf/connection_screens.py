@@ -24,15 +24,50 @@ from django.conf import settings
 from evennia import utils
 
 CONNECTION_SCREEN = """
-|b==============================================================|n
- Welcome to |g{}|n, version {}!
 
- If you have an existing account, connect to it by typing:
-      |wconnect <username> <password>|n
- If you need to create an account, type (without the <>'s):
-      |wcreate <username> <password>|n
+|r             ;;          ;;             
+            ;Kk.        .xK;            
+           ,0Oc.        .cO0,           
+          .OK;            ;XO'          
+         .kWd.  ;,        .dNx.         
+        .xN0,   ld.   ..   ,KXd.        
+       .dKXd   .ON0kkl,.    oX0o.       
+      .dKK0,   oWX0kkoc;.   ,0K0o.      
+     .oKOXd.  ,ko'.  .'ox'  .dN00o.     
+     lKk0X:   .,       'kc   :XKk0l     
+    cKOkNXl        ..,lxo.  .lXWOkKc    
+   :X0dKXdl:.   'okxddc'   .:ldXNkOK:   
+  ;KXdkWo  ..  :XXl.        .  dWKx0K;  
+ ;KNddNX;     .dMXc            ;XWkdXK, 
+,0WklKMk.  .'. :XMNd;.    .'.  .kMNddN0,
+kW0ckWMk.  .oxcl0WMWWO,'ccxd.  .OMMOlOMk
+lNOlOMMNx:;cdxd0WWWMMW0K0xxdc:cOWMWkoKNl
+.oNOdXMNkxkdlcxNMWKkx0WMXo:llxO0WMKd0No.
+ .dNOkNMXxdkOXWMMMXOxKMMMN0OOOOXMNk0Wd. 
+  .xN00WMWOdxO0XWMMMMMMWXOkxxONMWKKWx.  
+   .kNKXWMk,cOkckNNWMNNKoxk:'oNMXXNk.   
+    .ONNWWo  ';..:Okox0c.;'  :XWWWO.    
+     'OWMX:       ;xd0O'     :NWW0'     
+      ,0MX:       .dWMK,     :XW0,      
+       ;KM0c.      cKNN:   .cKMK;       
+        :XMWKd.    lXN0' .cONMX:        
+         cXWWK,   :KNO,  ,KWMXc         
+          lXMK,  cKx;.   ,KMNl          
+          .oNK, :Kd.     .cOl.          
+           .d0, ,0o        .            
+            .c'  lO,                    
+                'dl.                    
+               ;x;                      
+               :x'                      
+                lOdoodo.                
+                .lNMMK;                 
+                 .oK0:                  
+                  .;'.
 
- Enter |whelp|n for more info. |wlook|n will re-show this screen.
-|b==============================================================|n""".format(
-    settings.SERVERNAME, utils.get_evennia_version("short")
-)
+              |nThe Scrolls 
+                  2020
+
+  An Elder Scrolls based mud based on 
+          |gEvennia|n by Griatch                
+
+""".format(settings.SERVERNAME, utils.get_evennia_version("short"))

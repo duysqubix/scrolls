@@ -52,19 +52,19 @@ GLOBAL_SCRIPTS = {
         'persistent': True,
         'desc': 'storage for room data'
     },
-    'skillsdb':{
+    'skillsdb': {
         'typeclass': 'world.skills.SkillDB',
         'persistent': True,
         'desc': 'storage for mud-wide skills'
     },
-    'racesdb':{
+    'racesdb': {
         'typeclass': 'world.race.RaceInfo',
         'persistent': True,
         'desc': 'storage for race information'
     }
-
 }
 
+CMDSET_UNLOGGEDIN = "evennia.contrib.menu_login.UnloggedinCmdSet"
 ######################################################################
 # Settings given in secret_settings.py override those in this file.
 ######################################################################
