@@ -7,12 +7,16 @@ is setup to be the "default" character type created by the default
 creation commands.
 
 """
+import copy
+from world.birthsigns import NoSign
 from evennia import DefaultCharacter
 from world.globals import GOD_LVL, WIZ_LVL, Size
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
 from evennia.utils.utils import lazy_property
 from world.storagehandler import StorageHandler
+from evennia.utils.evmenu import EvMenu
+
 
 class SkillHandler(StorageHandler):
     __attr_name__ = "skills"
@@ -23,41 +27,28 @@ class SkillHandler(StorageHandler):
         return None
 
     def add(self, skill: Skill):
+        if not isinstance(skill, Skill):
+            raise ValueError('not a valid skill object')
         setattr(self, skill.name, skill)
+
 
 class StatHandler(StorageHandler):
     __attr_name__ = "characteristics"
-
-    def update(self, stat_name, **kwargs):
-        """
-        update stat in object.attributes, using kwargs as field names and values
-
-        ex:
-        update_info = {'base': 34}
-        self.update_stat('str', update_info)
-        """
-
-        cur_stat = self.get(stat_name)
-
-        for attr, value in kwargs.items():
-            if attr in cur_stat.__dict__:
-                cur_stat.__dict__[attr] = value
-
-
 
 
 class AttrHandler(StorageHandler):
     __attr_name__ = "attrs"
 
     def init(self):
+
         # max health
-        self.max_health = self.caller.stats.end.value // 2 + 1
+        self.max_health = self.caller.stats.end.base // 2 + 1
 
         # stamina
-        self.stamina = self.caller.stats.end.bonus
+        self.max_stamina = self.caller.stats.end.bonus
 
         # magicka
-        self.magicka = self.caller.stats.int.value
+        self.max_magicka = self.caller.stats.int.base
 
         # linguistics
         self.linguistics = self.caller.stats.int.bonus // 2 + 1
@@ -81,6 +72,10 @@ class AttrHandler(StorageHandler):
         # luck
         self.luck = self.caller.stats.lck.bonus
 
+        # current health, magicka, stamina
+        self.health = self.max_health
+        self.magicka = self.max_magicka
+        self.stamina = self.max_stamina
 
 
 class Character(DefaultCharacter):
@@ -118,10 +113,7 @@ class Character(DefaultCharacter):
     def at_object_creation(self):
 
         # characteristics
-        stats_x = [x.short for x in CHARACTERISTICS]
-        stats_y = CHARACTERISTICS
-        self.db.characteristics = dict(zip(stats_x, stats_y))
-
+        self.db.characteristics = copy.deepcopy(CHARACTERISTICS)
 
         # level
         level = None
@@ -133,7 +125,20 @@ class Character(DefaultCharacter):
         else:
             level = 1
         # attributes
-        self.db.attrs = {'action_points': 3, 'exp': 0, 'level': level, 'birthsign': None}
+        self.db.attrs = {
+            'exp': 0,
+            'level': level,
+            'birthsign': NoSign,
+            'race': 'none'
+        }
 
         # skills
         self.db.skills = dict()
+
+        # enter the chargen state
+        EvMenu(self,
+               "world.char_gen",
+               startnode="pick_race",
+               cmdset_mergetype='Replace',
+               cmdset_priority=1,
+               auto_quit=True)
