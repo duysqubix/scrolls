@@ -6,7 +6,7 @@ Commands describe the input the account can do to the game.
 """
 
 from evennia import Command as BaseCommand
-
+from evennia import EvForm, EvTable
 # from evennia import default_cmds
 
 
@@ -77,34 +77,38 @@ class CmdScore(Command):
 
     def func(self):
         ch = self.caller
-        # characteristcs
-        stats = ch.stats.all()
 
-        msg = """
-   +-----------------------------------------------+
-   |{0: >20}          |
-   +-----------------------------------------------+
-   | {1} Birthsign: {2: <10} |
-   | {3} Level    : {4: <8}|
-   | {5}   |
-   | {6}
-   | {7}
-   | {8}
-   | {9}
-   +----------------------------------------------+
-        """.format(ch.name.capitalize(),
-                   ch.stats.str.format(),
-                   ch.attrs.birthsign,
-                   ch.stats.end.format(),
-                   ch.attrs.level,
-                   ch.stats.agi.format(),
-                   ch.stats.int.format(),
-                   ch.stats.wp.format(),
-                   ch.stats.prc.format(),
-                   ch.stats.prs.format(),
-                   ch.stats.lck.format(),
-                   fill=' ')
-        ch.msg(msg)
+        def green_or_red(num):
+            if num < 0:
+                return f"|r{num}|n"
+            elif num > 0:
+                return f"|g{num}|n"
+            else:
+                return f"{num}"
+
+        form = EvForm("/home/ubuntu/scrolls/resources/score_form.py")
+        form.map({
+            1: ch.name.capitalize(),
+            2: ch.stats.str.base,
+            3: green_or_red(ch.stats.str.bonus),
+            4: ch.stats.agi.base,
+            5: green_or_red(ch.stats.agi.bonus),
+            6: ch.stats.end.base,
+            7: green_or_red(ch.stats.end.bonus),
+            8: ch.stats.wp.base,
+            9: green_or_red(ch.stats.wp.bonus),
+            10: ch.attrs.level,
+            11: ch.stats.lck.base,
+            12: green_or_red(ch.stats.lck.bonus),
+            13: ch.stats.int.base,
+            14: green_or_red(ch.stats.int.bonus),
+            15: ch.stats.prs.base,
+            16: green_or_red(ch.stats.prs.bonus),
+            17: ch.stats.prc.base,
+            18: green_or_red(ch.stats.prc.bonus),
+            19: str(ch.attrs.birthsign)
+        })
+        ch.msg(str(form))
 
 
 # -------------------------------------------------------------

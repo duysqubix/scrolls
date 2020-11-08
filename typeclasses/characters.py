@@ -8,7 +8,7 @@ creation commands.
 
 """
 import copy
-from world.birthsigns import NoSign
+from world.birthsigns import BirthSign, NoSign
 from evennia import DefaultCharacter
 from world.globals import GOD_LVL, WIZ_LVL, Size
 from world.characteristics import CHARACTERISTICS
@@ -16,6 +16,7 @@ from world.skills import Skill
 from evennia.utils.utils import lazy_property
 from world.storagehandler import StorageHandler
 from evennia.utils.evmenu import EvMenu
+from evennia.utils import make_iter
 
 
 class SkillHandler(StorageHandler):
@@ -33,7 +34,7 @@ class SkillHandler(StorageHandler):
 
 
 class StatHandler(StorageHandler):
-    __attr_name__ = "characteristics"
+    __attr_name__ = "stats"
 
 
 class AttrHandler(StorageHandler):
@@ -111,9 +112,8 @@ class Character(DefaultCharacter):
         return SkillHandler(self)
 
     def at_object_creation(self):
-
         # characteristics
-        self.db.characteristics = copy.deepcopy(CHARACTERISTICS)
+        self.db.stats = copy.deepcopy(CHARACTERISTICS)
 
         # level
         level = None
@@ -132,13 +132,13 @@ class Character(DefaultCharacter):
             'race': 'none'
         }
 
-        # skills
-        self.db.skills = dict()
-
+        _ = self.attrs
+        _ = self.stats
+        _ = self.skills
         # enter the chargen state
         EvMenu(self,
                "world.char_gen",
                startnode="pick_race",
                cmdset_mergetype='Replace',
                cmdset_priority=1,
-               auto_quit=True)
+               auto_quit=False)

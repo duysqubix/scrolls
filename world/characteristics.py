@@ -7,7 +7,7 @@ class Characteristic:
         self.favored = favored
 
     def __str__(self):
-        return f"Characteristic: <{self.short}>"
+        return f"{self.__class__.__name__}: <{self.base}/{self.bonus}>"
 
     def __repr__(self):
         return str(self)
@@ -18,10 +18,7 @@ class Characteristic:
 
         if self.name != other.name and self.short != other.short:
             raise ValueError('can only add characteristics of the same type')
-
-        return Characteristic(self.name,
-                              self.short,
-                              base=(self.base + other.base),
+        return self.__class__(base=(self.base + other.base),
                               bonus=(self.bonus + other.bonus),
                               favored=(self.favored or other.favored))
 
@@ -32,9 +29,7 @@ class Characteristic:
         return char
 
     def __neg__(self):
-        return Characteristic(self.name,
-                              self.short,
-                              base=-self.base,
+        return self.__class__(base=-self.base,
                               bonus=-self.bonus,
                               favored=self.favored)
 

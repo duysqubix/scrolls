@@ -36,10 +36,11 @@ class CmdCharacterGen(Command):
 
     def func(self):
         ch = self.caller
-        self.args = self.args.strip().split(' ')
         if not self.args:
             char = ch
         else:
+            self.args = self.args.strip().split(' ')
+
             char_name = self.args[0]
             char = evennia.search_object(char_name)
             if not char:
@@ -52,12 +53,12 @@ class CmdCharacterGen(Command):
                 ch.msg("You cannot do a chargen with that object.")
                 return
 
-            if not char.is_connected():
+            if not char.is_connected:
                 ch.msg(f"{char.name} is not online")
                 return
 
         EvMenu(char,
-               "world.char_gen",
+               "world.chargen.gen",
                startnode="pick_race",
                cmdset_mergetype='Replace',
                cmdset_priority=1,

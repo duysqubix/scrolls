@@ -4,6 +4,7 @@ Holds information regarding races of the scrolls
 
 from typeclasses.scripts import Script
 
+
 class RaceInfo(Script):
     def at_object_creation(self):
         self.reset()
@@ -17,7 +18,7 @@ class RaceInfo(Script):
                 """.strip(),
                 "sdesc":
                 "high elves",
-                'base_stats': {
+                'stats': {
                     'str': 20,
                     'end': 23,
                     'agi': 23,
@@ -36,7 +37,7 @@ class RaceInfo(Script):
                 """.strip(),
                 "sdesc":
                 "reptilian humanoids",
-                'base_stats': {
+                'stats': {
                     'str': 25,
                     'end': 24,
                     'agi': 28,
@@ -55,7 +56,7 @@ class RaceInfo(Script):
                 """.strip(),
                 "sdesc":
                 "wood elves",
-                'base_stats': {
+                'stats': {
                     'str': 21,
                     'end': 21,
                     'agi': 31,
@@ -74,7 +75,7 @@ class RaceInfo(Script):
                 """.strip(),
                 "sdesc":
                 "hybrid of man and mer",
-                'base_stats': {
+                'stats': {
                     'str': 23,
                     'end': 21,
                     'agi': 22,
@@ -93,7 +94,7 @@ class RaceInfo(Script):
                 """.strip(),
                 "sdesc":
                 "dark elves",
-                'base_stats': {
+                'stats': {
                     'str': 25,
                     'end': 24,
                     'agi': 29,
@@ -112,7 +113,7 @@ class RaceInfo(Script):
                 """.strip(),
                 "sdesc":
                 "countryside human",
-                'base_stats': {
+                'stats': {
                     'str': 26,
                     'end': 27,
                     'agi': 24,
@@ -131,7 +132,7 @@ class RaceInfo(Script):
                 """.strip(),
                 "sdesc":
                 "cosmopolitan human",
-                'base_stats': {
+                'stats': {
                     'str': 24,
                     'end': 23,
                     'agi': 23,
@@ -150,7 +151,7 @@ class RaceInfo(Script):
                 """.strip(),
                 "sdesc":
                 "feline humanoids",
-                'base_stats': {
+                'stats': {
                     'str': 22,
                     'end': 22,
                     'agi': 29,
@@ -169,7 +170,7 @@ class RaceInfo(Script):
                 """.strip(),
                 "sdesc":
                 "sons and daughters of skyrim",
-                'base_stats': {
+                'stats': {
                     'str': 30,
                     'end': 28,
                     'agi': 23,
@@ -188,7 +189,7 @@ class RaceInfo(Script):
                 """.strip(),
                 "sdesc":
                 "Orcs",
-                'base_stats': {
+                'stats': {
                     'str': 28,
                     'end': 30,
                     'agi': 22,
@@ -207,7 +208,7 @@ class RaceInfo(Script):
                 """.strip(),
                 "sdesc":
                 "sword masters",
-                'base_stats': {
+                'stats': {
                     'str': 27,
                     'end': 28,
                     'agi': 26,

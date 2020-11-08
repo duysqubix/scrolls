@@ -29,7 +29,7 @@ def pick_race_altmer(caller, **kwargs):
     altmer = __racesdb.db.races['altmer']
 
     desc = altmer['desc']
-    stats = altmer['base_stats']
+    stats = altmer['stats']
     stats = " ".join([f"{k}:{v}, " for (k, v) in stats.items()])
 
     text = ("Altmer or high elves (Help for more information)" \
@@ -97,7 +97,7 @@ def gen_characteristics_2(caller, **kwargs):
 
 
 def gen_characteristics_3(caller, **kwargs):
-    stats = dict(__racesdb.db.races[kwargs['race']]['base_stats'])
+    stats = dict(__racesdb.db.races[kwargs['race']]['stats'])
     stat_keys = list(stats.keys())
     for _ in range(7):
         k1 = random.choice(stat_keys)
@@ -138,8 +138,9 @@ def finish(caller, **kwargs):
 
     # set base stats
     for stat, base in kwargs['stats'].items():
-        attr = caller.stats.get(stat)
-        attr.base = base
+        _s = caller.stats.get(stat)
+        _s.base = base
+        caller.stats.set(stat, _s)
 
     # calc_birthsign and assign
     is_cursed = False
@@ -159,9 +160,10 @@ def finish(caller, **kwargs):
     elif kwargs['birthsign']['name'] == 'mage':
         kwargs['birthsign']['sign'] = mage_signs[idx](is_cursed)
 
-    caller.attrs.birthsign = kwargs['birthsign']['sign']
-
+    # change birthsign
+    change_birthsign(caller, kwargs['birthsign']['sign'])
     # set race
     caller.attrs.race = kwargs['race']
     caller.msg(kwargs)
+    # caller.save()
     return None, None
