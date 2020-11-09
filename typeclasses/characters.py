@@ -8,15 +8,14 @@ creation commands.
 
 """
 import copy
-from world.birthsigns import BirthSign, NoSign
+from world.birthsigns import NoSign
 from evennia import DefaultCharacter
-from world.globals import GOD_LVL, WIZ_LVL, Size
+from world.globals import GOD_LVL, WIZ_LVL
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
 from evennia.utils.utils import lazy_property
 from world.storagehandler import StorageHandler
 from evennia.utils.evmenu import EvMenu
-from evennia.utils import make_iter
 
 
 class SkillHandler(StorageHandler):
@@ -37,19 +36,83 @@ class StatHandler(StorageHandler):
     __attr_name__ = "stats"
 
 
+class ConditionHandler(StorageHandler):
+    __attr_name__ = 'conditions'
+
+    def has(self, condition):
+        return True if self.get(condition) is not None else False
+
+    def add(self, condition, X=None, **kwargs):
+
+        # check to see if caller has condition
+        if not self.has(condition):
+            con = condition(X=X)  # initialize condition
+            con.at_condition(self.caller)  # fire at condition
+            # add it to list of conditions stored on handler
+            self.set(con)
+
+    def remove(self, condition):
+        if not self.has(
+                condition):  # trying to remove a non-existant condition
+            return True
+        con = self.get(condition)
+        if con.enabled is True:  # try to end it
+            if con.end_condition(self.caller) is False:
+                self.caller.msg(
+                    f"try as you might, you are still affected by {con.__conditionname__}"
+                )
+                return False
+        con.after_condition(self.caller)
+        del self.caller.db.conditions[con.name]
+
+    def get(self, condition):
+        print(condition, type(condition))
+        name = condition.__conditionname__
+        try:
+            return self.__getattr__(name)
+        except KeyError:
+            return None
+
+    def set(self, condition):
+        name = condition.__conditionname__
+        value = condition
+        self.__setattr__(name, value)
+
+
 class AttrHandler(StorageHandler):
     __attr_name__ = "attrs"
 
+    @property
+    def max_health(self):
+        return self.caller.stats.end.base // 2 + 1
+
+    @property
+    def max_stamina(self):
+        return self.caller.stats.end.bonus
+
+    @property
+    def max_magicka(self):
+        return self.caller.stats.int.base
+
+    @property
+    def max_speed(self):
+        sb = self.caller.stats.str.bonus
+        ab = self.caller.stats.agi.bonus
+        return sb + (2 * ab)
+
+    @property
+    def max_carry(self):
+        # carry rating
+        sb = self.caller.stats.str.bonus
+        eb = self.caller.stats.end.bonus
+
+        return (4 * sb) + (2 * eb)
+
+    @property
+    def max_luck(self):
+        return self.caller.stats.lck.bonus
+
     def init(self):
-
-        # max health
-        self.max_health = self.caller.stats.end.base // 2 + 1
-
-        # stamina
-        self.max_stamina = self.caller.stats.end.bonus
-
-        # magicka
-        self.max_magicka = self.caller.stats.int.base
 
         # linguistics
         self.linguistics = self.caller.stats.int.bonus // 2 + 1
@@ -60,23 +123,12 @@ class AttrHandler(StorageHandler):
         pcb = self.caller.stats.prs.bonus
         self.initiative = ab + ib + pcb
 
-        # speed
-        sb = self.caller.stats.str.bonus
-        ab = self.caller.stats.agi.bonus
-        self.speed = sb + (2 * ab)
-
-        # carry rating
-        sb = self.caller.stats.str.bonus
-        eb = self.caller.stats.end.bonus
-        self.carry_rating = (4 * sb) + (2 * eb)
-
-        # luck
-        self.luck = self.caller.stats.lck.bonus
-
         # current health, magicka, stamina
         self.health = self.max_health
         self.magicka = self.max_magicka
         self.stamina = self.max_stamina
+        self.speed = self.max_speed
+        self.carry = self.max_carry
 
 
 class Character(DefaultCharacter):
@@ -111,7 +163,16 @@ class Character(DefaultCharacter):
     def skills(self):
         return SkillHandler(self)
 
+    @lazy_property
+    def conditions(self):
+        return ConditionHandler(self)
+
+    @property
+    def is_pc(self):
+        return True
+
     def at_object_creation(self):
+
         # characteristics
         self.db.stats = copy.deepcopy(CHARACTERISTICS)
 
@@ -135,6 +196,7 @@ class Character(DefaultCharacter):
         _ = self.attrs
         _ = self.stats
         _ = self.skills
+        _ = self.conditions
         # enter the chargen state
         # EvMenu(self,
         #        "world.char_gen",

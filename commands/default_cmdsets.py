@@ -18,6 +18,7 @@ from evennia import default_cmds
 from .command import *
 from .wiz import *
 
+
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
     """
     The `CharacterCmdSet` contains general in-game commands like `look`,
@@ -36,10 +37,11 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         # any commands you add below will overload the default ones.
         #
 
-        cmds = [CmdLook, CmdSpawn, CmdCharacterGen, CmdScore]
+        cmds = [
+            CmdLook, CmdSpawn, CmdCharacterGen, CmdScore, CmdFrenzied, CmdEmote
+        ]
         for cmd in cmds:
             self.add(cmd())
-            
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

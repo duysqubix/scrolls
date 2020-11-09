@@ -5,8 +5,10 @@ Commands describe the input the account can do to the game.
 
 """
 
+from world.conditions import Frenzied
+from world.utils.act import act, Announce
 from evennia import Command as BaseCommand
-from evennia import EvForm, EvTable
+from evennia import EvForm, search_object
 # from evennia import default_cmds
 
 
@@ -32,6 +34,44 @@ class Command(BaseCommand):
     """
 
     pass
+
+
+class CmdEmote(Command):
+    """
+    custom emote command
+
+    Usage:
+        emote "$n says hello to $N"
+    """
+
+    key = 'emote'
+
+    def func(self):
+        ch = self.caller
+        naud = search_object('naud')[0]
+        if naud is not None:
+            act("$n says hello to $N", False, True, ch, None, naud,
+                Announce.ToNotVict)
+            act("$n says hello to you.", False, True, ch, None, naud,
+                Announce.ToVict)
+
+
+class CmdFrenzied(Command):
+    """
+    Used to test 
+    """
+
+    key = 'frenzy'
+
+    def func(self):
+        ch = self.caller
+
+        if not ch.conditions.has(Frenzied):
+            ch.conditions.add(Frenzied)
+            ch.msg("You enter a state of frenzy.")
+        else:
+            ch.conditions.remove(Frenzied)
+            ch.msg("You seem more calm.")
 
 
 class CmdLook(Command):
