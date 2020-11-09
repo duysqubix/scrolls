@@ -106,7 +106,8 @@ class CmdScore(Command):
             16: green_or_red(ch.stats.prs.bonus),
             17: ch.stats.prc.base,
             18: green_or_red(ch.stats.prc.bonus),
-            19: str(ch.attrs.birthsign)
+            19: str(ch.attrs.birthsign),
+            20: ch.attrs.race.capitalize()
         })
         ch.msg(str(form))
 
