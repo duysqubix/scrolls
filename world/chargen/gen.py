@@ -19,13 +19,63 @@ def pick_race(caller, **kwargs):
         options.append({
             'key': race,
             'desc': __racesdb.db.races[race]['sdesc'].capitalize(),
-            'goto': f"pick_race_{race}"
+            'goto': (f"pick_race_specific", {
+                'race': race
+            })
         })
 
     return text, tuple(options)
 
 
+def pick_race_specific(caller, **kwargs):
+    race = __racesdb.db.races[kwargs['race']]
+    desc = race['desc']
+    stats = race['stats']
+    stats = " ".join([f"{k}:{v}, " for (k, v) in stats.items()])
+
+    text = ("(Help for more information)" \
+    f"\n{stats}", utils.wrap(desc, 80))
+    options = ({
+        'key':
+        'yes',
+        'desc':
+        f"Do you want to be an {kwargs['race']}",
+        'goto': ("altmer_novice_skill_upgrade", {
+            'race': f"{kwargs['race']}"
+        })
+    }, {
+        'key': 'no',
+        'desc': 'pick another race',
+        'goto': "pick_race"
+    })
+    return text, options
+
+
 def pick_race_altmer(caller, **kwargs):
+    altmer = __racesdb.db.races['altmer']
+
+    desc = altmer['desc']
+    stats = altmer['stats']
+    stats = " ".join([f"{k}:{v}, " for (k, v) in stats.items()])
+
+    text = ("Altmer or high elves (Help for more information)" \
+    f"\n{stats}", utils.wrap(desc, 80))
+    options = ({
+        'key': 'yes',
+        'desc': "Do you want to be an altmer",
+        'goto': ("altmer_novice_skill_upgrade", {
+            'race': 'altmer'
+        })
+    }, {
+        'key': 'no',
+        'desc': 'pick another race',
+        'goto': "pick_race"
+    })
+    return text, options
+
+
+def pick_race_altmer(caller, **kwargs):
+    race = 'altmer'
     altmer = __racesdb.db.races['altmer']
 
     desc = altmer['desc']

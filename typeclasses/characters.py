@@ -117,10 +117,10 @@ class Character(DefaultCharacter):
 
         # level
         level = None
-        if self.db.superuser and self.id == 1:
+        if self.is_superuser and self.id == 1:
             level = GOD_LVL
 
-        elif self.db.superuser:
+        elif self.is_superuser:
             level = WIZ_LVL
         else:
             level = 1
@@ -128,7 +128,7 @@ class Character(DefaultCharacter):
         self.db.attrs = {
             'exp': 0,
             'level': level,
-            'birthsign': NoSign,
+            'birthsign': NoSign(),
             'race': 'none'
         }
 
@@ -136,9 +136,9 @@ class Character(DefaultCharacter):
         _ = self.stats
         _ = self.skills
         # enter the chargen state
-        EvMenu(self,
-               "world.char_gen",
-               startnode="pick_race",
-               cmdset_mergetype='Replace',
-               cmdset_priority=1,
-               auto_quit=False)
+        # EvMenu(self,
+        #        "world.char_gen",
+        #        startnode="pick_race",
+        #        cmdset_mergetype='Replace',
+        #        cmdset_priority=1,
+        #        auto_quit=False)
