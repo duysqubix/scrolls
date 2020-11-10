@@ -3,6 +3,7 @@ Holds information regarding races of the scrolls
 """
 
 from typeclasses.scripts import Script
+from world.traits import *
 
 
 class RaceInfo(Script):
@@ -27,7 +28,7 @@ class RaceInfo(Script):
                     'prc': 25,
                     'prs': 25
                 },
-                'traits': {},
+                'traits': {(DiseaseResistTrait, 50)},
                 'powers': {}
             },
             'argonian': {

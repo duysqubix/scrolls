@@ -14,7 +14,7 @@ from evennia import DefaultCharacter
 from world.globals import GOD_LVL, WIZ_LVL
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
-from evennia.utils.utils import lazy_property, make_iter
+from evennia.utils.utils import inherits_from, lazy_property, make_iter
 from world.storagehandler import StorageHandler
 from evennia.utils.evmenu import EvMenu
 
@@ -87,27 +87,55 @@ class ConditionHandler(StorageHandler):
 class AttrHandler(StorageHandler):
     __attr_name__ = "attrs"
 
+    def update(self):
+        self.max_carry()
+        self.max_health()
+        self.max_magicka()
+        self.max_speed()
+        self.max_stamina()
+
+    def change_vital(self, attr_type, by=0):
+        """
+        helper function to change current vital value 
+        based on max and current value. attr_type supplied must be
+        valid key that points to attributes on AttributeHandler, and must
+        be a valid VitalAttribute object
+        """
+        attr = self.__dict__[attr_type]
+        if not inherits_from(attr, 'world.attributes.VitalAttribute'):
+            raise NotImplementedError(
+                'change_vital function doesnt support changing attribute that are NOT VitalAttributes'
+            )
+        cur = attr.cur
+        cur += by
+        if cur < 0:
+            cu = 0
+        if cur > attr.max:
+            cur = attr.max
+
+        self.__dict__[attr_type].cur = cur
+
     def max_health(self):
         health = (self.caller.stats.end.base // 2 + 1)
         self.health.max = health
-        return health + self.health.mod
+        return health + self.health.mods
 
     def max_stamina(self):
         stamina = self.caller.stats.end.bonus
         self.stamina.max = stamina
-        return stamina + self.stamina.mod
+        return stamina + self.stamina.mods
 
     def max_magicka(self):
         magicka = self.caller.stats.int.base
         self.magicka.max = magicka
-        return magicka + self.magicka.mod
+        return magicka + self.magicka.mods
 
     def max_speed(self):
         sb = self.caller.stats.str.bonus
         ab = self.caller.stats.agi.bonus
         speed = sb + (2 * ab)
         self.speed.max = speed
-        return speed + self.speed.mod
+        return speed + self.speed.mods
 
     def max_carry(self):
         # carry rating
@@ -115,7 +143,7 @@ class AttrHandler(StorageHandler):
         eb = self.caller.stats.end.bonus
         carry = ((4 * sb) + (2 * eb))
         self.carry.max = carry
-        return carry + self.carry.mod
+        return carry + self.carry.mods
 
 
 class Character(DefaultCharacter):

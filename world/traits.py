@@ -3,7 +3,7 @@ Much like conditions....
 """
 from evennia import search_object
 from evennia.utils.utils import inherits_from
-from world.conditions import BreathUnderWater, Condition, Fear, Flying, Intangible
+from world.conditions import BreathUnderWater, Burning, Condition, Fear, Flying, Intangible
 
 
 class Trait(Condition):
@@ -126,3 +126,161 @@ class IncorporealTrait(Trait):
 
     def at_condition(self):
         self.caller.conditions.add([Intangible, Flying])
+
+    def after_condition(self):
+        self.caller.conditions.remove([Intangible, Flying])
+
+
+class NaturalToughnessTrait(Trait):
+    __conditionname__ = "natural toughness"
+
+    def init(self):
+        if not self.X or not isinstance(self.X, [int, float]):
+            raise ValueError('X must be a valid castable int type')
+
+        self.X = int(self.X)
+
+
+class NaturalWeaponsTrait(Trait):
+    """
+    character has unique weapons of some kind;
+    ex. claws, teeth, etc... adds , TBD, when fighting
+    """
+    __conditionname__ = "natural weapons"
+
+    def init(self):
+        if not self.X:
+            raise ValueError(
+                "natural weapons traits needs a name when initialized")
+        self.X = str(self.X)
+
+
+class PowerWellTrait(Trait):
+    __conditionname__ = 'power well'
+
+    def init(self):
+        if not self.X or not isinstance(self.X, [int, float]):
+            raise ValueError('X must be valid castable int type')
+
+    def at_condition(self):
+        # increase max magicka by X
+        self.caller.attrs.magicka.add_mod(self.X)
+
+    def after_condition(self):
+        self.caller.attrs.magicka.remove_mod(self.X)
+
+
+class SkeletalTrait(Trait):
+    __conditionname__ = 'skeletal'
+
+    def at_condition(self):
+        # gain undead trait automatically
+        self.attrs.traits.add(UndeadTrait)
+        # immune to burning condition
+        self.attrs.immunity.value['conditions'].append(Burning)
+
+    def after_condition(self):
+        self.attrs.immunity.value['conditions'].remove(Burning)
+        self.attrs.traits.remove(UndeadTrait)
+
+
+class SilverScarredTrait(Trait):
+    __conditionname__ = 'silver scarred'
+
+    def init(self):
+        if not self.X or not isinstance(self.X, [float, int]):
+            raise ValueError('silver scarred trait requires damage modifier')
+
+        self.X = float(self.X)
+
+
+class SpellAbsorptionTrait(Trait):
+    __conditionname__ = 'spell absorption'
+
+    def init(self):
+        if not self.X or not isinstance(self.X, [float, int]):
+            raise ValueError('spell absorption requires castable int type')
+
+        self.X = int(self.X)
+        if self.X > 10:
+            self.X = 10
+
+
+class StuntedMagickaTrait(Trait):
+    __conditionname__ = "stunted magicka"
+
+    def at_condition(self):
+        self.caller.attrs.magicka.rate = 0.0
+
+    def after_condition(self):
+        self.caller.attrs.magicka.rate = 1.0
+
+
+class SummonedTrait(Trait):
+    __conditionname__ = 'summoned'
+
+
+class SunScarredTrait(Trait):
+    __conditionname__ = 'sun scarred'
+
+    def init(self):
+        if not self.X or not isinstance(self.X, [int, float]):
+            raise ValueError('sun scarred trait requires castable int type')
+        self.X = float(self.X)
+
+    def effect(self, **kwargs):
+        """ 
+        designed to be used when exposed to sun, reduce 
+        players SP point by 1
+        """
+        if self.enabled:
+            self.caller.attrs.change_vital('stamina', -1)
+
+
+class RegenerationTrait(Trait):
+    __conditionname__ = 'regeneration'
+
+    def init(self):
+        if not self.X or not isinstance(self.X, [int, float]):
+            raise ValueError('regeneration trait requires castable float type')
+
+        self.X = int(self.X)
+
+    def effect(self, **kwargs):
+        """ use to heal player X amnt """
+        self.caller.attrs.change_vital('health', 1)
+
+
+class ResistanceTrait(Trait):
+    __conditionname__ = 'resistance'
+
+    # TODO: add resistant types to this trait (resistant types have not been created or defined yet)
+    def init(self):
+        if not self.X or not isinstance(self.X, [int, float]):
+            raise ValueError('resistance trait requires castable float type')
+
+        self.X = float(self.X)
+
+
+class UndeadTrait(Trait):
+    __conditionname__ = 'undead'
+
+    def at_condition(self):
+        # immune to disease, poison, aging, fatigue
+        # dazed, defened
+        self.caller.attrs.immunity.value['disease'].append('all')
+        self.caller.attrs.immunity.value['poison'].append('all')
+
+    def after_condition(self):
+        self.attrs.immunity.value['disease'].append('all')
+
+
+class UndyingTrait(Trait):
+    __conditionname__ = 'undying'
+
+    def at_condition(self):
+        # immune to all disease
+        self.attrs.immunity.value['disease'].append('all')
+
+    def after_condition(self):
+        self.attrs.immunity.value['disease'].append('all')

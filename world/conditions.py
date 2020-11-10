@@ -2,8 +2,8 @@
 Things that externally affect the character and their capabilities intead of
 features of the characters nature
 """
-from evennia import logger, search_object
-from evennia.utils import dedent
+from evennia.utils import dedent, lazy_property
+import evennia
 
 
 class Condition:
@@ -25,12 +25,11 @@ class Condition:
     def name(self):
         return self.__conditionname__
 
+    #BUG: fails when using lazy_property handler
     @property
     def caller(self):
         dbref = f"#{self.caller_id}"
-        obj = search_object(dbref, exact=True, use_dbref=True)
-        if not obj:
-            return None
+        obj = evennia.search_object(dbref, exact=True, use_dbref=True)
         return obj[0]
 
     def __str__(self):

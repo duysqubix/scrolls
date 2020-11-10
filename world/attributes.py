@@ -24,7 +24,8 @@ class VitalAttribute(Attribute):
                 'cur': 0,
                 'max': -1,
                 'mod': [],
-                'rate': 1.0
+                'rate': 1.0,
+                'rate_mod': 0.0
         }).items():
             setattr(self, k, v)
 

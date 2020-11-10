@@ -10,6 +10,7 @@ class StorageHandler:
         super().__setattr__(name, value)
         if name not in ['caller']:
             _v = self.caller.attributes.get(self.__attr_name__, default={})
+            print(type(_v), type(name), type(value))
             _v[name] = value
             self.caller.attributes.add(self.__attr_name__, _v)
 
