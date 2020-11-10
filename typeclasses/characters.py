@@ -49,8 +49,8 @@ class ConditionHandler(StorageHandler):
         for con in condition:
             # check to see if caller has condition
             if not self.has(con):
-                c = con(caller_id=self.caller.id, X=X)  # initialize condition
-                c.at_condition()  # fire at condition
+                c = con(X=X)  # initialize condition
+                c.at_condition(self.caller)  # fire at condition
                 # add it to list of conditions stored on handler
                 #TODO: need to handle if condition is already set
                 self.set(c)
@@ -63,12 +63,12 @@ class ConditionHandler(StorageHandler):
                 return True
             c = self.get(con)
             if c.enabled is True:  # try to end it
-                if c.end_condition() is False:
+                if c.end_condition(self.caller) is False:
                     self.caller.msg(
                         f"try as you might, you are still affected by {con.__conditionname__}"
                     )
                     return False
-            c.after_condition()
+            c.after_condition(self.caller)
             del self.caller.db.conditions[c.name]
 
     def get(self, condition):
@@ -82,6 +82,10 @@ class ConditionHandler(StorageHandler):
         name = condition.__conditionname__
         value = condition
         self.__setattr__(name, value)
+
+
+class TraitHandler(ConditionHandler):
+    __attr_name__ = "traits"
 
 
 class AttrHandler(StorageHandler):
@@ -186,11 +190,16 @@ class Character(DefaultCharacter):
     def conditions(self):
         return ConditionHandler(self)
 
+    @lazy_property
+    def traits(self):
+        return TraitHandler(self)
+
     def at_object_creation(self):
         self.db.attrs = {}
         self.db.stats = {}
         self.db.skills = {}
         self.db.conditions = {}
+        self.db.traits = {}
 
         # characteristics
         self.db.stats = copy.deepcopy(CHARACTERISTICS)
@@ -234,7 +243,6 @@ class Character(DefaultCharacter):
             VitalAttribute('carry'),
         }
 
-        # _ = self.traits
         # enter the chargen state
         # EvMenu(self,
         #        "world.char_gen",

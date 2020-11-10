@@ -36,15 +36,15 @@ class BoundTrait(Trait):
 class CrawlingTrait(Trait):
     __conditionname__ = "crawling"
 
-    def at_condition(self):
-        cur_max_speed = self.caller.attrs.speed.max
+    def at_condition(self, caller):
+        cur_max_speed = caller.attrs.speed.max
         # halve current max speed
         self.meta['speed_mod'] = -(cur_max_speed // 2 + 1)
-        self.caller.attrs.speed.add_mod(self.meta['speed_mod'])
+        caller.attrs.speed.add_mod(self.meta['speed_mod'])
 
-    def after_condition(self):
-        self.caller.attrs.modifier['speed'].remove(self.meta['speed_mod'])
-        self.caller.attrs.speed.remove_mod(self.meta['speed_mod'])
+    def after_condition(self, caller):
+        caller.attrs.modifier['speed'].remove(self.meta['speed_mod'])
+        caller.attrs.speed.remove_mod(self.meta['speed_mod'])
 
 
 class DiseaseResistTrait(Trait):
@@ -58,7 +58,7 @@ class DiseaseResistTrait(Trait):
 class DiseasedTrait(Trait):
     __conditionname__ = "diseased"
 
-    def at_condition(self):
+    def at_condition(self, caller):
         if self.X is None:
             raise ValueError("diseased trait must have X defined")
 
@@ -66,27 +66,27 @@ class DiseasedTrait(Trait):
 class FlyerTrait(Trait):
     __conditionname__ = 'flying'
 
-    def at_condition(self):
+    def at_condition(self, caller):
         if self.X is None:
             raise ValueError("diseased trait must have X defined")
-        self.caller.conditions.add(Flying)
+        caller.conditions.add(Flying)
 
-    def after_condition(self):
-        self.caller.conditions.remove(Flying)
+    def after_condition(self, caller):
+        caller.conditions.remove(Flying)
 
 
 class FromBeyondTrait(Trait):
     __conditionname__ = "from beyond"
 
-    def at_condition(self):
-        self.caller.attrs.immunity.value['disease'].append('all')
-        self.caller.attrs.immunity.value['poison'].append('all')
-        self.caller.attrs.immunity.value['condition'].append(Fear)
+    def at_condition(self, caller):
+        caller.attrs.immunity.value['disease'].append('all')
+        caller.attrs.immunity.value['poison'].append('all')
+        caller.attrs.immunity.value['condition'].append(Fear)
 
-    def after_condition(self):
-        self.caller.attrs.immunity.value['disease'].remove('all')
-        self.caller.attrs.immunity.value['poison'].remove('all')
-        self.caller.attrs.immunity.value['condition'].remove(Fear)
+    def after_condition(self, caller):
+        caller.attrs.immunity.value['disease'].remove('all')
+        caller.attrs.immunity.value['poison'].remove('all')
+        caller.attrs.immunity.value['condition'].remove(Fear)
 
 
 class ImmunityTrait(Trait):
@@ -114,21 +114,21 @@ class ImmunityTrait(Trait):
         if not inherits_from(self.imm_obj, obj_class_type):
             raise ValueError("X must be a valid condition, disease, or poison")
 
-    def at_condition(self):
-        self.caller.attrs.immunity.value[self.imm_type].append(self.imm_obj)
+    def at_condition(self, caller):
+        caller.attrs.immunity.value[self.imm_type].append(self.imm_obj)
 
-    def after_condition(self):
-        self.caller.attrs.immunity.value[self.imm_type].remove(self.imm_obj)
+    def after_condition(self, caller):
+        caller.attrs.immunity.value[self.imm_type].remove(self.imm_obj)
 
 
 class IncorporealTrait(Trait):
     __conditionname__ = "incorporeal"
 
-    def at_condition(self):
-        self.caller.conditions.add([Intangible, Flying])
+    def at_condition(self, caller):
+        caller.conditions.add([Intangible, Flying])
 
-    def after_condition(self):
-        self.caller.conditions.remove([Intangible, Flying])
+    def after_condition(self, caller):
+        caller.conditions.remove([Intangible, Flying])
 
 
 class NaturalToughnessTrait(Trait):
@@ -162,26 +162,26 @@ class PowerWellTrait(Trait):
         if not self.X or not isinstance(self.X, [int, float]):
             raise ValueError('X must be valid castable int type')
 
-    def at_condition(self):
+    def at_condition(self, caller):
         # increase max magicka by X
-        self.caller.attrs.magicka.add_mod(self.X)
+        caller.attrs.magicka.add_mod(self.X)
 
-    def after_condition(self):
-        self.caller.attrs.magicka.remove_mod(self.X)
+    def after_condition(self, caller):
+        caller.attrs.magicka.remove_mod(self.X)
 
 
 class SkeletalTrait(Trait):
     __conditionname__ = 'skeletal'
 
-    def at_condition(self):
+    def at_condition(self, caller):
         # gain undead trait automatically
-        self.attrs.traits.add(UndeadTrait)
+        caller.attrs.traits.add(UndeadTrait)
         # immune to burning condition
-        self.attrs.immunity.value['conditions'].append(Burning)
+        caller.attrs.immunity.value['conditions'].append(Burning)
 
-    def after_condition(self):
-        self.attrs.immunity.value['conditions'].remove(Burning)
-        self.attrs.traits.remove(UndeadTrait)
+    def after_condition(self, caller):
+        caller.attrs.immunity.value['conditions'].remove(Burning)
+        caller.attrs.traits.remove(UndeadTrait)
 
 
 class SilverScarredTrait(Trait):
@@ -209,11 +209,11 @@ class SpellAbsorptionTrait(Trait):
 class StuntedMagickaTrait(Trait):
     __conditionname__ = "stunted magicka"
 
-    def at_condition(self):
-        self.caller.attrs.magicka.rate = 0.0
+    def at_condition(self, caller):
+        caller.attrs.magicka.rate = 0.0
 
-    def after_condition(self):
-        self.caller.attrs.magicka.rate = 1.0
+    def after_condition(self, caller):
+        caller.attrs.magicka.rate = 1.0
 
 
 class SummonedTrait(Trait):
@@ -228,13 +228,13 @@ class SunScarredTrait(Trait):
             raise ValueError('sun scarred trait requires castable int type')
         self.X = float(self.X)
 
-    def effect(self, **kwargs):
+    def effect(self, caller, **kwargs):
         """ 
         designed to be used when exposed to sun, reduce 
         players SP point by 1
         """
         if self.enabled:
-            self.caller.attrs.change_vital('stamina', -1)
+            caller.attrs.change_vital('stamina', -1)
 
 
 class RegenerationTrait(Trait):
@@ -246,9 +246,9 @@ class RegenerationTrait(Trait):
 
         self.X = int(self.X)
 
-    def effect(self, **kwargs):
+    def effect(self, caller, **kwargs):
         """ use to heal player X amnt """
-        self.caller.attrs.change_vital('health', 1)
+        caller.attrs.change_vital('health', 1)
 
 
 class ResistanceTrait(Trait):
@@ -265,22 +265,40 @@ class ResistanceTrait(Trait):
 class UndeadTrait(Trait):
     __conditionname__ = 'undead'
 
-    def at_condition(self):
+    def at_condition(self, caller):
         # immune to disease, poison, aging, fatigue
         # dazed, defened
-        self.caller.attrs.immunity.value['disease'].append('all')
-        self.caller.attrs.immunity.value['poison'].append('all')
+        caller.attrs.immunity.value['disease'].append('all')
+        caller.attrs.immunity.value['poison'].append('all')
 
-    def after_condition(self):
-        self.attrs.immunity.value['disease'].append('all')
+    def after_condition(self, caller):
+        caller.attrs.immunity.value['disease'].append('all')
 
 
 class UndyingTrait(Trait):
     __conditionname__ = 'undying'
 
-    def at_condition(self):
+    def at_condition(self, caller):
         # immune to all disease
-        self.attrs.immunity.value['disease'].append('all')
+        caller.attrs.immunity.value['disease'].append('all')
 
-    def after_condition(self):
-        self.attrs.immunity.value['disease'].append('all')
+    def after_condition(self, caller):
+        caller.attrs.immunity.value['disease'].append('all')
+
+
+class UnnaturalSensesTrait(Trait):
+    __conditionname__ = 'unatural senses'
+
+
+class WeaknessTrait(Trait):
+    __conditionname__ = 'weakness'
+
+    def init(self):
+        if not self.X or not isinstance(self.X, [int, float]):
+            raise ValueError("weakness trait requires castable float type")
+
+        self.X = float(self.X)
+
+
+class TerrifyingTrait(Trait):
+    __conditionname__ = 'terrifying'
