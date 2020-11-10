@@ -10,7 +10,6 @@ class StorageHandler:
         super().__setattr__(name, value)
         if name not in ['caller']:
             _v = self.caller.attributes.get(self.__attr_name__, default={})
-            print(_v)
             _v[name] = value
             self.caller.attributes.add(self.__attr_name__, _v)
 
@@ -30,9 +29,12 @@ class StorageHandler:
     def init(self):
         pass
 
-    @property
-    def all(self):
-        return list(self.caller.attributes.get(self.__attr_name__).keys())
+    def all(self, return_obj=False):
+        if not return_obj:
+            return list(self.caller.attributes.get(self.__attr_name__).keys())
+        objs = list(self.caller.attributes.get(self.__attr_name__).values())
+        return objs
+        # return [x for x in objs if x != self.__attr_name__]
 
     def get(self, name):
         return self.__getattr__(name)

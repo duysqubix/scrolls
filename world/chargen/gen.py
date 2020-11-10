@@ -213,7 +213,7 @@ def finish(caller, **kwargs):
     # change birthsign
     change_birthsign(caller, kwargs['birthsign']['sign'])
     # set race
-    caller.attrs.race = kwargs['race']
+    caller.attrs.race.value = kwargs['race']
     caller.msg(kwargs)
     # caller.save()
     return None, None

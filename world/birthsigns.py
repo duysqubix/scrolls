@@ -149,18 +149,18 @@ class RitualSign(BirthSign):
 
 
 def change_birthsign(caller, birthsign):
-    if caller.attrs.birthsign == birthsign:
+    if caller.attrs.birthsign.value == birthsign:
         caller.msg("you already are born under the {birthsign}")
         return
 
     try:
-        cursed = caller.attrs.birthsign.cursed
+        cursed = caller.attrs.birthsign.value.cursed
     except AttributeError:
         cursed = False
 
     if not (birthsign == NoSign()):
         # remove effects of current birthsign
-        for type_, values in caller.attrs.birthsign.properties.items():
+        for type_, values in caller.attrs.birthsign.value.properties.items():
             for k, v in values.items():
                 if k == 'stats':
                     stats = v
@@ -197,4 +197,4 @@ def change_birthsign(caller, birthsign):
 
     # finally change birthsign of caller
     birthsign.cursed = cursed
-    caller.attrs.birthsign = birthsign
+    caller.attrs.birthsign.value = birthsign

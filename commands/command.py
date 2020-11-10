@@ -5,7 +5,7 @@ Commands describe the input the account can do to the game.
 
 """
 
-from world.conditions import Frenzied
+from world.conditions import Frenzied, Flying
 from world.utils.act import act, Announce
 from evennia import Command as BaseCommand
 from evennia import EvForm, search_object
@@ -34,6 +34,28 @@ class Command(BaseCommand):
     """
 
     pass
+
+
+class CmdAffect(Command):
+    """
+    Shows current affects on you
+
+    Usage:
+        affect
+    """
+
+    key = 'affect'
+
+    def func(self):
+        ch = self.caller
+
+        conditions = ch.conditions.all
+        ch.msg("You are affected by the following:")
+        msg = ""
+        # conditions
+        for con in conditions:
+            msg += "|g{con}|n\n"
+        #spells
 
 
 class CmdEmote(Command):
@@ -67,10 +89,10 @@ class CmdFrenzied(Command):
         ch = self.caller
 
         if not ch.conditions.has(Frenzied):
-            ch.conditions.add(Frenzied)
+            ch.conditions.add([Frenzied, Flying])
             ch.msg("You enter a state of frenzy.")
         else:
-            ch.conditions.remove(Frenzied)
+            ch.conditions.remove([Frenzied, Flying])
             ch.msg("You seem more calm.")
 
 
@@ -137,7 +159,7 @@ class CmdScore(Command):
             7: green_or_red(ch.stats.end.bonus),
             8: ch.stats.wp.base,
             9: green_or_red(ch.stats.wp.bonus),
-            10: ch.attrs.level,
+            10: ch.attrs.level.value,
             11: ch.stats.lck.base,
             12: green_or_red(ch.stats.lck.bonus),
             13: ch.stats.int.base,
@@ -146,8 +168,8 @@ class CmdScore(Command):
             16: green_or_red(ch.stats.prs.bonus),
             17: ch.stats.prc.base,
             18: green_or_red(ch.stats.prc.bonus),
-            19: str(ch.attrs.birthsign),
-            20: ch.attrs.race.capitalize()
+            19: str(ch.attrs.birthsign.value),
+            20: ch.attrs.race.value.capitalize()
         })
         ch.msg(str(form))
 

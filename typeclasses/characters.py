@@ -8,12 +8,13 @@ creation commands.
 
 """
 import copy
+from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
 from evennia import DefaultCharacter
 from world.globals import GOD_LVL, WIZ_LVL
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
-from evennia.utils.utils import lazy_property
+from evennia.utils.utils import lazy_property, make_iter
 from world.storagehandler import StorageHandler
 from evennia.utils.evmenu import EvMenu
 
@@ -43,30 +44,34 @@ class ConditionHandler(StorageHandler):
         return True if self.get(condition) is not None else False
 
     def add(self, condition, X=None, **kwargs):
+        condition = make_iter(condition)
 
-        # check to see if caller has condition
-        if not self.has(condition):
-            con = condition(X=X)  # initialize condition
-            con.at_condition(self.caller)  # fire at condition
-            # add it to list of conditions stored on handler
-            self.set(con)
+        for con in condition:
+            # check to see if caller has condition
+            if not self.has(con):
+                c = con(caller_id=self.caller.id, X=X)  # initialize condition
+                c.at_condition()  # fire at condition
+                # add it to list of conditions stored on handler
+                #TODO: need to handle if condition is already set
+                self.set(c)
 
     def remove(self, condition):
-        if not self.has(
-                condition):  # trying to remove a non-existant condition
-            return True
-        con = self.get(condition)
-        if con.enabled is True:  # try to end it
-            if con.end_condition(self.caller) is False:
-                self.caller.msg(
-                    f"try as you might, you are still affected by {con.__conditionname__}"
-                )
-                return False
-        con.after_condition(self.caller)
-        del self.caller.db.conditions[con.name]
+        condition = make_iter(condition)
+
+        for con in condition:
+            if not self.has(con):  # trying to remove a non-existant condition
+                return True
+            c = self.get(con)
+            if c.enabled is True:  # try to end it
+                if c.end_condition() is False:
+                    self.caller.msg(
+                        f"try as you might, you are still affected by {con.__conditionname__}"
+                    )
+                    return False
+            c.after_condition()
+            del self.caller.db.conditions[c.name]
 
     def get(self, condition):
-        print(condition, type(condition))
         name = condition.__conditionname__
         try:
             return self.__getattr__(name)
@@ -82,53 +87,35 @@ class ConditionHandler(StorageHandler):
 class AttrHandler(StorageHandler):
     __attr_name__ = "attrs"
 
-    @property
     def max_health(self):
-        return self.caller.stats.end.base // 2 + 1
+        health = (self.caller.stats.end.base // 2 + 1)
+        self.health.max = health
+        return health + self.health.mod
 
-    @property
     def max_stamina(self):
-        return self.caller.stats.end.bonus
+        stamina = self.caller.stats.end.bonus
+        self.stamina.max = stamina
+        return stamina + self.stamina.mod
 
-    @property
     def max_magicka(self):
-        return self.caller.stats.int.base
+        magicka = self.caller.stats.int.base
+        self.magicka.max = magicka
+        return magicka + self.magicka.mod
 
-    @property
     def max_speed(self):
         sb = self.caller.stats.str.bonus
         ab = self.caller.stats.agi.bonus
-        return sb + (2 * ab)
+        speed = sb + (2 * ab)
+        self.speed.max = speed
+        return speed + self.speed.mod
 
-    @property
     def max_carry(self):
         # carry rating
         sb = self.caller.stats.str.bonus
         eb = self.caller.stats.end.bonus
-
-        return (4 * sb) + (2 * eb)
-
-    @property
-    def max_luck(self):
-        return self.caller.stats.lck.bonus
-
-    def init(self):
-
-        # linguistics
-        self.linguistics = self.caller.stats.int.bonus // 2 + 1
-
-        # initiative
-        ab = self.caller.stats.agi.bonus
-        ib = self.caller.stats.int.bonus
-        pcb = self.caller.stats.prs.bonus
-        self.initiative = ab + ib + pcb
-
-        # current health, magicka, stamina
-        self.health = self.max_health
-        self.magicka = self.max_magicka
-        self.stamina = self.max_stamina
-        self.speed = self.max_speed
-        self.carry = self.max_carry
+        carry = ((4 * sb) + (2 * eb))
+        self.carry.max = carry
+        return carry + self.carry.mod
 
 
 class Character(DefaultCharacter):
@@ -151,9 +138,9 @@ class Character(DefaultCharacter):
     at_post_puppet - Echoes "AccountName has entered the game" to the room.
 
     """
-    @lazy_property
-    def stats(self):
-        return StatHandler(self)
+    @property
+    def is_pc(self):
+        return True
 
     @lazy_property
     def attrs(self):
@@ -164,14 +151,18 @@ class Character(DefaultCharacter):
         return SkillHandler(self)
 
     @lazy_property
+    def stats(self):
+        return StatHandler(self)
+
+    @lazy_property
     def conditions(self):
         return ConditionHandler(self)
 
-    @property
-    def is_pc(self):
-        return True
-
     def at_object_creation(self):
+        self.db.attrs = {}
+        self.db.stats = {}
+        self.db.skills = {}
+        self.db.conditions = {}
 
         # characteristics
         self.db.stats = copy.deepcopy(CHARACTERISTICS)
@@ -187,16 +178,35 @@ class Character(DefaultCharacter):
             level = 1
         # attributes
         self.db.attrs = {
-            'exp': 0,
-            'level': level,
-            'birthsign': NoSign(),
-            'race': 'none'
+            'exp':
+            Attribute('exp', 0),
+            'level':
+            Attribute('level', level),
+            'race':
+            Attribute('race', 'none'),
+            'immunity':
+            Attribute('immunity', {
+                'poison': [],
+                'disease': [],
+                'conditions': []
+            }),
+            'birthsign':
+            Attribute('birthsign', NoSign()),
+            'action_points':
+            Attribute('action_points', 3),
+            'health':
+            VitalAttribute('health'),  # cur/max/mod_max/recover
+            'magicka':
+            VitalAttribute('magicka'),
+            'stamina':
+            VitalAttribute('stamina'),
+            'speed':
+            VitalAttribute('speed'),
+            'carry':
+            VitalAttribute('carry'),
         }
 
-        _ = self.attrs
-        _ = self.stats
-        _ = self.skills
-        _ = self.conditions
+        # _ = self.traits
         # enter the chargen state
         # EvMenu(self,
         #        "world.char_gen",

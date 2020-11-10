@@ -2,37 +2,57 @@
 Things that externally affect the character and their capabilities intead of
 features of the characters nature
 """
-from evennia import logger
+from evennia import logger, search_object
+from evennia.utils import dedent
 
 
 class Condition:
     __conditionname__ = ""
     __msg__ = ""
 
-    def __init__(self, X=None):
+    def __init__(self, caller_id, X=None):
+        self.caller_id = caller_id
         self.meta = dict()
         self.X = X
         self.enabled = True
         self.multiple = False
+        self.init()
+
+    def init(self):
+        pass
 
     @property
     def name(self):
         return self.__conditionname__
 
-    def at_condition(self, caller):
+    @property
+    def caller(self):
+        dbref = f"#{self.caller_id}"
+        obj = search_object(dbref, exact=True, use_dbref=True)
+        if not obj:
+            return None
+        return obj[0]
+
+    def __str__(self):
+        msg = f"""
+            {self.name}: {self.meta}   
+        """
+        return dedent(msg)
+
+    def at_condition(self):
         """ things to do when immediately affected by condition"""
         return None
 
-    def effect(self, caller, **kwargs):
+    def effect(self, **kwargs):
         """does the effect of the conditions"""
         return None
 
-    def end_condition(self, caller) -> bool:
+    def end_condition(self) -> bool:
         """ to end condition, call this function instead"""
         self.enabled = False
         return True
 
-    def after_condition(self, caller):
+    def after_condition(self):
         """ things to do when condition ends """
         return None
 
@@ -40,10 +60,14 @@ class Condition:
 class Bleeding(Condition):
     __conditionname__ = "bleeding"
 
-    def effect(self, caller, **kwargs):
+    def at_condition(self):
+        if self.X is None:
+            raise ValueError("bleeding condition must have X defined")
+
+    def effect(self, **kwargs):
         # take damage to caller of value X and end condition
         if self.enabled:
-            caller.attrs.health -= self.X
+            self.caller.attrs.health.cur -= self.X
             self.end_condition()
 
 
@@ -54,8 +78,8 @@ class Blinded(Condition):
 class Burning(Condition):
     __conditionname__ = 'burning'
 
-    def effect(self, caller, **kwargs):
-        caller.attrs.health -= self.X
+    def effect(self, **kwargs):
+        self.caller.attrs.health.cur -= self.X
         self.X += 1
 
 
@@ -66,7 +90,7 @@ class Chameleon(Condition):
 class Crippled(Condition):
     __conditionname__ = "crippled"
 
-    def effect(self, caller, **kwargs):
+    def effect(self, **kwargs):
         # TODO: complicated condition revisit here
         part = kwargs['body_part']
 
@@ -74,10 +98,10 @@ class Crippled(Condition):
 class Dazed(Condition):
     __conditionname__ = 'dazed'
 
-    def effect(self, caller, **kwargs):
+    def effect(self, **kwargs):
         if self.enabled:
             # reduce action point by 1, minimum of one
-            caller.attrs.action_points -= 1
+            self.caller.attrs.action_points.value -= 1
 
 
 class Deafened(Condition):
@@ -88,12 +112,12 @@ class Fatigued(Condition):
     """Fatigued.X refers to level of Fatigue """
     __conditionname__ = 'fatigued'
 
-    def effect(self, caller, **kwargs):
+    def effect(self, **kwargs):
         if self.enabled:
             if self.X >= 5:  # character dies
-                caller.attrs.health = -1
+                self.caller.attrs.health.cur = -1
             elif self.X == 4:  # character falls unconcious
-                caller.attrs.health = 0
+                self.caller.attrs.health.cur = 0
             elif self.X == 3:  # -30 penalty
                 self.meta['penalty'] = {'all': -30}
             elif self.X == 2:  # -20
@@ -105,7 +129,7 @@ class Fatigued(Condition):
 class Frenzied(Condition):
     __conditionname__ = "frenzied"
 
-    def at_condition(self, caller):
+    def at_condition(self):
         self.meta['penalty'] = {
             'stats': {
                 'prs': -20,
@@ -117,12 +141,12 @@ class Frenzied(Condition):
         }
 
         self.meta['immunity'] = ['stunned', 'fear', {'wound': 'passive'}]
-        caller.stats.str.bonus += 1
-        caller.stats.end.bonus += 1
+        self.caller.stats.str.bonus += 1
+        self.caller.stats.end.bonus += 1
 
-    def after_condition(self, caller):
-        caller.stats.str.bonus -= 1
-        caller.stats.end.bonus -= 1
+    def after_condition(self):
+        self.caller.stats.str.bonus -= 1
+        self.caller.stats.end.bonus -= 1
 
 
 class Hidden(Condition):
@@ -144,18 +168,22 @@ class Muffled(Condition):
 class Prone(Condition):
     __conditionname__ = 'prone'
 
-    def at_condition(self, caller):
+    def at_condition(self):
         self.meta['penalty'] = {'fight': -20}
 
-    def end_condition(self, caller):
-        cost = caller.attrs.max_speed // 2
-        cur_speed = caller.attrs.speed
+    def end_condition(self):
+        if not self.enabled:
+            return True
+
+        cost = self.caller.attrs.speed.max // 2
+        cur_speed = self.caller.attrs.speed.cur
         if (cur_speed - cost) < 0:
             self.enabled = True
-            caller.msg("you are too tired to get up")
+            self.caller.msg("you are too tired to get up")
             return False
 
-        caller.attrs.speed -= cost
+        self.caller.attrs.speed.cur -= cost
+        self.enabled = False
         return True
 
 
@@ -176,20 +204,20 @@ class Restrained(Condition):
 
 
 class Silenced(Condition):
-    def at_condition(self, caller):
+    def at_condition(self):
         self.meta['penalty'] = {'spell': -20}
 
 
 class Slowed(Condition):
-    def at_condition(self, caller):
-        cur_speed = caller.attrs.max_speed
-        new_speed = cur_speed // 2 + 1
-        caller.attrs.max_speed = new_speed
+    def at_condition(self):
+        cur_speed = self.caller.attrs.speed.max
+        speed_mod = cur_speed // 2 + 1
+        self.caller.attrs.speed.add_mod(-speed_mod)
 
-    def after_condition(self, caller):
-        cur_speed = caller.attrs.max_speed
-        new_speed = (cur_speed * 2) - 1
-        caller.attrs.max_speed = new_speed
+    def after_condition(self):
+        cur_speed = self.caller.attrs.max_speed
+        speed_mod = (cur_speed * 2) - 1
+        self.caller.attrs.speed.remove_mod(-speed_mod)
 
 
 class Sleeping(Condition):
@@ -199,22 +227,50 @@ class Sleeping(Condition):
 class Stunned(Condition):
     __conditionname__ = 'stunned'
 
-    def at_condition(self, caller):
-        caller.attrs.action_points = 0
+    def at_condition(self):
+        self.caller.attrs.action_points.value = 0
 
 
 class Unconscious(Condition):
     __conditionname__ = 'unconcious'
 
-    def at_condition(self, caller):
+    def at_condition(self):
         # add prone condition
-        caller.conditions.add(Prone)
+        self.caller.conditions.add(Prone)
 
-    def effect(self, caller, **kwargs):
+    def effect(self, **kwargs):
         # check to see if caller has SP 0, if so, they automatically
         # gain X=5 fatigue condition, which utlimately leads to death
-        if caller.conditions.has(Fatigued):
+        if self.enabled and self.caller.conditions.has(Fatigued):
             # increase level by one
-            fatigued = caller.conditions.get(Fatigued)
+            fatigued = self.caller.conditions.get(Fatigued)
             fatigued.X = 5  # kill them....
-            caller.conditions.set(fatigued)
+            self.caller.conditions.set(fatigued)
+
+    def after_condition(self):
+        if self.enabled and self.caller.conditions.has(Prone):
+            self.caller.conditions.remove(Prone)
+
+
+class BreathUnderWater(Condition):
+    __conditionname__ = "breath underwater"
+
+
+class DarkSight(Condition):
+    __conditionname__ = "dark sight"
+
+
+class Deaf(Condition):
+    __conditionname__ = "deaf"
+
+
+class Fear(Condition):
+    __conditionname__ = "fear"
+
+
+class Intangible(Condition):
+    __conditionname__ = 'intangible'
+
+
+class Flying(Condition):
+    __conditionname__ = "flying"
