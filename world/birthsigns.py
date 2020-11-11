@@ -1,3 +1,4 @@
+from world.traits import PowerWellTrait, SpellAbsorptionTrait, StuntedMagickaTrait, WeaknessTrait
 import evennia
 import random
 
@@ -80,9 +81,7 @@ class LordSign(BirthSign):
         self.properties['effect'] = {'health': {'recover': 2}}
         self.properties['cursed'] = {
             'stats': [EndChar(bonus=5)],
-            'traits': {
-                'weakness': ('fire', 2)
-            }
+            'traits': [(WeaknessTrait, 2, 'fire')]
         }
 
 
@@ -95,11 +94,9 @@ class MageSign(BirthSign):
              StrChar(bonus=-5),
              PrsChar(bonus=-5)])
 
-        self.properties['effect'] = {'traits': {'power well': 10}}
+        self.properties['effect'] = {'traits': [PowerWellTrait, 10, None]}
         self.properties['cursed'] = {
-            'traits': {
-                'power well': 15
-            },
+            'traits': [(PowerWellTrait, 15, None)],
             'stats': [cursed_stats]
         }
 
@@ -109,16 +106,10 @@ class ApprenticeSign(BirthSign):
 
     def init(self):
         self.properties['effect'] = {
-            'traits': {
-                'power well': 25,
-                'weakness': ('magic', 3)
-            }
+            'traits': [(PowerWellTrait, 25, None), (WeaknessTrait, 3, 'magic')]
         }
         self.properties['cursed'] = {
-            'traits': {
-                'power well': 25,
-                'weakness': ('magic', 1)
-            }
+            'traits': [(PowerWellTrait, 25, None), (WeaknessTrait, 1, 'magic')]
         }
 
 
@@ -127,17 +118,12 @@ class AtronachSign(BirthSign):
 
     def init(self):
         self.properties['effect'] = {
-            'traits': {
-                'power well': 50,
-                'spell absorption': 5,
-                'stunted magicka': True
-            }
+            'traits': [(PowerWellTrait, 50, None),
+                       (SpellAbsorptionTrait, 5, None),
+                       (StuntedMagickaTrait, None, None)]
         }
         self.properties['cursed'] = {
-            'traits': {
-                'power well': 25,
-                'weakness': ('magic', 1)
-            }
+            'traits': [(PowerWellTrait, 25, None), (WeaknessTrait, 1, 'magic')]
         }
 
 
@@ -172,7 +158,15 @@ def change_birthsign(caller, birthsign):
                         new_stat = cur_stat - stat
                         caller.stats.set(stat.short, new_stat)
                 elif k == 'traits':
-                    pass
+                    traits = v
+
+                    if type_ == 'cursed' and not cursed:
+                        continue
+
+                    for trait in traits:
+                        # add each trait
+                        trait_cls, X, Y = trait
+                        caller.traits.remove(trait_cls)
 
                 elif k == 'powers':
                     pass
@@ -190,7 +184,16 @@ def change_birthsign(caller, birthsign):
                     new_stat = cur_stat + stat
                     caller.stats.set(stat.short, new_stat)
             elif k == 'traits':
-                pass
+                traits = v
+
+                if type_ == 'cursed' and not cursed:
+                    continue
+
+                for trait in traits:
+                    # add each trait
+                    print(trait, type(trait))
+                    trait_cls, X, Y = trait
+                    caller.traits.add(trait_cls, X=X, Y=Y)
 
             elif k == 'powers':
                 pass

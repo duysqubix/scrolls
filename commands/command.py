@@ -148,7 +148,8 @@ class CmdScore(Command):
             else:
                 return f"{num}"
 
-        form = EvForm("/home/ubuntu/scrolls/resources/score_form.py")
+        #TODO change path to EvForm to  use
+        form = EvForm("resources.score_form")
         form.map({
             1: ch.name.capitalize(),
             2: ch.stats.str.base,
@@ -169,9 +170,9 @@ class CmdScore(Command):
             17: ch.stats.prc.base,
             18: green_or_red(ch.stats.prc.bonus),
             19: str(ch.attrs.birthsign.value),
-            20: ch.attrs.race.value.capitalize()
+            20: ch.attrs.race.value.name.capitalize()
         })
-        ch.msg(str(form))
+        ch.msg(form)
 
 
 # -------------------------------------------------------------

@@ -26,7 +26,6 @@ put secret game- or server-specific settings in secret_settings.py.
 
 # Use the defaults from Evennia unless explicitly overridden
 from evennia.settings_default import *
-
 ######################################################################
 # Evennia base server config
 ######################################################################
@@ -51,16 +50,6 @@ GLOBAL_SCRIPTS = {
         'typeclass': 'typeclasses.scripts.EntityDB',
         'persistent': True,
         'desc': 'storage for room data'
-    },
-    'skillsdb': {
-        'typeclass': 'world.skills.SkillDB',
-        'persistent': True,
-        'desc': 'storage for mud-wide skills'
-    },
-    'racesdb': {
-        'typeclass': 'world.race.RaceInfo',
-        'persistent': True,
-        'desc': 'storage for race information'
     }
 }
 

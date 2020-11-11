@@ -7,20 +7,21 @@ from evennia.utils import utils
 from evennia.contrib.dice import roll_dice
 from world.characteristics import CHARACTERISTICS
 from world.birthsigns import *
-
-__racesdb = GLOBAL_SCRIPTS.racesdb
+from world.races import PLAYABLE_RACES, get_race
+from world.attributes import Attribute
+import copy
 
 
 def pick_race(caller, **kwargs):
-    races = list(__racesdb.db.races.keys())
+    races = [(x.name, x.sdesc) for x in PLAYABLE_RACES]
     text = "Pick a race"
     options = []
-    for race in races:
+    for name, sdesc in races:
         options.append({
-            'key': race,
-            'desc': __racesdb.db.races[race]['sdesc'].capitalize(),
+            'key': name.capitalize(),
+            'desc': f"|c{sdesc.capitalize()}|n",
             'goto': (f"pick_race_specific", {
-                'race': race
+                'race': name
             })
         })
 
@@ -28,13 +29,13 @@ def pick_race(caller, **kwargs):
 
 
 def pick_race_specific(caller, **kwargs):
-    race = __racesdb.db.races[kwargs['race']]
-    desc = race['desc']
-    stats = race['stats']
-    stats = " ".join([f"{k}:{v}, " for (k, v) in stats.items()])
+    race = get_race(kwargs['race'])
+    desc = race.desc
+    stats = race.stats
+    stats = " ".join([f"{stat.short}:{stat.base}, " for stat in stats])
 
     text = ("(Help for more information)" \
-    f"\n{stats}", utils.wrap(desc, 80))
+    f"\n{stats}", utils.wrap(utils.dedent(desc), 80))
     options = ({
         'key':
         'yes',
@@ -42,53 +43,6 @@ def pick_race_specific(caller, **kwargs):
         f"Do you want to be an {kwargs['race']}",
         'goto': ("altmer_novice_skill_upgrade", {
             'race': f"{kwargs['race']}"
-        })
-    }, {
-        'key': 'no',
-        'desc': 'pick another race',
-        'goto': "pick_race"
-    })
-    return text, options
-
-
-def pick_race_altmer(caller, **kwargs):
-    altmer = __racesdb.db.races['altmer']
-
-    desc = altmer['desc']
-    stats = altmer['stats']
-    stats = " ".join([f"{k}:{v}, " for (k, v) in stats.items()])
-
-    text = ("Altmer or high elves (Help for more information)" \
-    f"\n{stats}", utils.wrap(desc, 80))
-    options = ({
-        'key': 'yes',
-        'desc': "Do you want to be an altmer",
-        'goto': ("altmer_novice_skill_upgrade", {
-            'race': 'altmer'
-        })
-    }, {
-        'key': 'no',
-        'desc': 'pick another race',
-        'goto': "pick_race"
-    })
-    return text, options
-
-
-def pick_race_altmer(caller, **kwargs):
-    race = 'altmer'
-    altmer = __racesdb.db.races['altmer']
-
-    desc = altmer['desc']
-    stats = altmer['stats']
-    stats = " ".join([f"{k}:{v}, " for (k, v) in stats.items()])
-
-    text = ("Altmer or high elves (Help for more information)" \
-    f"\n{stats}", utils.wrap(desc, 80))
-    options = ({
-        'key': 'yes',
-        'desc': "Do you want to be an altmer",
-        'goto': ("altmer_novice_skill_upgrade", {
-            'race': 'altmer'
         })
     }, {
         'key': 'no',
@@ -109,10 +63,6 @@ def altmer_novice_skill_upgrade(call, **kwargs):
         k['skill'] = {skill: 'novice'}
         options.append({'key': skill, 'goto': ('gen_characteristics_1', k)})
     return text, tuple(options)
-
-
-def pick_birthsign(caller, **kwargs):
-    pass
 
 
 def gen_characteristics_1(caller, **kwargs):
@@ -147,22 +97,22 @@ def gen_characteristics_2(caller, **kwargs):
 
 
 def gen_characteristics_3(caller, **kwargs):
-    stats = dict(__racesdb.db.races[kwargs['race']]['stats'])
-    stat_keys = list(stats.keys())
+    stats = copy.deepcopy(get_race(kwargs['race']).stats)
+    stat_keys = dict({x.short: x.base for x in stats})
     for _ in range(7):
-        k1 = random.choice(stat_keys)
-        k2 = random.choice(stat_keys)
+        k1 = random.choice(list(stat_keys.keys()))
+        k2 = random.choice(list(stat_keys.keys()))
         _, _, _, (roll1, roll2) = roll_dice(2, 10, return_tuple=True)
-        stats[k1] += roll1
-        stats[k2] += roll2
+        stat_keys[k1] += roll1
+        stat_keys[k2] += roll2
 
-    text = f"Roll for stats\n{stats}"
+    text = f"Roll for stats\n{stat_keys}"
     lck = roll_dice(2, 10, ('+', 30))
     if lck > 50:
         lck = 50
-    stats['lck'] = lck
+    stat_keys['lck'] = lck
     k = kwargs.copy()
-    k['stats'] = stats.copy()
+    k['stats'] = stat_keys.copy()
     options = ({
         'key': 'accept',
         'goto': ('determine_birthsign', k)
@@ -213,7 +163,8 @@ def finish(caller, **kwargs):
     # change birthsign
     change_birthsign(caller, kwargs['birthsign']['sign'])
     # set race
-    caller.attrs.race.value = kwargs['race']
+    race = copy.deepcopy(get_race(kwargs['race']))
+    caller.attrs.race = Attribute(race.name, race)
     caller.msg(kwargs)
     # caller.save()
     return None, None

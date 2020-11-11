@@ -34,8 +34,7 @@ class StorageHandler:
         if not return_obj:
             return list(self.caller.attributes.get(self.__attr_name__).keys())
         objs = list(self.caller.attributes.get(self.__attr_name__).values())
-        return objs
-        # return [x for x in objs if x != self.__attr_name__]
+        return [x for x in objs if x != self.__attr_name__]
 
     def get(self, name):
         return self.__getattr__(name)

@@ -8,6 +8,9 @@ creation commands.
 
 """
 import copy
+from typing import Any, List, Tuple
+from world.conditions import Condition
+from world.races import NoRace, get_race
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
 from evennia import DefaultCharacter
@@ -43,17 +46,21 @@ class ConditionHandler(StorageHandler):
     def has(self, condition):
         return True if self.get(condition) is not None else False
 
-    def add(self, condition, X=None, **kwargs):
-        condition = make_iter(condition)
-
-        for con in condition:
+    def add(self, conditions):
+        for con in conditions:
+            cls = con['cls']
+            X = con['X']
+            Y = con['Y']
             # check to see if caller has condition
-            if not self.has(con):
-                c = con(X=X)  # initialize condition
-                c.at_condition(self.caller)  # fire at condition
-                # add it to list of conditions stored on handler
-                #TODO: need to handle if condition is already set
-                self.set(c)
+            if self.has(cls) and cls.multi_allow is False:
+                self.caller.msg("you can't be affected by this again")
+                return None
+            print(cls, X, Y)
+            c = cls(X=X, Y=Y)  # initialize condition
+            c.at_condition(self.caller)  # fire at condition
+            # add it to list of conditions stored on handler
+            #TODO: need to handle if condition is already set
+            self.set(c)
 
     def remove(self, condition):
         condition = make_iter(condition)
@@ -69,19 +76,31 @@ class ConditionHandler(StorageHandler):
                     )
                     return False
             c.after_condition(self.caller)
+
             del self.caller.db.conditions[c.name]
 
     def get(self, condition):
-        name = condition.__conditionname__
-        try:
-            return self.__getattr__(name)
-        except KeyError:
+        name = self.__attr_name__
+        con_name = condition.__conditionname__
+        conditions = self.__getattr__(name)
+
+        if not conditions:
             return None
+        cond = [x for x in conditions if x.name == con_name]
+
+        if not cond:
+            return None
+        cond = cond[0]
+        return cond
 
     def set(self, condition):
-        name = condition.__conditionname__
-        value = condition
-        self.__setattr__(name, value)
+        name = self.__attr_name__
+        conditions = self.__getattr__(name)
+        if not isinstance(conditions, list):
+            conditions = []
+
+        conditions.append(condition)
+        self.__setattr__(name, conditions)
 
 
 class TraitHandler(ConditionHandler):
@@ -118,6 +137,10 @@ class AttrHandler(StorageHandler):
             cur = attr.max
 
         self.__dict__[attr_type].cur = cur
+
+    def change_race(self, race):
+        new_race = get_race(race)
+        cur_race = self.__dict__['race']
 
     def max_health(self):
         health = (self.caller.stats.end.base // 2 + 1)
@@ -220,7 +243,7 @@ class Character(DefaultCharacter):
             'level':
             Attribute('level', level),
             'race':
-            Attribute('race', 'none'),
+            Attribute('race', NoRace()),
             'immunity':
             Attribute('immunity', {
                 'poison': [],

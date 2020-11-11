@@ -7,14 +7,53 @@ import evennia
 
 
 class Condition:
+    """
+    Base class for condition and traits.
+    Traits and conditions are seperate for asthetics, but in 
+    a programming sense they are exactly the same thing.
+
+    Args:
+        X: generic arg, depending on trait/condition
+        Y: generic arg, depending on trait/condition
+        enabled: allows effect() method to execute successfully
+        allow_multi: determines if more than one of this condition can stack
+        copies: keeps track of copies if stacking
+
+    Methods:
+        at_condition(self, caller)
+            when the condition is first applied to character, this will execute
+        
+        end_condition(self, caller)
+            this will attempt to end the condition, must return bool
+
+        after_condition(self, caller)
+            this is called right before condition is actually removed,
+            but has passed all the checks to be removed
+        
+        effect(self, caller)
+            function that can be called at will as long as condition/trait is enabled
+
+        on_duplicate(self, other)
+            handles logic for if and when a trait/condition is flagged for multi_allow. 
+            In backend, traits are stored in 'key:value' pairs, therefore we can't have 
+            more than one of the same trait, so this function handles what to do when a 
+            duplicate is attempting to join the list of traits.
+
+            The best way to duplicate this is by doing:
+
+            def on_duplicate(self, other):
+                super().on_duplicate(other)
+                # your code here.
+    """
     __conditionname__ = ""
     __msg__ = ""
 
-    def __init__(self, X=None):
+    def __init__(self, X=None, Y=None):
         self.meta = dict()
         self.X = X
+        self.Y = Y
         self.enabled = True
-        self.multiple = False
+        self.allow_multi = False
         self.init()
 
     def init(self):
@@ -29,6 +68,9 @@ class Condition:
             {self.name}: {self.meta}   
         """
         return dedent(msg)
+
+    def __repr__(self):
+        return f"<{self.name.capitalize()}/{self.X}/{self.Y}>"
 
     def at_condition(self, caller):
         """ things to do when immediately affected by condition"""
@@ -46,6 +88,10 @@ class Condition:
     def after_condition(self, caller):
         """ things to do when condition ends """
         return None
+
+    def on_duplicate(self, other):
+        if not self.multi_allow:
+            return None
 
 
 class Bleeding(Condition):
