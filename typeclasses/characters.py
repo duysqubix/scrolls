@@ -46,38 +46,32 @@ class ConditionHandler(StorageHandler):
     def has(self, condition):
         return True if self.get(condition) is not None else False
 
-    def add(self, conditions):
+    def add(self, *conditions):
         for con in conditions:
-            cls = con['cls']
-            X = con['X']
-            Y = con['Y']
+            cls, X, Y = con
+
+            c = cls(X, Y)
             # check to see if caller has condition
-            if self.has(cls) and cls.multi_allow is False:
+            if self.has(cls) and c.allow_multi is False:
                 self.caller.msg("you can't be affected by this again")
                 return None
-            print(cls, X, Y)
-            c = cls(X=X, Y=Y)  # initialize condition
             c.at_condition(self.caller)  # fire at condition
-            # add it to list of conditions stored on handler
-            #TODO: need to handle if condition is already set
             self.set(c)
 
-    def remove(self, condition):
-        condition = make_iter(condition)
-
+    def remove(self, *condition):
         for con in condition:
-            if not self.has(con):  # trying to remove a non-existant condition
+            if not self.has(
+                    con.cls):  # trying to remove a non-existant condition
                 return True
-            c = self.get(con)
+            c = self.get(con.cls)
             if c.enabled is True:  # try to end it
                 if c.end_condition(self.caller) is False:
                     self.caller.msg(
-                        f"try as you might, you are still affected by {con.__conditionname__}"
+                        f"try as you might, you are still affected by {con.cls.__conditionname__}"
                     )
                     return False
             c.after_condition(self.caller)
-
-            del self.caller.db.conditions[c.name]
+            self.__getattr__(self.__attr_name__).remove(c)
 
     def get(self, condition):
         name = self.__attr_name__
@@ -95,12 +89,7 @@ class ConditionHandler(StorageHandler):
 
     def set(self, condition):
         name = self.__attr_name__
-        conditions = self.__getattr__(name)
-        if not isinstance(conditions, list):
-            conditions = []
-
-        conditions.append(condition)
-        self.__setattr__(name, conditions)
+        self.__getattr__(name).append(condition)
 
 
 class TraitHandler(ConditionHandler):
@@ -193,6 +182,22 @@ class Character(DefaultCharacter):
     at_post_puppet - Echoes "AccountName has entered the game" to the room.
 
     """
+    def save_character(self):
+        self.db.stats = dict(self.db.stats)
+        self.db.skills = dict(self.db.skills)
+        self.db.conditions = dict(self.db.conditions)
+        self.db.traits = dict(self.db.traits)
+        self.db.attrs = dict(self.db.attrs)
+
+    def at_pre_unpuppet(self):
+        self.save_character()
+
+    def at_server_reload(self):
+        self.save_character()
+
+    def at_server_shutdown(self):
+        self.save_character()
+
     @property
     def is_pc(self):
         return True
@@ -221,8 +226,8 @@ class Character(DefaultCharacter):
         self.db.attrs = {}
         self.db.stats = {}
         self.db.skills = {}
-        self.db.conditions = {}
-        self.db.traits = {}
+        self.db.conditions = {'conditions': []}
+        self.db.traits = {'traits': []}
 
         # characteristics
         self.db.stats = copy.deepcopy(CHARACTERISTICS)

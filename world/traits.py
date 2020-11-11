@@ -1,13 +1,16 @@
 """
 Much like conditions....
 """
+from collections import namedtuple
 from evennia import search_object
 from evennia.utils.utils import inherits_from
 from world.conditions import BreathUnderWater, Burning, Condition, DarkSight, Fear, Flying, Intangible
 
 
 class Trait(Condition):
-    pass
+    def __init__(self, X, Y):
+        super().__init__(X=X, Y=Y)
+        self.is_trait = True
 
 
 class AmphibiousTrait(Trait):
@@ -63,16 +66,8 @@ class DiseasedTrait(Trait):
             raise ValueError("diseased trait must have X defined")
 
 
-class FlyerTrait(Trait):
-    __conditionname__ = 'flying'
-
-    def at_condition(self, caller):
-        if self.X is None:
-            raise ValueError("diseased trait must have X defined")
-        caller.conditions.add(Flying)
-
-    def after_condition(self, caller):
-        caller.conditions.remove(Flying)
+class FlyerTrait(Flying, Trait):
+    pass
 
 
 class FromBeyondTrait(Trait):
@@ -264,6 +259,7 @@ class ResistanceTrait(Trait):
 
     # TODO: add resistant types to this trait (resistant types have not been created or defined yet)
     def init(self):
+        self.allow_multi = True
         if not self.X or not isinstance(self.X, (int, float)):
             raise ValueError('resistance trait requires castable float type')
 
@@ -335,3 +331,44 @@ class ResilientTrait(Trait):
 
     def after_condition(self, caller):
         caller.attrs.health.max -= self.X
+
+
+ALL_TRAITS = [
+    AmphibiousTrait,
+    BoundTrait,
+    CrawlingTrait,
+    DiseasedTrait,
+    DiseaseResistTrait,
+    FlyerTrait,
+    FromBeyondTrait,
+    ImmunityTrait,
+    IncorporealTrait,
+    NaturalToughnessTrait,
+    NaturalWeaponsTrait,
+    PowerWellTrait,
+    SkeletalTrait,
+    SilverScarredTrait,
+    SpellAbsorptionTrait,
+    StuntedMagickaTrait,
+    SummonedTrait,
+    SunScarredTrait,
+    RegenerationTrait,
+    ResistanceTrait,
+    UndeadTrait,
+    UndyingTrait,
+    UnnaturalSensesTrait,
+    WeaknessTrait,
+    TerrifyingTrait,
+    ToughTrait,
+    DarkSightTrait,
+    ResilientTrait,
+]
+
+
+def get_trait(trait_name, x=None, y=None):
+    TraitTuple = namedtuple('TraitTuple', ['cls', 'x', 'y'])
+
+    for t in ALL_TRAITS:
+        if t.__conditionname__ == trait_name:
+            return TraitTuple(t, x, y)
+    return None

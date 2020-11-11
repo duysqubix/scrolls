@@ -5,7 +5,7 @@ Commands describe the input the account can do to the game.
 
 """
 
-from world.conditions import Frenzied, Flying
+from world.conditions import Frenzied, Flying, get_condition
 from world.utils.act import act, Announce
 from evennia import Command as BaseCommand
 from evennia import EvForm, search_object
@@ -49,12 +49,20 @@ class CmdAffect(Command):
     def func(self):
         ch = self.caller
 
-        conditions = ch.conditions.all
-        ch.msg("You are affected by the following:")
-        msg = ""
+        conditions = ch.conditions.conditions
+        traits = ch.traits.traits
+        ch.msg("You are affected by the following:\n")
+        msg = "Conditions:\n"
         # conditions
         for con in conditions:
-            msg += "|g{con}|n\n"
+            msg += f"|g{str(con).replace('_', ' ').capitalize()}|n\n"
+
+        # traits
+        msg += "\nTraits:\n"
+        for trait in traits:
+            msg += f"|g{str(trait).replace('_', ' ').capitalize()}|n\n"
+
+        ch.msg(msg)
         #spells
 
 
@@ -89,10 +97,12 @@ class CmdFrenzied(Command):
         ch = self.caller
 
         if not ch.conditions.has(Frenzied):
-            ch.conditions.add([Frenzied, Flying])
+            frenzied = get_condition('frenzied')
+            ch.conditions.add(frenzied)
             ch.msg("You enter a state of frenzy.")
         else:
-            ch.conditions.remove([Frenzied, Flying])
+            frenzied = get_condition('frenzied')
+            ch.conditions.remove(frenzied)
             ch.msg("You seem more calm.")
 
 

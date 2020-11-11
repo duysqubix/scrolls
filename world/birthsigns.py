@@ -94,7 +94,7 @@ class MageSign(BirthSign):
              StrChar(bonus=-5),
              PrsChar(bonus=-5)])
 
-        self.properties['effect'] = {'traits': [PowerWellTrait, 10, None]}
+        self.properties['effect'] = {'traits': [(PowerWellTrait, 10, None)]}
         self.properties['cursed'] = {
             'traits': [(PowerWellTrait, 15, None)],
             'stats': [cursed_stats]
@@ -191,9 +191,8 @@ def change_birthsign(caller, birthsign):
 
                 for trait in traits:
                     # add each trait
-                    print(trait, type(trait))
                     trait_cls, X, Y = trait
-                    caller.traits.add(trait_cls, X=X, Y=Y)
+                    caller.traits.add(trait)
 
             elif k == 'powers':
                 pass

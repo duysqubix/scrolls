@@ -2,6 +2,7 @@
 Things that externally affect the character and their capabilities intead of
 features of the characters nature
 """
+from collections import namedtuple
 from evennia.utils import dedent, lazy_property
 import evennia
 
@@ -64,13 +65,16 @@ class Condition:
         return self.__conditionname__
 
     def __str__(self):
-        msg = f"""
-            {self.name}: {self.meta}   
-        """
+        msg = f"{self.name}"
         return dedent(msg)
 
     def __repr__(self):
         return f"<{self.name.capitalize()}/{self.X}/{self.Y}>"
+
+    def __eq__(self, other):
+        if self.name == other.name and self.X == other.X and self.Y == other.Y and self.allow_multi == other.allow_multi:
+            return True
+        return False
 
     def at_condition(self, caller):
         """ things to do when immediately affected by condition"""
@@ -290,11 +294,11 @@ class Unconscious(Condition):
 
 
 class BreathUnderWater(Condition):
-    __conditionname__ = "breath underwater"
+    __conditionname__ = "breath_underwater"
 
 
 class DarkSight(Condition):
-    __conditionname__ = "dark sight"
+    __conditionname__ = "dark_sight"
 
 
 class Deaf(Condition):
@@ -311,3 +315,20 @@ class Intangible(Condition):
 
 class Flying(Condition):
     __conditionname__ = "flying"
+
+
+ALL_CONDITIONS = [
+    Bleeding, Blinded, Burning, Chameleon, Crippled, DarkSight, Dazed,
+    Deafened, Fatigued, Frenzied, Hidden, Muffled, Prone, Paralyzed,
+    Restrained, Silenced, Slowed, Sleeping, Stunned, Unconscious,
+    BreathUnderWater, Deaf, Fear, Intangible, Flying
+]
+
+
+def get_condition(con_name, x=None, y=None):
+    ConditionTuple = namedtuple('ConditionTuple', ['cls', 'x', 'y'])
+    for t in ALL_CONDITIONS:
+        if t.__conditionname__ == con_name:
+            t = ConditionTuple(t, x, y)
+            return t
+    return None
