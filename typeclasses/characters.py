@@ -55,19 +55,21 @@ class ConditionHandler(StorageHandler):
             if self.has(cls) and c.allow_multi is False:
                 self.caller.msg("you can't be affected by this again")
                 return None
+            print(c, self.caller)
             c.at_condition(self.caller)  # fire at condition
+            print(c, c.name)
             self.set(c)
 
     def remove(self, *condition):
         for con in condition:
-            if not self.has(
-                    con.cls):  # trying to remove a non-existant condition
+            cls, x, y = con
+            if not self.has(cls):  # trying to remove a non-existant condition
                 return True
-            c = self.get(con.cls)
+            c = self.get(cls)
             if c.enabled is True:  # try to end it
                 if c.end_condition(self.caller) is False:
                     self.caller.msg(
-                        f"try as you might, you are still affected by {con.cls.__conditionname__}"
+                        f"try as you might, you are still affected by {cls.__conditionname__}"
                     )
                     return False
             c.after_condition(self.caller)
@@ -192,8 +194,11 @@ class Character(DefaultCharacter):
     def at_pre_unpuppet(self):
         self.save_character()
 
-    # def at_server_reload(self):
-    #     self.save_character()
+    def at_server_reload(self):
+        self.save_character()
+
+    def at_server_shutdown(self):
+        self.save_character()
 
     @property
     def is_pc(self):

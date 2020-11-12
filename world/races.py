@@ -2,6 +2,7 @@
 Holds information regarding races of the scrolls
 """
 
+from world.attributes import Attribute
 from typeclasses.scripts import Script
 from world.traits import *
 from world.characteristics import StrChar, EndChar, AgiChar, IntChar, WpChar, PrcChar, PrsChar
@@ -19,8 +20,11 @@ class Race:
         self.stats = []
         self.traits = []
         self.powers = []
-        self.racial = []  # this is traits, but only race specific
+        self.racials = []  # this is traits, but only race specific
         self.init()
+
+    def __str__(self):
+        return f"{self.__name__.capitalize()}"
 
     def init(self):
         pass
@@ -71,9 +75,11 @@ class Altmer(Race):
             PrcChar(25),
             PrsChar(25)
         ])
+
         self.traits.extend([(DiseaseResistTrait, 50, None),
                             (PowerWellTrait, 20, None),
                             (WeaknessTrait, 2, 'magic')])
+        self.racials.extend([(MentalStrengthRacial, None, None)])
 
 
 class Argonian(Race):
@@ -110,7 +116,9 @@ class Argonian(Race):
         self.traits.extend([(DiseaseResistTrait, 75, None),
                             (ImmunityTrait, {
                                 'poison': 'all'
-                            }, None), (AmphibiousTrait, None)])
+                            }, None), (AmphibiousTrait, None, None)])
+
+        self.racials.extend([(InscrutableRacial, None, None)])
 
 
 class Bosmer(Race):
@@ -146,6 +154,8 @@ class Bosmer(Race):
 
         self.traits.extend([(DiseaseResistTrait, 50, None),
                             (ResistanceTrait, 1, 'poison')])
+
+        self.racials.extend([(NaturalArchersRacial, None, None)])
 
 
 class Breton(Race):
@@ -377,3 +387,19 @@ def get_race(race_name):
         if race.name == race_name:
             return race
     return None
+
+
+def change_race(caller, race):
+    if caller.attrs.race.value == race:
+        caller.msg("you can't change who you are...")
+        return
+
+    if race != NoRace():
+        # remove traits and racial traits of race
+        caller.traits.remove(*caller.attrs.race.value.traits)
+
+    # add effects of new race
+    caller.traits.add(*race.traits)
+    caller.traits.add(*race.racials)
+
+    caller.attrs.race = Attribute(race.name, value=race)

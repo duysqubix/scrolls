@@ -4,7 +4,7 @@ Much like conditions....
 from collections import namedtuple
 from evennia import search_object
 from evennia.utils.utils import inherits_from
-from world.conditions import BreathUnderWater, Burning, Condition, DarkSight, Fear, Flying, Intangible
+from world.conditions import BreathUnderWater, Burning, Condition, DarkSight, Fear, Flying, Intangible, get_condition
 
 
 class Trait(Condition):
@@ -16,8 +16,15 @@ class Trait(Condition):
 class AmphibiousTrait(Trait):
     __conditionname__ = "ambphibious"
 
+    def init(self):
+        self.breath_trait = get_condition('breath_underwater')
+
     def at_condition(self, caller):
-        caller.conditions.add(BreathUnderWater)
+
+        caller.conditions.add(self.breath_trait)
+
+    def after_condition(self, caller):
+        caller.conditions.remove(self.breath_trait)
 
 
 class BoundTrait(Trait):
@@ -51,9 +58,9 @@ class CrawlingTrait(Trait):
 
 
 class DiseaseResistTrait(Trait):
-    __conditionname__ = "disease resistance"
+    __conditionname__ = "disease_resistance"
 
-    def at_condition(self):
+    def at_condition(self, caller):
         if self.X is None:
             raise ValueError("disease resistance trait must have X defined")
 
@@ -121,11 +128,16 @@ class ImmunityTrait(Trait):
 class IncorporealTrait(Trait):
     __conditionname__ = "incorporeal"
 
+    def init(self):
+        self.intangile_trait = get_condition('intangible')
+        self.flying_trait = get_condition('flying')
+
     def at_condition(self, caller):
-        caller.conditions.add([Intangible, Flying])
+
+        caller.conditions.add(self.intangile_trait, self.flying_trait)
 
     def after_condition(self, caller):
-        caller.conditions.remove([Intangible, Flying])
+        caller.conditions.remove(self.intangile_trait, self.flying_trait)
 
 
 class NaturalToughnessTrait(Trait):
@@ -176,15 +188,18 @@ class PowerWellTrait(Trait):
 class SkeletalTrait(Trait):
     __conditionname__ = 'skeletal'
 
+    def init(self):
+        self.undead_trait = get_trait('undead')
+
     def at_condition(self, caller):
         # gain undead trait automatically
-        caller.attrs.traits.add(UndeadTrait)
+        caller.attrs.traits.add(self.undead_trait)
         # immune to burning condition
         caller.attrs.immunity.value['conditions'].append(Burning)
 
     def after_condition(self, caller):
         caller.attrs.immunity.value['conditions'].remove(Burning)
-        caller.attrs.traits.remove(UndeadTrait)
+        caller.attrs.traits.remove(self.undead_trait)
 
 
 class SilverScarredTrait(Trait):
@@ -366,9 +381,29 @@ ALL_TRAITS = [
 
 
 def get_trait(trait_name, x=None, y=None):
-    TraitTuple = namedtuple('TraitTuple', ['cls', 'x', 'y'])
-
     for t in ALL_TRAITS:
         if t.__conditionname__ == trait_name:
-            return TraitTuple(t, x, y)
+            return (t, x, y)
     return None
+
+
+class RacialTrait(Trait):
+    def __str__(self):
+        msg = f"{self.name.replace('_', ' ').capitalize()} (|Mracial|n)"
+        return msg
+
+    def init(self):
+        # do not change this, racial traits aren't meant to have more than once
+        self.allow_multi = False
+
+
+class MentalStrengthRacial(RacialTrait):
+    __conditionname__ = "mental_strength"
+
+
+class InscrutableRacial(RacialTrait):
+    __conditionname__ = "inscrutable"
+
+
+class NaturalArchersRacial(RacialTrait):
+    __conditionname__ = "natural_archers"

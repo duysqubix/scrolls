@@ -165,6 +165,7 @@ def change_birthsign(caller, birthsign):
 
                     for trait in traits:
                         # add each trait
+                        print(traits, trait)
                         trait_cls, X, Y = trait
                         caller.traits.remove(trait_cls)
 

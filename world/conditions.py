@@ -65,8 +65,16 @@ class Condition:
         return self.__conditionname__
 
     def __str__(self):
-        msg = f"{self.name}"
-        return dedent(msg)
+
+        if isinstance(self.X, dict):
+            x = f"[{list(self.X.keys())[0]}]"
+            y = f"[{list(self.X.values())[0]}]"
+        else:
+            x = f"[{str(self.X)}]" if self.X is not None else ""
+            y = f"[{str(self.Y)}]" if self.Y is not None else ""
+
+        msg = f"{self.name.replace('_', ' ').capitalize()} {x} {y}"
+        return msg
 
     def __repr__(self):
         return f"<{self.name.capitalize()}/{self.X}/{self.Y}>"
@@ -326,9 +334,7 @@ ALL_CONDITIONS = [
 
 
 def get_condition(con_name, x=None, y=None):
-    ConditionTuple = namedtuple('ConditionTuple', ['cls', 'x', 'y'])
     for t in ALL_CONDITIONS:
         if t.__conditionname__ == con_name:
-            t = ConditionTuple(t, x, y)
-            return t
+            return (t, x, y)
     return None

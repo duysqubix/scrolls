@@ -7,7 +7,7 @@ from evennia.utils import utils
 from evennia.contrib.dice import roll_dice
 from world.characteristics import CHARACTERISTICS
 from world.birthsigns import *
-from world.races import PLAYABLE_RACES, get_race
+from world.races import PLAYABLE_RACES, change_race, get_race
 from world.attributes import Attribute
 import copy
 
@@ -164,7 +164,7 @@ def finish(caller, **kwargs):
     change_birthsign(caller, kwargs['birthsign']['sign'])
     # set race
     race = copy.deepcopy(get_race(kwargs['race']))
-    caller.attrs.race = Attribute(race.name, race)
+    change_race(caller, race)
     caller.msg(kwargs)
     caller.attrs.update()
     return None, None
