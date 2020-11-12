@@ -7,7 +7,7 @@ class Characteristic:
         self.favored = favored
 
     def __str__(self):
-        return f"{self.__class__.__name__}: <{self.base}/{self.bonus}>"
+        return f"{self.__class__.__obj_name__}: <{self.base}/{self.bonus}>"
 
     def __repr__(self):
         return str(self)

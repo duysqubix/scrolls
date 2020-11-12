@@ -1,15 +1,17 @@
-from world.traits import PowerWellTrait, SpellAbsorptionTrait, StuntedMagickaTrait, WeaknessTrait
+from world.traits import PowerWellTrait, RunningOutOfLuckTrait, SpellAbsorptionTrait, StuntedMagickaTrait, WeaknessTrait
 import evennia
 import random
 
 from world.characteristics import *
 
 __all__ = ('WarriorSign', 'LadySign', 'SteedSign', 'LordSign', 'MageSign',
-           'RitualSign', 'ApprenticeSign', 'AtronachSign', 'change_birthsign')
+           'RitualSign', 'ApprenticeSign', 'AtronachSign', 'change_birthsign',
+           'ThiefSign', 'LoverSign', 'ShadowSign', 'TowerSign')
 
 
 class BirthSign:
-    __sign_name__ = ""
+    __obj_name__ = ""
+    __help_category__ = ""
 
     def __init__(self, cursed=False):
         self.properties = {'effect': {}, 'cursed': {}}
@@ -18,7 +20,7 @@ class BirthSign:
 
     def __str__(self):
         cursed = "" if not self.cursed else "|r*|n"
-        return f"{cursed}{self.__sign_name__.capitalize()}"
+        return f"{cursed}{self.__obj_name__.capitalize()}"
 
     def __repr__(self):
         return str(self)
@@ -27,22 +29,30 @@ class BirthSign:
         return str(self)
 
     def __eq__(self, other):
-        return self.__sign_name__ == other.__sign_name__
+        return self.__obj_name__ == other.__obj_name__
 
     def init(self):
         pass
 
     @property
     def name(self):
-        return self.__sign_name__
+        return self.__obj_name__
 
 
 class NoSign(BirthSign):
-    __sign_name__ = "NoSign"
+    __obj_name__ = "NoSign"
 
 
 class WarriorSign(BirthSign):
-    __sign_name__ = "warrior"
+    """
+    The Warrior is the first Guardian Constellation and he protects his 
+    charges during their Seasons. The Warrior’s own season is Last Seed when 
+    his Strength is needed for the harvest. His Charges are the Lady, the 
+    Steed, and the Lord. Those born under the sign of the Warrior are 
+    skilled with weapons of all kinds, but prone to short tempers.
+    """
+    __obj_name__ = "warrior"
+    __help_category__ = "warrior"
 
     def init(self):
         self.properties['effect'] = {'stats': [EndChar(bonus=1)]}
@@ -52,7 +62,12 @@ class WarriorSign(BirthSign):
 
 
 class LadySign(BirthSign):
-    __sign_name__ = "lady"
+    """
+    The Lady is one of the Warrior’s Charges and her Season is Heartfire. 
+    Those born under the sign of the Lady are kind and tolerant.
+    """
+    __obj_name__ = "lady"
+    __help_category__ = "warrior"
 
     def init(self):
         self.properties['effect'] = {'stats': [PrsChar(bonus=5)]}
@@ -62,7 +77,13 @@ class LadySign(BirthSign):
 
 
 class SteedSign(BirthSign):
-    __sign_name__ = 'steed'
+    """
+    The Steed is one of the Warrior’s Charges, and her Season is Mid Year. 
+    Those born under the sign of the Steed are impatient and always hurrying 
+    from one place to another.
+    """
+    __obj_name__ = 'steed'
+    __help_category__ = "warrior"
 
     def init(self):
         cursed_stats = random.choice([WpChar(bonus=-5), PrcChar(bonus=-5)])
@@ -75,7 +96,13 @@ class SteedSign(BirthSign):
 
 
 class LordSign(BirthSign):
-    __sign_name__ = "lord"
+    """
+    The Lord’s Season is First Seed and he oversees all of Tamriel during 
+    the planting. Those born under the sign of the Lord are stronger and 
+    healthier than those born under other signs.
+    """
+    __obj_name__ = "lord"
+    __help_category__ = "warrior"
 
     def init(self):
         self.properties['effect'] = {'health': {'recover': 2}}
@@ -86,7 +113,15 @@ class LordSign(BirthSign):
 
 
 class MageSign(BirthSign):
-    __sign_name__ = "mage"
+    """
+    The Mage is a Guardian Constellation whose Season is Rain’s Hand when 
+    magicka was first used by men. His Charges are the Apprentice, the 
+    Golem, and the Ritual. Those born under the Mage have more magicka and 
+    talent for all kinds of spellcasting, but are often arrogant and 
+    absent-minded.
+    """
+    __obj_name__ = "mage"
+    __help_category__ = "mage"
 
     def init(self):
         cursed_stats = random.choice(
@@ -102,7 +137,13 @@ class MageSign(BirthSign):
 
 
 class ApprenticeSign(BirthSign):
-    __sign_name__ = "apprentice"
+    """
+    The Apprentice’s Season is Sun’s Height. Those born under the sign of 
+    the apprentice have a special affinity for magick of all kinds, but are 
+    more vulnerable to magick as well.
+    """
+    __obj_name__ = "apprentice"
+    __help_category__ = "mage"
 
     def init(self):
         self.properties['effect'] = {
@@ -114,7 +155,14 @@ class ApprenticeSign(BirthSign):
 
 
 class AtronachSign(BirthSign):
-    __sign_name__ = "apprentice"
+    """
+    The Atronach (often called the Golem) is one of the Mage’s Charges. Its 
+    season is Sun’s Dusk. Those born under this sign are natural sorcerers 
+    with deep reserves of magicka, but they cannot generate magicka of their 
+    own.
+    """
+    __obj_name__ = "atronach"
+    __help_category__ = "mage"
 
     def init(self):
         self.properties['effect'] = {
@@ -128,10 +176,91 @@ class AtronachSign(BirthSign):
 
 
 class RitualSign(BirthSign):
-    __sign_name__ = "ritual"
+    """
+    The Ritual is one of the Mage’s Charges and its Season is Morning Star. 
+    Those born under this sign have a variety of abilities depending on the 
+    aspects of the moons and the Divines.
+    """
+    __obj_name__ = "ritual"
+    __help_category__ = "mage"
 
     def init(self):
         pass
+
+
+class ThiefSign(BirthSign):
+    """
+    The Thief is the last Guardian Constellation, and her Season is the 
+    darkest month of Evening Star. Her Charges are the Lover, the Shadow, 
+    and the Tower. Those born under the sign of the Thief are not typically 
+    thieves, though they take risks more often and only rarely come to harm. 
+    They will run out of luck eventually, however, and rarely live as long 
+    as those born under other signs.
+    """
+    __obj_name__ = "thief"
+    __help_category__ = "thief"
+
+    def init(self):
+        self.properties['cursed'] = {
+            'traits': [(RunningOutOfLuckTrait, None, None)]
+        }
+
+
+class LoverSign(BirthSign):
+    """
+    The Lover is one of the Thief ’s Charges and her season is Sun’s Dawn. 
+    Those born under the sign of the Lover are graceful and passionate.
+    """
+    __obj_name__ = 'lover'
+    __help_category__ = "thief"
+
+    def init(self):
+        cursed_stats = random.choice([WpChar(bonus=-5), StrChar(bonus=-5)])
+
+        self.properties['effect'] = {'stats': [AgiChar(bonus=5)]}
+        self.properties['cursed'] = {'stats': [cursed_stats, PrsChar(bonus=5)]}
+
+
+class ShadowSign(BirthSign):
+    """
+    The Shadow’s Season is Second Seed. The Shadow grants those born under 
+    her sign the ability to hide in shadows.
+    """
+
+    __obj_name__ = 'shadow'
+    __help_category__ = "thief"
+
+    def init(self):
+        cursed_stats = random.choice([PrsChar(bonus=-5), StrChar(bonus=-5)])
+
+        self.properties['effect'] = {'power': ['moonshadow']}
+        self.properties['cursed'] = {'stats': [cursed_stats, PrcChar(bonus=5)]}
+
+
+class TowerSign(BirthSign):
+    """
+    The Tower is one of the Thief ’s Charges and its Season is Frostfall. 
+    Those born under the sign of the Tower have a knack for finding gold and 
+    can open locks of all kinds.
+    """
+
+    __obj_name__ = 'tower'
+    __help_category__ = "thief"
+
+    def init(self):
+        cursed_stats = random.choice([WpChar(bonus=-5), StrChar(bonus=-5)])
+
+        self.properties['effect'] = {
+            'power': ['treasure_seeker'],
+            'stats': [PrcChar(bonus=5)]
+        }
+        self.properties['cursed'] = {'stats': [cursed_stats, AgiChar(bonus=5)]}
+
+
+ALL_BIRTHSIGNS = [
+    WarriorSign, LadySign, SteedSign, LordSign, MageSign, ApprenticeSign,
+    AtronachSign, RitualSign, ThiefSign, LoverSign, ShadowSign, TowerSign
+]
 
 
 def change_birthsign(caller, birthsign):
@@ -165,9 +294,9 @@ def change_birthsign(caller, birthsign):
 
                     for trait in traits:
                         # add each trait
-                        print(traits, trait)
+                        print(traits, ', trait is', trait)
                         trait_cls, X, Y = trait
-                        caller.traits.remove(trait_cls)
+                        caller.traits.remove(trait)
 
                 elif k == 'powers':
                     pass

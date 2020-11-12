@@ -9,7 +9,6 @@ creation commands.
 """
 import copy
 from typing import Any, List, Tuple
-from world.conditions import Condition
 from world.races import NoRace, get_race
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
@@ -20,6 +19,7 @@ from world.skills import Skill
 from evennia.utils.utils import inherits_from, lazy_property, make_iter
 from world.storagehandler import StorageHandler
 from evennia.utils.evmenu import EvMenu
+from evennia import logger
 
 
 class SkillHandler(StorageHandler):
@@ -47,6 +47,10 @@ class ConditionHandler(StorageHandler):
         return True if self.get(condition) is not None else False
 
     def add(self, *conditions):
+        """
+        Args:
+            conditions: list of condition tuples: [(cls, X, Y),]
+        """
         for con in conditions:
             cls, X, Y = con
 
@@ -69,15 +73,24 @@ class ConditionHandler(StorageHandler):
             if c.enabled is True:  # try to end it
                 if c.end_condition(self.caller) is False:
                     self.caller.msg(
-                        f"try as you might, you are still affected by {cls.__conditionname__}"
+                        f"try as you might, you are still affected by {cls.__obj_name__}"
                     )
                     return False
             c.after_condition(self.caller)
-            self.__getattr__(self.__attr_name__).remove(c)
+
+            match = None
+            for _c in self.__getattr__(self.__attr_name__):
+                if _c == c:
+                    self.caller.msg(_c)
+                    match = _c
+                    break
+
+            if match is not None:
+                self.__getattr__(self.__attr_name__).remove(match)
 
     def get(self, condition):
         name = self.__attr_name__
-        con_name = condition.__conditionname__
+        con_name = condition.__obj_name__
         conditions = self.__getattr__(name)
 
         if not conditions:

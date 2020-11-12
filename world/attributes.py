@@ -12,7 +12,7 @@ class Attribute:
         return f"{self.name.capitalize()}: {self.value}"
 
     def __repr__(self):
-        return f"{self.__class__.__name__}: <{self.name}:{self.value}>"
+        return f"{self.__class__.__obj_name__}: <{self.name}:{self.value}>"
 
     def init(self):
         pass

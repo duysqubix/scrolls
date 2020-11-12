@@ -45,6 +45,7 @@ class CmdAffect(Command):
     """
 
     key = 'affect'
+    aliases = ['af']
 
     def func(self):
         ch = self.caller

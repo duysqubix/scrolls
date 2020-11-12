@@ -8,13 +8,15 @@ from world.conditions import BreathUnderWater, Burning, Condition, DarkSight, Fe
 
 
 class Trait(Condition):
+    __obj_name__ = ""
+
     def __init__(self, X, Y):
         super().__init__(X=X, Y=Y)
         self.is_trait = True
 
 
 class AmphibiousTrait(Trait):
-    __conditionname__ = "ambphibious"
+    __obj_name__ = "ambphibious"
 
     def init(self):
         self.breath_trait = get_condition('breath_underwater')
@@ -28,7 +30,7 @@ class AmphibiousTrait(Trait):
 
 
 class BoundTrait(Trait):
-    __conditionname__ = "bound"
+    __obj_name__ = "bound"
 
     def __init__(self, caller_id, master_id):
         super().__init__(caller_id, X=None)
@@ -44,7 +46,7 @@ class BoundTrait(Trait):
 
 
 class CrawlingTrait(Trait):
-    __conditionname__ = "crawling"
+    __obj_name__ = "crawling"
 
     def at_condition(self, caller):
         cur_max_speed = caller.attrs.speed.max
@@ -58,7 +60,7 @@ class CrawlingTrait(Trait):
 
 
 class DiseaseResistTrait(Trait):
-    __conditionname__ = "disease_resistance"
+    __obj_name__ = "disease_resistance"
 
     def at_condition(self, caller):
         if self.X is None:
@@ -66,7 +68,7 @@ class DiseaseResistTrait(Trait):
 
 
 class DiseasedTrait(Trait):
-    __conditionname__ = "diseased"
+    __obj_name__ = "diseased"
 
     def at_condition(self, caller):
         if self.X is None:
@@ -78,7 +80,7 @@ class FlyerTrait(Flying, Trait):
 
 
 class FromBeyondTrait(Trait):
-    __conditionname__ = "from_beyond"
+    __obj_name__ = "from_beyond"
 
     def at_condition(self, caller):
         caller.attrs.immunity.value['disease'].append('all')
@@ -93,7 +95,7 @@ class FromBeyondTrait(Trait):
 
 class ImmunityTrait(Trait):
 
-    __conditionname__ = "immunity"
+    __obj_name__ = "immunity"
 
     def init(self):
         """
@@ -126,7 +128,7 @@ class ImmunityTrait(Trait):
 
 
 class IncorporealTrait(Trait):
-    __conditionname__ = "incorporeal"
+    __obj_name__ = "incorporeal"
 
     def init(self):
         self.intangile_trait = get_condition('intangible')
@@ -141,7 +143,7 @@ class IncorporealTrait(Trait):
 
 
 class NaturalToughnessTrait(Trait):
-    __conditionname__ = "natural_toughness"
+    __obj_name__ = "natural_toughness"
 
     def init(self):
         if not self.X or not isinstance(self.X, (int, float)):
@@ -155,7 +157,7 @@ class NaturalWeaponsTrait(Trait):
     character has unique weapons of some kind;
     ex. claws, teeth, etc... adds , TBD, when fighting
     """
-    __conditionname__ = "natural_weapons"
+    __obj_name__ = "natural_weapons"
 
     def init(self):
         if not self.X:
@@ -165,7 +167,7 @@ class NaturalWeaponsTrait(Trait):
 
 
 class PowerWellTrait(Trait):
-    __conditionname__ = 'power_well'
+    __obj_name__ = 'power_well'
 
     def init(self):
         self.allow_multi = True
@@ -186,7 +188,7 @@ class PowerWellTrait(Trait):
 
 
 class SkeletalTrait(Trait):
-    __conditionname__ = 'skeletal'
+    __obj_name__ = 'skeletal'
 
     def init(self):
         self.undead_trait = get_trait('undead')
@@ -203,7 +205,7 @@ class SkeletalTrait(Trait):
 
 
 class SilverScarredTrait(Trait):
-    __conditionname__ = 'silver_scarred'
+    __obj_name__ = 'silver_scarred'
 
     def init(self):
         if not self.X or not isinstance(self.X, (float, int)):
@@ -213,7 +215,7 @@ class SilverScarredTrait(Trait):
 
 
 class SpellAbsorptionTrait(Trait):
-    __conditionname__ = 'spell_absorption'
+    __obj_name__ = 'spell_absorption'
 
     def init(self):
         if not self.X or not isinstance(self.X, (float, int)):
@@ -225,7 +227,7 @@ class SpellAbsorptionTrait(Trait):
 
 
 class StuntedMagickaTrait(Trait):
-    __conditionname__ = "stunted_magicka"
+    __obj_name__ = "stunted_magicka"
 
     def at_condition(self, caller):
         caller.attrs.magicka.rate = 0.0
@@ -235,11 +237,11 @@ class StuntedMagickaTrait(Trait):
 
 
 class SummonedTrait(Trait):
-    __conditionname__ = 'summoned'
+    __obj_name__ = 'summoned'
 
 
 class SunScarredTrait(Trait):
-    __conditionname__ = 'sun_scarred'
+    __obj_name__ = 'sun_scarred'
 
     def init(self):
         if not self.X or not isinstance(self.X, [int, float]):
@@ -256,7 +258,7 @@ class SunScarredTrait(Trait):
 
 
 class RegenerationTrait(Trait):
-    __conditionname__ = 'regeneration'
+    __obj_name__ = 'regeneration'
 
     def init(self):
         if not self.X or not isinstance(self.X, (int, float)):
@@ -270,7 +272,7 @@ class RegenerationTrait(Trait):
 
 
 class ResistanceTrait(Trait):
-    __conditionname__ = 'resistance'
+    __obj_name__ = 'resistance'
 
     # TODO: add resistant types to this trait (resistant types have not been created or defined yet)
     def init(self):
@@ -281,8 +283,15 @@ class ResistanceTrait(Trait):
         self.X = float(self.X)
 
 
+class RunningOutOfLuckTrait(Trait):
+    __obj_name__ = 'running_out_of_luck'
+
+    def init(self):
+        self.allow_multi = False
+
+
 class UndeadTrait(Trait):
-    __conditionname__ = 'undead'
+    __obj_name__ = 'undead'
 
     def at_condition(self, caller):
         # immune to disease, poison, aging, fatigue
@@ -295,7 +304,7 @@ class UndeadTrait(Trait):
 
 
 class UndyingTrait(Trait):
-    __conditionname__ = 'undying'
+    __obj_name__ = 'undying'
 
     def at_condition(self, caller):
         # immune to all disease
@@ -306,11 +315,11 @@ class UndyingTrait(Trait):
 
 
 class UnnaturalSensesTrait(Trait):
-    __conditionname__ = 'unatural_senses'
+    __obj_name__ = 'unatural_senses'
 
 
 class WeaknessTrait(Trait):
-    __conditionname__ = 'weakness'
+    __obj_name__ = 'weakness'
 
     # TODO: add weakness types to this trait (damage types have not been created or defined yet)
 
@@ -322,11 +331,11 @@ class WeaknessTrait(Trait):
 
 
 class TerrifyingTrait(Trait):
-    __conditionname__ = 'terrifying'
+    __obj_name__ = 'terrifying'
 
 
 class ToughTrait(Trait):
-    __conditionname__ = 'tough'
+    __obj_name__ = 'tough'
 
 
 class DarkSightTrait(DarkSight, Trait):
@@ -334,7 +343,7 @@ class DarkSightTrait(DarkSight, Trait):
 
 
 class ResilientTrait(Trait):
-    __conditionname__ = 'resilient'
+    __obj_name__ = 'resilient'
 
     def init(self):
         if not self.X or not isinstance(self.X, (float, int)):
@@ -352,6 +361,7 @@ ALL_TRAITS = [
     AmphibiousTrait,
     BoundTrait,
     CrawlingTrait,
+    DarkSightTrait,
     DiseasedTrait,
     DiseaseResistTrait,
     FlyerTrait,
@@ -368,28 +378,28 @@ ALL_TRAITS = [
     SummonedTrait,
     SunScarredTrait,
     RegenerationTrait,
+    ResilientTrait,
     ResistanceTrait,
+    RunningOutOfLuckTrait,
+    TerrifyingTrait,
+    ToughTrait,
     UndeadTrait,
     UndyingTrait,
     UnnaturalSensesTrait,
     WeaknessTrait,
-    TerrifyingTrait,
-    ToughTrait,
-    DarkSightTrait,
-    ResilientTrait,
 ]
 
 
 def get_trait(trait_name, x=None, y=None):
     for t in ALL_TRAITS:
-        if t.__conditionname__ == trait_name:
+        if t.__obj_name__ == trait_name:
             return (t, x, y)
     return None
 
 
 class RacialTrait(Trait):
     def __str__(self):
-        msg = f"{self.name.replace('_', ' ').capitalize()} (|Mracial|n)"
+        msg = f"{self.name.replace('_', ' ').capitalize()} (|Mracial|g)"
         return msg
 
     def init(self):
@@ -398,12 +408,12 @@ class RacialTrait(Trait):
 
 
 class MentalStrengthRacial(RacialTrait):
-    __conditionname__ = "mental_strength"
+    __obj_name__ = "mental_strength"
 
 
 class InscrutableRacial(RacialTrait):
-    __conditionname__ = "inscrutable"
+    __obj_name__ = "inscrutable"
 
 
 class NaturalArchersRacial(RacialTrait):
-    __conditionname__ = "natural_archers"
+    __obj_name__ = "natural_archers"

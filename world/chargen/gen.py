@@ -1,26 +1,68 @@
 """
 Holds entire character generation process using evennia menus
 """
+from os import stat
 import random
+import copy
+import numpy as np
 from evennia import GLOBAL_SCRIPTS
 from evennia.utils import utils
 from evennia.contrib.dice import roll_dice
 from world.characteristics import CHARACTERISTICS
 from world.birthsigns import *
 from world.races import PLAYABLE_RACES, change_race, get_race
-from world.attributes import Attribute
-import copy
+from evennia.utils.evform import EvForm, EvTable
 
 
 def pick_race(caller, **kwargs):
     races = [(x.name, x.sdesc) for x in PLAYABLE_RACES]
     text = "Pick a race"
+    form = EvForm('resources.chargen_race_form')
+
+    race_info = np.zeros((len(PLAYABLE_RACES), 8), dtype='object')
+
+    for idx in range(len(PLAYABLE_RACES)):
+
+        info = []
+        s = PLAYABLE_RACES[idx]
+        name = s.name.capitalize()
+        for idy in range(8):
+            if idy == 0:
+                info.append(name)
+            else:
+                info.append(s.stats[idy - 1].base)
+
+        max = np.max([x for x in info if isinstance(x, int)])
+        min = np.min([x for x in info if isinstance(x, int)])
+
+        idx_max = info.index(max)
+        idx_min = info.index(min)
+        info[idx_max] = f"|g{info[idx_max]}|n"
+        info[idx_min] = f"|r{info[idx_min]}|n"
+
+        info = [str(x) for x in info]
+        race_info[idx] = info
+
+    race_table = EvTable("Race",
+                         "Str",
+                         "End",
+                         "Agi",
+                         "Int",
+                         "Wp",
+                         "Prc",
+                         "Prs",
+                         table=race_info.transpose().tolist(),
+                         border='incols',
+                         height=2)
+    form.map(tables={'B': race_table})
+    text = str(form) + "\n*base stats"
+
     options = []
     for name, sdesc in races:
         options.append({
             'key': name.capitalize(),
             'desc': f"|c{sdesc.capitalize()}|n",
-            'goto': (f"pick_race_specific", {
+            'goto': ("skill_upgrade", {
                 'race': name
             })
         })
@@ -28,57 +70,45 @@ def pick_race(caller, **kwargs):
     return text, tuple(options)
 
 
-def pick_race_specific(caller, **kwargs):
+def skill_upgrade(caller, **kwargs):
     race = get_race(kwargs['race'])
-    desc = race.desc
-    stats = race.stats
-    stats = " ".join([f"{stat.short}:{stat.base}, " for stat in stats])
-
-    text = ("(Help for more information)" \
-    f"\n{stats}", utils.wrap(utils.dedent(desc), 80))
-    options = ({
-        'key':
-        'yes',
-        'desc':
-        f"Do you want to be an {kwargs['race']}",
-        'goto': ("altmer_novice_skill_upgrade", {
-            'race': f"{kwargs['race']}"
-        })
-    }, {
-        'key': 'no',
-        'desc': 'pick another race',
-        'goto': "pick_race"
-    })
-    return text, options
-
-
-def altmer_novice_skill_upgrade(call, **kwargs):
-    text = "You can decide on one of the following to start as a novice"
+    text = "Choose a skill to upgrade to novice for free"
     options = []
-    for skill in [
-            'alchemy', 'alteration', 'conjuratin', 'destruction', 'enchanting',
-            'illusion', 'mysticism', 'restoration'
-    ]:
+
+    if not race.upgradable_skills:
         k = kwargs.copy()
-        k['skill'] = {skill: 'novice'}
-        options.append({'key': skill, 'goto': ('gen_characteristics_1', k)})
+        k['upgraded_skill'] = None
+        text, options = "Press `enter` to continue", ({
+            'key':
+            '_default',
+            'goto': ('favored_characteristics_1', k)
+        })
+        return text, options
+
+    for skill in race.upgradable_skills:
+        k = kwargs.copy()
+        k['upgraded_skill'] = {skill: 'novice'}
+        options.append({
+            'key': skill,
+            'goto': ('favored_characteristics_1', k)
+        })
     return text, tuple(options)
 
 
-def gen_characteristics_1(caller, **kwargs):
+def favored_characteristics_1(caller, **kwargs):
     text = "Choose a favored characteristic"
     options = []
     for stat in CHARACTERISTICS.values():
         k = kwargs.copy()
         k['favored_stats'] = [stat.short]
         options.append({
-            'key': stat.short,
-            'goto': ('gen_characteristics_2', k)
+            'key': stat.name.capitalize(),
+            'goto': ('favored_characteristics_2', k)
         })
     return text, tuple(options)
 
 
-def gen_characteristics_2(caller, **kwargs):
+def favored_characteristics_2(caller, **kwargs):
     text = "Choose another favored characteristic"
     options = []
 
@@ -90,7 +120,7 @@ def gen_characteristics_2(caller, **kwargs):
         k['favored_stats'] = k['favored_stats'].copy()
         k['favored_stats'].append(stat.short)
         options.append({
-            'key': stat.short,
+            'key': stat.name.capitalize(),
             'goto': ('gen_characteristics_3', k)
         })
     return text, tuple(options)
@@ -106,31 +136,44 @@ def gen_characteristics_3(caller, **kwargs):
         stat_keys[k1] += roll1
         stat_keys[k2] += roll2
 
-    text = f"Roll for stats\n{stat_keys}"
+    race_base = dict({x.short: x.base for x in stats})
+
+    text = "Roll for stats (enter for reroll)\n\n"
+
     lck = roll_dice(2, 10, ('+', 30))
     if lck > 50:
         lck = 50
     stat_keys['lck'] = lck
     k = kwargs.copy()
     k['stats'] = stat_keys.copy()
+
+    _max = max(stat_keys.keys(), key=(lambda key: stat_keys[key]))
+    _min = min(stat_keys.keys(), key=(lambda key: stat_keys[key]))
+
+    stat_keys[_max] = f"|g{stat_keys[_max]}|n"
+    stat_keys[_min] = f"|r{stat_keys[_min]}|n"
+
+    for name, base in race_base.items():
+        text += f"{name.capitalize():>3}: {stat_keys[name]} ({base})\n"
+
     options = ({
         'key': 'accept',
         'goto': ('determine_birthsign', k)
     }, {
-        'key': 'reroll',
+        'key': '_default',
         'goto': ('gen_characteristics_3', k)
     })
     return text, options
 
 
 def determine_birthsign(caller, **kwargs):
-    text = "Determine your birthsign"
+    text = "Determine your fate"
 
     options = []
     for sign in ['warrior', 'mage', 'thief']:
         k = kwargs.copy()
         k['birthsign'] = {'name': sign}
-        options.append({'key': sign, 'goto': ('finish', k)})
+        options.append({'key': sign.capitalize(), 'goto': ('finish', k)})
     return text, tuple(options)
 
 
@@ -153,12 +196,15 @@ def finish(caller, **kwargs):
 
     warrior_signs = [WarriorSign, LadySign, SteedSign, LordSign]
     mage_signs = [MageSign, ApprenticeSign, AtronachSign, RitualSign]
-    thief_signs = []
+    thief_signs = [ThiefSign, LoverSign, ShadowSign, TowerSign]
     if kwargs['birthsign']['name'] == 'warrior':
         kwargs['birthsign']['sign'] = warrior_signs[idx](is_cursed)
 
     elif kwargs['birthsign']['name'] == 'mage':
         kwargs['birthsign']['sign'] = mage_signs[idx](is_cursed)
+
+    elif kwargs['birthsign']['name'] == 'thief':
+        kwargs['birthsign']['sign'] = thief_signs[idx](is_cursed)
 
     # change birthsign
     change_birthsign(caller, kwargs['birthsign']['sign'])

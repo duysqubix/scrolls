@@ -54,6 +54,8 @@ GLOBAL_SCRIPTS = {
 }
 
 CMDSET_UNLOGGEDIN = "evennia.contrib.menu_login.UnloggedinCmdSet"
+BASE_BATCHPROCESS_PATHS += ["resources"]
+
 ######################################################################
 # Settings given in secret_settings.py override those in this file.
 ######################################################################

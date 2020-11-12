@@ -13,21 +13,26 @@ class Race:
     Long description of a race
     """
 
-    __name__ = ""
+    __obj_name__ = ""
     __sdesc__ = ""
+    __help_category__ = "races"
 
     def __init__(self):
         self.stats = []
         self.traits = []
         self.powers = []
         self.racials = []  # this is traits, but only race specific
+        self.upgradable_skills = []
         self.init()
 
     def __str__(self):
-        return f"{self.__name__.capitalize()}"
+        return f"{self.__obj_name__.capitalize()}"
 
     def init(self):
         pass
+
+    def __obj_name__(self):
+        return self.__obj_name__
 
     @property
     def desc(self):
@@ -39,7 +44,23 @@ class Race:
 
     @property
     def name(self):
-        return self.__name__
+        return self.__obj_name__
+
+    def formatted(self):
+        """formats stats, traits and racials for printing and reporting"""
+
+        stats = {x.short: x.base for x in self.stats}
+
+        stats_str = ", ".join(
+            [f"{k.capitalize()}: {v}" for (k, v) in stats.items()])
+
+        traits = self.traits
+        traits_str = ""
+        for (cls, x, y) in traits:
+            c = cls(x, y)
+            s = f"{str(c)}, "
+            traits_str += s
+        return (stats_str, traits_str)
 
 
 class NoRace(Race):
@@ -51,7 +72,7 @@ class Altmer(Race):
     The Altmer (or High Elves, as they are also known) are a race of Mer that make their home on Summerset Isle, 
     an island off the south western coast of Tamriel. Many races of Tamriel consider the Altmer to be quite beautiful 
     due to their fair, golden skinned complexion and the dazzling gem like colors of their eyes; as such, the Altmer 
-    are welcome guests in most parts of Tamriel, save for the Black Marsh and Vvardenfell.  However, the combination 
+    are welcome guests in most parts of Tamriel, save for the Black Marsh and Vvardenfell. However, the combination 
     of their fair appearance, long lives, propensity for magic and resemblance to the Old Elves of Tamriel tends to 
     give Altmer an elevated sense of their own importance. This can sometimes impact diplomatic relations with the 
     other races.The use of magic is heavily emphasized in Altmer society,  given the latent magical gifts of the 
@@ -62,7 +83,7 @@ class Altmer(Race):
     their longevity. Altmer born and raised on Summerset Isle tend to be haughty and more out of touch than those 
     raised in other areas of Tamriel.
     """
-    __name__ = "altmer"
+    __obj_name__ = "altmer"
     __sdesc__ = "high elves"
 
     def init(self):
@@ -80,6 +101,11 @@ class Altmer(Race):
                             (PowerWellTrait, 20, None),
                             (WeaknessTrait, 2, 'magic')])
         self.racials.extend([(MentalStrengthRacial, None, None)])
+
+        self.upgradable_skills.extend([
+            'alchemy', 'alteration', 'conjuration', 'destruction',
+            'enchanting', 'illusion', 'mysticism', 'restoration'
+        ])
 
 
 class Argonian(Race):
@@ -99,7 +125,7 @@ class Argonian(Race):
     and venture out into the wider world as adventurers and hired workers. Unfortunately, others are sometimes 
     forcibly removed from Black Marsh by slavers and sold as chattel across Tamriel
     """
-    __name__ = "argonian"
+    __obj_name__ = "argonian"
     __sdesc__ = "reptilian humanoids"
 
     def init(self):
@@ -138,7 +164,7 @@ class Bosmer(Race):
     (and even some who leave) are carnivorous, even engaging in cannibalism on occasion
     """
 
-    __name__ = 'bosmer'
+    __obj_name__ = 'bosmer'
     __sdesc__ = "wood elves"
 
     def init(self):
@@ -175,12 +201,26 @@ class Breton(Race):
     castles and towers for natural caverns.
     """
 
-    __name__ = "breton"
+    __obj_name__ = "breton"
     __sdesc__ = "mer bastard"
 
     def init(self):
-        self.stats.extend([(ResistanceTrait, 2, 'magic'),
-                           (PowerWellTrait, 10, None)])
+        self.stats.extend([
+            StrChar(23),
+            EndChar(21),
+            AgiChar(22),
+            IntChar(28),
+            WpChar(30),
+            PrcChar(25),
+            PrsChar(25)
+        ])
+        self.traits.extend([(ResistanceTrait, 2, 'magic'),
+                            (PowerWellTrait, 10, None)])
+
+        self.upgradable_skills.extend([
+            'alchemy', 'alteration', 'conjuration', 'destruction',
+            'enchanting', 'illusion', 'mysticism'
+        ])
 
 
 class Dunmer(Race):
@@ -201,7 +241,7 @@ class Dunmer(Race):
     deeply spiritual and disciplined lifestyle, a vital key to the survival of the nomads in the harsh land of Morrowind.
     """
 
-    __name__ = 'dunmer'
+    __obj_name__ = 'dunmer'
     __sdesc__ = 'dark elves'
 
     def init(self):
@@ -217,13 +257,15 @@ class Dunmer(Race):
 
         self.traits.extend([(ResistanceTrait, 3, 'fire')])
 
+        self.upgradable_skills.extend(['destruction'])
+
 
 class Imperial(Race):
     """
     Imperials (also known as Cyrods) are a race of men descended from Nedics who settled in the province of Cyrodiil, most notably Nibenese and Colovians. From the time of the Merethic Era the Imperials were held in slavery by the Ayleids (also known as the Heartland High Elves) until a Nedic woman by the name of Alessia organized a successful slave revolt with the help of her champion Pelinal Whitestrake and demigod Morihaus.Following the revolt, the Cyrods set up three different empires under three different factions: Alessia and her followers, the Reman Dynasty and the Septim Dynasty. Though the empires had internal differences, more stark differences arose between the more mercantile Nibenese and the rougher Colovians. Where the Nibenese Imperials were skilled at trading the creation of wealth, the Colovian Imperials were influenced by their northern Nordic neighbors, turning to more physical pursuits such as farming and war. In fact, such differences kept the Imperials from becoming a unified people until the arrival of Reman Cyrodiil in the First Era and the warrior King Cuhlecain at the end of the Second Era. Due to the central position of Cyrodiil in Tamriel, Cyrods have learned to become shrewd traders and diplomats. The more Nordic Imperials, Colovians are rougher and more physical than their Nibenese counterparts. The Nibenese are more cosmopolitan than their Colovian bretheren, and have excelled in trade and other such pursuits
     """
 
-    __name__ = "imperial"
+    __obj_name__ = "imperial"
     __sdesc__ = "cyrods of Cyrodiil"
 
     def init(self):
@@ -256,7 +298,7 @@ class SuthayRaht(Race):
     being one of their names for Mehrunes Dagon. 
     """
 
-    __name__ = 'suthay raht'
+    __obj_name__ = 'suthay-raht'
     __sdesc__ = 'feline humanoids'
 
     def init(self):
@@ -292,7 +334,7 @@ class Nord(Race):
     martial enterprise, be it sellsword, brigand, or wandering adventurer.
     """
 
-    __name__ = 'nord'
+    __obj_name__ = 'nord'
     __sdesc__ = 'children of skyrim'
 
     def init(self):
@@ -327,7 +369,7 @@ class Orsimer(Race):
     more ferocious than their Orsinium cousins, who tend to have more skill as craftsmen
     """
 
-    __name__ = 'orsimer'
+    __obj_name__ = 'orsimer'
     __sdesc__ = 'barbaric orcs'
 
     def init(self):
@@ -345,6 +387,8 @@ class Orsimer(Race):
                             (ToughTrait, None, None),
                             (ResistanceTrait, 1, 'magic')])
 
+        self.upgradable_skills.extend(['smithing'])
+
 
 class Redguard(Race):
     """
@@ -360,7 +404,7 @@ class Redguard(Race):
     battlefield ethics, preferring to fight honorably even against creatures they see as below them.
 
     """
-    __name__ = 'redguard'
+    __obj_name__ = 'redguard'
     __sdesc__ = 'children of yokuda'
 
     def init(self):
@@ -397,6 +441,7 @@ def change_race(caller, race):
     if race != NoRace():
         # remove traits and racial traits of race
         caller.traits.remove(*caller.attrs.race.value.traits)
+        caller.traits.remove(*caller.attrs.race.value.racials)
 
     # add effects of new race
     caller.traits.add(*race.traits)

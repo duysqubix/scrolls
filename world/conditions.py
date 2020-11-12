@@ -46,7 +46,7 @@ class Condition:
                 super().on_duplicate(other)
                 # your code here.
     """
-    __conditionname__ = ""
+    __obj_name__ = ""
     __msg__ = ""
 
     def __init__(self, X=None, Y=None):
@@ -62,7 +62,7 @@ class Condition:
 
     @property
     def name(self):
-        return self.__conditionname__
+        return self.__obj_name__
 
     def __str__(self):
 
@@ -107,7 +107,7 @@ class Condition:
 
 
 class Bleeding(Condition):
-    __conditionname__ = "bleeding"
+    __obj_name__ = "bleeding"
 
     def at_condition(self):
         if self.X is None:
@@ -121,11 +121,11 @@ class Bleeding(Condition):
 
 
 class Blinded(Condition):
-    __conditionname__ = "blinded"
+    __obj_name__ = "blinded"
 
 
 class Burning(Condition):
-    __conditionname__ = 'burning'
+    __obj_name__ = 'burning'
 
     def effect(self, caller, **kwargs):
         caller.attrs.health.cur -= self.X
@@ -133,11 +133,11 @@ class Burning(Condition):
 
 
 class Chameleon(Condition):
-    __conditionname__ = "chameleon"
+    __obj_name__ = "chameleon"
 
 
 class Crippled(Condition):
-    __conditionname__ = "crippled"
+    __obj_name__ = "crippled"
 
     def effect(self, **kwargs):
         # TODO: complicated condition revisit here
@@ -145,7 +145,7 @@ class Crippled(Condition):
 
 
 class Dazed(Condition):
-    __conditionname__ = 'dazed'
+    __obj_name__ = 'dazed'
 
     def effect(self, caller, **kwargs):
         if self.enabled:
@@ -154,12 +154,12 @@ class Dazed(Condition):
 
 
 class Deafened(Condition):
-    __conditionname__ = 'deafened'
+    __obj_name__ = 'deafened'
 
 
 class Fatigued(Condition):
     """Fatigued.X refers to level of Fatigue """
-    __conditionname__ = 'fatigued'
+    __obj_name__ = 'fatigued'
 
     def effect(self, caller, **kwargs):
         if self.enabled:
@@ -176,7 +176,7 @@ class Fatigued(Condition):
 
 
 class Frenzied(Condition):
-    __conditionname__ = "frenzied"
+    __obj_name__ = "frenzied"
 
     def at_condition(self, caller):
         self.meta['penalty'] = {
@@ -199,23 +199,23 @@ class Frenzied(Condition):
 
 
 class Hidden(Condition):
-    __conditionname__ = 'hidden'
+    __obj_name__ = 'hidden'
 
 
 class Immobilized(Condition):
-    __conditionname__ = 'immobilized'
+    __obj_name__ = 'immobilized'
 
 
 class Hidden(Condition):
-    __conditionname__ = 'invisible'
+    __obj_name__ = 'invisible'
 
 
 class Muffled(Condition):
-    __conditionname__ = 'muffled'
+    __obj_name__ = 'muffled'
 
 
 class Prone(Condition):
-    __conditionname__ = 'prone'
+    __obj_name__ = 'prone'
 
     def at_condition(self):
         self.meta['penalty'] = {'fight': -20}
@@ -241,7 +241,7 @@ class Paralyzed(Condition):
     A character is frozen, unable to move any poart of their body.
     They may only cast spells that do not require speech or motion
     """
-    __conditionname__ = 'paralyzed'
+    __obj_name__ = 'paralyzed'
 
 
 class Restrained(Condition):
@@ -249,7 +249,7 @@ class Restrained(Condition):
     A character is restrained, and thus unable to move, attach or defend themselves.
     Only spells can be cast that do not require motion.
     """
-    __conditionname__ = 'restrained'
+    __obj_name__ = 'restrained'
 
 
 class Silenced(Condition):
@@ -270,18 +270,18 @@ class Slowed(Condition):
 
 
 class Sleeping(Condition):
-    __conditionname__ = "sleeping"
+    __obj_name__ = "sleeping"
 
 
 class Stunned(Condition):
-    __conditionname__ = 'stunned'
+    __obj_name__ = 'stunned'
 
     def at_condition(self, caller):
         caller.attrs.action_points.value = 0
 
 
 class Unconscious(Condition):
-    __conditionname__ = 'unconcious'
+    __obj_name__ = 'unconcious'
 
     def at_condition(self, caller):
         # add prone condition
@@ -302,27 +302,27 @@ class Unconscious(Condition):
 
 
 class BreathUnderWater(Condition):
-    __conditionname__ = "breath_underwater"
+    __obj_name__ = "breath_underwater"
 
 
 class DarkSight(Condition):
-    __conditionname__ = "dark_sight"
+    __obj_name__ = "dark_sight"
 
 
 class Deaf(Condition):
-    __conditionname__ = "deaf"
+    __obj_name__ = "deaf"
 
 
 class Fear(Condition):
-    __conditionname__ = "fear"
+    __obj_name__ = "fear"
 
 
 class Intangible(Condition):
-    __conditionname__ = 'intangible'
+    __obj_name__ = 'intangible'
 
 
 class Flying(Condition):
-    __conditionname__ = "flying"
+    __obj_name__ = "flying"
 
 
 ALL_CONDITIONS = [
@@ -335,6 +335,6 @@ ALL_CONDITIONS = [
 
 def get_condition(con_name, x=None, y=None):
     for t in ALL_CONDITIONS:
-        if t.__conditionname__ == con_name:
+        if t.__obj_name__ == con_name:
             return (t, x, y)
     return None
