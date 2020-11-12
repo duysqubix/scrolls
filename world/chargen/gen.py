@@ -166,5 +166,5 @@ def finish(caller, **kwargs):
     race = copy.deepcopy(get_race(kwargs['race']))
     caller.attrs.race = Attribute(race.name, race)
     caller.msg(kwargs)
-    # caller.save()
+    caller.attrs.update()
     return None, None

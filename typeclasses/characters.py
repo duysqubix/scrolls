@@ -192,11 +192,8 @@ class Character(DefaultCharacter):
     def at_pre_unpuppet(self):
         self.save_character()
 
-    def at_server_reload(self):
-        self.save_character()
-
-    def at_server_shutdown(self):
-        self.save_character()
+    # def at_server_reload(self):
+    #     self.save_character()
 
     @property
     def is_pc(self):

@@ -15,7 +15,7 @@ class CmdSpawn(Command):
     """
 
     key = "spawn"
-    locks = f"attr_ge(level, {BUILDER_LVL}"
+    locks = f"attr_ge(level.value, {BUILDER_LVL}"
 
     def func(self):
         ch = self.caller
@@ -31,7 +31,7 @@ class CmdCharacterGen(Command):
     """
 
     key = "chargen"
-    locks = f"attr_ge(level, {WIZ_LVL}"
+    locks = f"attr_ge(level.value, {WIZ_LVL}"
     arg_regex = r"\s|$"
 
     def func(self):
