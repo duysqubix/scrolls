@@ -31,9 +31,6 @@ class Race:
     def init(self):
         pass
 
-    def __obj_name__(self):
-        return self.__obj_name__
-
     @property
     def desc(self):
         return self.__doc__
