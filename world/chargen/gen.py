@@ -1,16 +1,16 @@
 """
 Holds entire character generation process using evennia menus
 """
-from os import stat
 import random
 import copy
+from world.attributes import Attribute
 import numpy as np
 from evennia import GLOBAL_SCRIPTS
-from evennia.utils import utils
 from evennia.contrib.dice import roll_dice
 from world.characteristics import CHARACTERISTICS
 from world.birthsigns import *
 from world.races import PLAYABLE_RACES, change_race, get_race
+from world.gender import ALL_GENDERS
 from evennia.utils.evform import EvForm, EvTable
 
 
@@ -173,7 +173,25 @@ def determine_birthsign(caller, **kwargs):
     for sign in ['warrior', 'mage', 'thief']:
         k = kwargs.copy()
         k['birthsign'] = {'name': sign}
-        options.append({'key': sign.capitalize(), 'goto': ('finish', k)})
+        options.append({
+            'key': sign.capitalize(),
+            'goto': ('decide_gender', k)
+        })
+    return text, tuple(options)
+
+
+def decide_gender(caller, **kwargs):
+    text = "Select your gender"
+
+    options = []
+    for gender in ALL_GENDERS:
+        k = kwargs.copy()
+        k['gender'] = gender
+        options.append({
+            'key': gender.value.capitalize(),
+            'goto': ("finish", k)
+        })
+
     return text, tuple(options)
 
 
@@ -211,6 +229,10 @@ def finish(caller, **kwargs):
     # set race
     race = copy.deepcopy(get_race(kwargs['race']))
     change_race(caller, race)
+
+    # set gender
+    caller.attrs.gender = Attribute('gender', kwargs['gender'])
     caller.msg(kwargs)
     caller.attrs.update()
+    caller.full_restore()
     return None, None

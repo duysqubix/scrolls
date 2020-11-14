@@ -50,6 +50,11 @@ GLOBAL_SCRIPTS = {
         'typeclass': 'typeclasses.scripts.EntityDB',
         'persistent': True,
         'desc': 'storage for room data'
+    },
+    'booksdb': {
+        'typeclass': 'typeclasses.scripts.EntityDB',
+        'persistent': True,
+        'desc': 'storage room for all books'
     }
 }
 

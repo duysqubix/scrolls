@@ -32,8 +32,9 @@ class Command(BaseCommand):
             every command, like prompts.
 
     """
-
-    pass
+    def at_post_cmd(self):
+        "called after self.func()."
+        self.caller.msg(prompt=self.caller.get_prompt())
 
 
 class CmdAffect(Command):
@@ -81,10 +82,10 @@ class CmdEmote(Command):
         ch = self.caller
         naud = search_object('naud')[0]
         if naud is not None:
-            act("$n says hello to $N", False, True, ch, None, naud,
-                Announce.ToNotVict)
+            act("You say hello to $N", False, False, ch, None, naud,
+                Announce.ToChar)
             act("$n says hello to you.", False, True, ch, None, naud,
-                Announce.ToVict)
+                Announce.ToRoom)
 
 
 class CmdFrenzied(Command):
@@ -181,7 +182,8 @@ class CmdScore(Command):
             17: ch.stats.prc.base,
             18: green_or_red(ch.stats.prc.bonus),
             19: str(ch.attrs.birthsign.value),
-            20: ch.attrs.race.value.name.capitalize()
+            20: ch.attrs.race.value.name.capitalize(),
+            21: ch.attrs.gender.value.value.capitalize()
         })
         ch.msg(form)
 

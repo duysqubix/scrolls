@@ -24,3 +24,8 @@ class Npc(Character):
 
         # add the default cmdset
         self.cmdset.add_default(NpcBaseCmdSet, permanent=True)
+
+    def at_object_creation(self):
+        super().at_object_creation()
+        self.db.is_npc = True
+        self.db.is_pc = False

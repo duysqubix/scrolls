@@ -206,7 +206,7 @@ class Immobilized(Condition):
     __obj_name__ = 'immobilized'
 
 
-class Hidden(Condition):
+class Invisible(Condition):
     __obj_name__ = 'invisible'
 
 
@@ -253,11 +253,15 @@ class Restrained(Condition):
 
 
 class Silenced(Condition):
+    __obj_name__ = "silenced"
+
     def at_condition(self, caller):
         self.meta['penalty'] = {'spell': -20}
 
 
 class Slowed(Condition):
+    __obj_name__ = "slowed"
+
     def at_condition(self, caller):
         cur_speed = caller.attrs.speed.max
         speed_mod = cur_speed // 2 + 1
@@ -327,9 +331,9 @@ class Flying(Condition):
 
 ALL_CONDITIONS = [
     Bleeding, Blinded, Burning, Chameleon, Crippled, DarkSight, Dazed,
-    Deafened, Fatigued, Frenzied, Hidden, Muffled, Prone, Paralyzed,
-    Restrained, Silenced, Slowed, Sleeping, Stunned, Unconscious,
-    BreathUnderWater, Deaf, Fear, Intangible, Flying
+    Deafened, Fatigued, Frenzied, Hidden, Muffled, Immobilized, Invisible,
+    Muffled, Prone, Paralyzed, Restrained, Silenced, Slowed, Sleeping, Stunned,
+    Unconscious, BreathUnderWater, Deaf, Fear, Intangible, Flying
 ]
 
 

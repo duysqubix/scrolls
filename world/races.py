@@ -49,7 +49,7 @@ class Race:
         stats = {x.short: x.base for x in self.stats}
 
         stats_str = ", ".join(
-            [f"{k.capitalize()}: {v}" for (k, v) in stats.items()])
+            [f"{k.capitalize()}({v})" for (k, v) in stats.items()])
 
         traits = self.traits
         traits_str = ""

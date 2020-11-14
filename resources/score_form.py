@@ -4,7 +4,7 @@ TABLECHAR = "c"
 FORM = '''
 |y.--------------------------------------------------------.  
 |y|  |nName: xxxxx1xxxxx                    Level: xx10xx   |y |
-|y|  |nRace: xxx20xxxx                                      |y |
+|y|  |nRace: xxx20xxxx                     Gender: xxx21xxx |y |
 |y >------------------------------------------------------<
 |y|                                                        |
 |y| |nSTR: x2x (x3x )  AGI: x4x  (x5x ) Birthsign: xxxx19xxxx|y|

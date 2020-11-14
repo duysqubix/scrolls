@@ -44,11 +44,6 @@ for race in PLAYABLE_RACES:
     tmp = RaceSignHelpEntry(race)
 
     # add stats for race
-    stats = {x.short: x.base for x in tmp.obj.stats}
-
-    stats_str = ", ".join(
-        [f"{k.capitalize()}: {v}" for (k, v) in stats.items()])
-
     stats, traits = tmp.obj.formatted()
 
     tmp.entrytext += f"\n\nStats: {stats}\n"

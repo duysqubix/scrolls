@@ -9,6 +9,7 @@ creation commands.
 """
 import copy
 from typing import Any, List, Tuple
+from world.gender import Gender
 from world.races import NoRace, get_race
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
@@ -213,10 +214,6 @@ class Character(DefaultCharacter):
     def at_server_shutdown(self):
         self.save_character()
 
-    @property
-    def is_pc(self):
-        return True
-
     @lazy_property
     def attrs(self):
         return AttrHandler(self)
@@ -237,15 +234,31 @@ class Character(DefaultCharacter):
     def traits(self):
         return TraitHandler(self)
 
+    def get_prompt(self):
+        self.attrs.update()
+        hp = self.attrs.health
+        mg = self.attrs.magicka
+        st = self.attrs.stamina
+        sp = self.attrs.speed
+        prompt = f"\nHP:{hp.cur}/{hp.max} MG:{mg.cur}/{mg.max} ST:{st.cur}/{st.max} SP:{sp.cur}/{sp.max}"
+        return prompt
+
+    def full_restore(self):
+        self.attrs.update()
+        self.attrs.health.cur = self.attrs.health.max
+        self.attrs.magicka.cur = self.attrs.magicka.max
+        self.attrs.speed.cur = self.attrs.speed.max
+        self.attrs.stamina.cur = self.attrs.stamina.max
+
     def at_object_creation(self):
         self.db.attrs = {}
         self.db.stats = {}
         self.db.skills = {}
         self.db.conditions = {'conditions': []}
         self.db.traits = {'traits': []}
-
-        # characteristics
         self.db.stats = copy.deepcopy(CHARACTERISTICS)
+        self.db.is_npc = False
+        self.db.is_pc = True
 
         # level
         level = None
@@ -258,6 +271,8 @@ class Character(DefaultCharacter):
             level = 1
         # attributes
         self.db.attrs = {
+            'gender':
+            Attribute('gender', Gender.NoGender),
             'exp':
             Attribute('exp', 0),
             'level':

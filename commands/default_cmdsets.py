@@ -14,7 +14,7 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 
 """
 
-from evennia import default_cmds
+from evennia import default_cmds, CmdSet
 from .command import *
 from .wiz import *
 
@@ -39,7 +39,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
 
         cmds = [
             CmdLook, CmdSpawn, CmdCharacterGen, CmdScore, CmdFrenzied,
-            CmdEmote, CmdAffect
+            CmdEmote, CmdAffect, CmdWizInvis, CmdOEdit
         ]
         for cmd in cmds:
             self.add(cmd())
