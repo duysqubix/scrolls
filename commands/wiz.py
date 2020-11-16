@@ -1,3 +1,4 @@
+from typeclasses.objs.custom import CUSTOM_OBJS
 from evennia.utils.utils import dedent
 import tabulate
 from world.oedit import OEditMode
@@ -5,14 +6,62 @@ from world.utils.utils import is_invis
 from world.conditions import get_condition
 from world.utils.act import Announce, act
 import evennia
-from evennia import EvMenu, EvTable, EvForm
+from evennia import EvMenu, create_object
 from commands.command import Command
 from world.globals import BUILDER_LVL, WIZ_LVL, IMM_LVL
 from evennia import GLOBAL_SCRIPTS
 from evennia.utils.ansi import ANSIParser
 __all__ = [
-    "CmdSpawn", "CmdCharacterGen", "CmdWizInvis", "CmdOEdit", "CmdOList"
+    "CmdSpawn", "CmdCharacterGen", "CmdWizInvis", "CmdOEdit", "CmdOList",
+    "CmdLoad"
 ]
+
+
+class CmdLoad(Command):
+    """
+    Load an object/mob
+
+    Usage:
+        load <obj/mob> <vnum>
+    """
+
+    key = 'load'
+    locks = f"attr_ge(level.value, {BUILDER_LVL})"
+
+    def func(self):
+        ch = self.caller
+        args = self.args.strip().split()
+
+        if not args:
+            ch.msg(f"{self.__doc__}")
+            return
+        if len(args) == 1:
+            ch.msg("must supply valid vnum number")
+            return
+        # <obj/mob> <vnum>
+        obj_type, vnum = args
+        if obj_type.lower() not in ('obj', 'mob'):
+            ch.msg("must supply either `obj` or `mob`")
+            return
+
+        try:
+            vnum = int(vnum)
+        except ValueError:
+            ch.msg("invalid vnum number")
+            return
+
+        # check to see if vnum exists
+        if vnum not in GLOBAL_SCRIPTS.objdb.vnum.keys():
+            ch.msg(f"that {obj_type}:{vnum} does not exist")
+            return
+        obj_bp = GLOBAL_SCRIPTS.objdb.vnum[vnum]
+        # create instance of object and either put in room
+        obj_type = CUSTOM_OBJS[obj_bp['type']]
+        obj = create_object(obj_type, key=vnum)
+        obj.move_to(ch.location)
+        act_msg = "$n waves $s hands around and with a bright flashing light, $e creates"\
+            f" a {obj.db.sdesc}"
+        act(act_msg, False, False, ch, None, None, Announce.ToRoom)
 
 
 class CmdOList(Command):

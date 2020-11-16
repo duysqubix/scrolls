@@ -13,18 +13,25 @@ class Default(Object):
 
 class Book(Object):
     """
-    Parent class for book type objects
+    Book objects, the core object of the game revolving
+    around books
     """
 
     __obj_type__ = "book"
     __obj_specific_fields__ = {"author": "", "title": "", "contents": ""}
 
-    def at_object_creation(self):
-        """ 
-        Construct contents on book based on obj vnum
-        which caller sets the key == vnum
-        """
-        blueprint = GLOBAL_SCRIPTS.objdb.vnum[int(self.key)]
+
+class Weapon(Object):
+    """
+    Weapon objects, they deal damagne and can be wielded
+    """
+
+    __obj_type__ = "weapon"
+    __obj_specific_fields__ = {'dam_roll': ""}
 
 
-CUSTOM_OBJS = {Default.__obj_type__: Default, Book.__obj_type__: Book}
+CUSTOM_OBJS = {
+    Default.__obj_type__: Default,
+    Book.__obj_type__: Book,
+    Weapon.__obj_type__: Weapon
+}

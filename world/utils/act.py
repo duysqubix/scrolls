@@ -127,7 +127,7 @@ def act(msg, hide_invisible, hide_sleep, ch, obj, vict_obj, announce_type):
                 msg = msg.replace('$E', 'it')
 
     if announce_type == Announce.ToRoom:
-        ch.location.announce(msg, exclude=[ch])
+        ch.location.announce(msg)  #, exclude=[ch])
         return
     if announce_type == Announce.ToChar:
         ch.msg(msg)

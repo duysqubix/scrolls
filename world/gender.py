@@ -19,7 +19,7 @@ def get_gender(name):
 
 
 def is_male(caller):
-    if not caller.is_pc or not caller.is_npc:
+    if not caller.db.is_pc or not caller.db.is_npc:
         return False
     if caller.attrs.gender.value == Gender.Male:
         return True
@@ -27,7 +27,7 @@ def is_male(caller):
 
 
 def is_female(caller):
-    if not caller.is_pc or not caller.is_npc:
+    if not caller.db.is_pc or not caller.db.is_npc:
         return False
     if caller.attrs.gender.value == Gender.Female:
         return True
@@ -35,7 +35,7 @@ def is_female(caller):
 
 
 def is_nogender(caller):
-    if not caller.is_pc or not caller.is_npc:
+    if not caller.db.is_pc or not caller.db.is_npc:
         return False
     if caller.attrs.gender.value == Gender.NoGender:
         return True

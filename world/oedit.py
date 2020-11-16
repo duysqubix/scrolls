@@ -4,9 +4,7 @@ Main EvMenu that handles editing objects
 import copy
 from typeclasses.objs.custom import CUSTOM_OBJS
 from evennia import GLOBAL_SCRIPTS
-from evennia.utils.eveditor import EvEditor
-from evennia import CmdSet
-from evennia.utils.utils import dedent
+from evennia import CmdSet, EvEditor, EvMenu
 from commands.command import Command
 from evennia.commands.default.help import CmdHelp
 
@@ -38,7 +36,7 @@ class OEditMode:
         self.db = GLOBAL_SCRIPTS.objdb
         self.obj = None
         self.prompt = _OEDIT_PROMPT
-
+        self.orig_obj = None
         # attempt to find vnum in objdb
         if self.vnum in self.db.vnum.keys():
             self.obj = self.db.vnum[self.vnum]
@@ -52,11 +50,16 @@ class OEditMode:
             # extra fields here
             obj_type = self.obj['type']
             extra_fields = CUSTOM_OBJS[obj_type].__obj_specific_fields__
-            self.obj['extra'] = extra_fields
+
+            for efield, evalue in extra_fields.items():
+                if efield not in self.obj['extra'].keys():
+                    self.obj['extra'][efield] = evalue
 
         else:
-            self.caller.msg("creating new obj vnum: [{self.vnum}]")
+            self.caller.msg(f"creating new obj vnum: [{self.vnum}]")
             self.obj = copy.deepcopy(_DEFAULT_OBJ_STRUCT)
+
+        self.orig_obj = copy.deepcopy(self.obj)
 
     def _cut_long_text(self, txt):
         txt = str(txt)
@@ -66,8 +69,10 @@ class OEditMode:
         else:
             return txt[:max_len] + "[...]"
 
-    def save(self):
-        self.db.vnum[self.vnum] = self.obj
+    def save(self, override=False):
+        if (self.orig_obj != self.obj) or override:
+            self.db.vnum[self.vnum] = self.obj
+            self.caller.msg("object saved.")
 
     def summarize(self):
         # max_len = 50
@@ -97,7 +102,7 @@ applies: {", ".join(self.obj['applies'])}
 """
         self.caller.msg(self.obj['extra'])
         for efield, evalue in self.obj['extra'].items():
-            msg += f"{efield:<7}: {evalue}\n"
+            msg += f"{efield:<7}: {self._cut_long_text(evalue)}\n"
         self.caller.msg(msg)
 
 
@@ -188,6 +193,9 @@ class Set(OEditCommand):
                     del obj['extra'][field]
 
                 obj[keyword] = selected_type
+                ch.ndb._oedit.save(
+                    override=True
+                )  # force save, so it can update apporpriately
                 # also reinit oeditmode to add new fields
                 ch.ndb._oedit.__init__(ch, ch.ndb._oedit.vnum)
                 ch.msg(f"object type changed `{selected_type}`")
@@ -214,9 +222,10 @@ class Set(OEditCommand):
                         obj[keyword][extra_keyword] = buffer
                         ch.msg(f"{extra_keyword} set.")
 
-                    _ = EvEditor(ch,
-                                 loadfunc=(lambda _x: obj[keyword]),
-                                 savefunc=save_func)
+                    _ = EvEditor(
+                        ch,
+                        loadfunc=(lambda _x: obj[keyword][extra_keyword]),
+                        savefunc=save_func)
 
                 else:
                     # args is more than 3
@@ -258,5 +267,6 @@ class Exit(OEditCommand):
     def func(self):
         ch = self.caller
         ch.cmdset.remove('world.oedit.OEditCmdSet')
+
         ch.ndb._oedit.save()
         del ch.ndb._oedit
