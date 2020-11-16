@@ -9,6 +9,7 @@ from evennia import EvMenu, EvTable, EvForm
 from commands.command import Command
 from world.globals import BUILDER_LVL, WIZ_LVL, IMM_LVL
 from evennia import GLOBAL_SCRIPTS
+from evennia.utils.ansi import ANSIParser
 __all__ = [
     "CmdSpawn", "CmdCharacterGen", "CmdWizInvis", "CmdOEdit", "CmdOList"
 ]
@@ -27,9 +28,16 @@ class CmdOList(Command):
     def func(self):
         ch = self.caller
         objs = []
+
+        color_codes = ANSIParser.ansi_map
         for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
-            objs.append(
-                [f"[{vnum}]", f"{data['sdesc']}", f"{str(data['type'])}"])
+            obj = [f"[{vnum}]", f"{data['sdesc']}", f"{data['type']}"]
+
+            # strip color here, so it displays nicely
+            for color_code, _ in color_codes:
+                obj = [str(x).replace(color_code, "") for x in obj]
+            objs.append(obj)
+
         msg = tabulate.tabulate(objs,
                                 headers=['Vnum', 'Name', 'Type'],
                                 tablefmt='fancy_grid')
