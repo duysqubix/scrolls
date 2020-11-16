@@ -15,8 +15,9 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 """
 
 from evennia import default_cmds, CmdSet
-from .command import *
-from .wiz import *
+import commands.informative as info
+import commands.wiz as wiz
+from world.globals import BUILDER_LVL
 
 
 class CharacterCmdSet(default_cmds.CharacterCmdSet):
@@ -37,12 +38,37 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         # any commands you add below will overload the default ones.
         #
 
-        cmds = [
-            CmdLook, CmdSpawn, CmdCharacterGen, CmdScore, CmdFrenzied,
-            CmdEmote, CmdAffect, CmdWizInvis, CmdOEdit, CmdOList, CmdLoad
-        ]
-        for cmd in cmds:
-            self.add(cmd())
+        self.add(info.CmdAffect())
+        self.add(info.CmdLook())
+        self.add(info.CmdScore())
+        self.add(info.CmdRead())
+        self.add(info.CmdInventory())
+
+
+class BuilderCmdSet(CmdSet):
+    """
+    The command sets for builders
+    """
+    key = "DefaultBuilder"
+
+    def at_cmdset_creation(self):
+        super().at_cmdset_creation()
+        self.add(wiz.CmdCharacterGen())
+        self.add(wiz.CmdLoad())
+        self.add(wiz.CmdOEdit())
+        self.add(wiz.CmdRestore())
+        self.add(wiz.CmdOList())
+
+
+class ImmCmdSet(CmdSet):
+    """
+    command sets for immortals
+    """
+    key = "DefaultImmortal"
+
+    def at_cmdset_creation(self):
+        super().at_cmdset_creation()
+        self.add(wiz.CmdPurge())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

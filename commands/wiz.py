@@ -1,5 +1,5 @@
 from typeclasses.objs.custom import CUSTOM_OBJS
-from evennia.utils.utils import dedent
+from evennia.utils.utils import dedent, inherits_from
 import tabulate
 from world.oedit import OEditMode
 from world.utils.utils import is_invis
@@ -136,6 +136,28 @@ class CmdOEdit(Command):
         ch.ndb._oedit = OEditMode(self, vnum)
         ch.cmdset.add('world.oedit.OEditCmdSet')
         ch.execute_cmd("look")
+
+
+class CmdPurge(Command):
+    """
+    Purge all contents in room that isn't character
+
+    Usage:
+        purge
+    """
+
+    key = 'purge'
+    locks = f"attr_ge(level.value, {IMM_LVL})"
+
+    def func(self):
+        ch = self.caller
+
+        for obj in ch.location.contents:
+            if inherits_from(obj, 'typeclasses.characters.Character'):
+                continue
+            obj.delete()
+            
+        act("With an ear splitting bang, $n clears the room", False,False, ch,None, None, Announce.ToRoom)
 
 
 class CmdWizInvis(Command):

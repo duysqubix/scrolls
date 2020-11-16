@@ -12,6 +12,7 @@ _DEFAULT_OBJ_STRUCT = {
     'key': "an unfinshed object",
     'sdesc': "an unfinshed object",
     'ldesc': "an unfinished object is lying here",
+    "edesc": "",  # extra descrition when looked at
     "adesc": None,  # action desciption, message string announced when used
     "type":
     'default',  # type of object: book, weapon, equipment, scroll, etc...
@@ -80,7 +81,6 @@ class OEditMode:
         #     ldesc = self.obj['ldesc']
         # else:
         #     ldesc = self.obj['ldesc'][:max_len] + "[...]"
-        ldesc = self._cut_long_text(self.obj['ldesc'])
         msg = f"""
 ********Summary*******
 
@@ -89,8 +89,9 @@ VNUM: [{self.vnum}]
 key    : |y{self.obj['key']}|n
 sdesc  : |y{self.obj['sdesc']}|n
 ldesc  : 
-|y{ldesc}|n
+|y{self._cut_long_text(self.obj['ldesc'])}|n
 
+edesc  : {self._cut_long_text(self.obj['edesc'])}
 adesc  : {self.obj['adesc']}
 type   : {self.obj['type']}
 wear   : {self.obj['wear_flags']}
@@ -162,7 +163,7 @@ class Set(OEditCommand):
             ch.msg("that obj attribute doesn't exist.")
             return
 
-        if keyword in ('key', 'sdesc', 'ldesc', 'adesc'):
+        if keyword in ('key', 'sdesc', 'edesc', 'ldesc', 'adesc'):
             # keyword is key, sdesc, ldesc, adesc
             if len(args) > 1:
                 # here the user set the value of the supplied keyword

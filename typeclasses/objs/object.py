@@ -157,10 +157,11 @@ class Object(DefaultObject):
     def basetype_setup(self):
         super().basetype_setup()
         self.locks.add(";".join(["call:false()", "puppet:false()"]))
-
+        super().at_object_creation()
         self.db.name = ""
         self.db.sdesc = ""
         self.db.ldesc = ""
+        self.db.edesc = ""  # extra description when specifically looked at
         self.db.adesc = ""
         self.db.type = None
         self.db.wear_flags = None
@@ -178,21 +179,15 @@ class Object(DefaultObject):
         Construct contents on object based on obj vnum
         which caller sets the key == vnum
         """
-        super().at_object_creation()
+
         obj = GLOBAL_SCRIPTS.objdb.vnum[int(self.key)]
-        print(obj)
         keys_aliases = obj['key'].split()
 
-        key = keys_aliases[0]
-        aliases = []
-        if len(keys_aliases) > 1:
-            aliases.extend(keys_aliases[1:])
-
-        self.db.name = key
-        self.db.aliases = aliases
+        self.db.name = keys_aliases
         self.db.sdesc = obj['sdesc']
         self.db.ldesc = obj['ldesc']
         self.db.adesc = obj['adesc']
+        self.db.edesc = obj['edesc']
         self.db.type = obj['type']
         self.db.wear_flats = obj['wear_flags']
         self.db.weight = obj['weight']
@@ -206,6 +201,6 @@ class Object(DefaultObject):
         # value as specified in __obj_specific_fields__
         for efield, evalue in self.__obj_specific_fields__.items():
             if efield in self.db.extra.keys():
-                self.__dict__[efield] = self.db.extra[efield]
+                self.attributes.add(efield, self.db.extra[efield])
             else:
-                self.__dict__[efield] = evalue
+                self.attributes.add(efield, evalue)

@@ -14,7 +14,7 @@ from world.races import NoRace, get_race
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
 from evennia import DefaultCharacter
-from world.globals import GOD_LVL, WIZ_LVL
+from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, WIZ_LVL
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
 from evennia.utils.utils import inherits_from, lazy_property, make_iter
@@ -198,6 +198,9 @@ class Character(DefaultCharacter):
     at_post_puppet - Echoes "AccountName has entered the game" to the room.
 
     """
+    def at_after_move(self, src_location):
+        self.execute_cmd("look")
+
     def save_character(self):
         self.db.stats = dict(self.db.stats)
         self.db.skills = dict(self.db.skills)
@@ -213,6 +216,25 @@ class Character(DefaultCharacter):
 
     def at_server_shutdown(self):
         self.save_character()
+
+    def at_cmdset_get(self, **kwargs):
+
+        if self.db.attrs:  # does this  just on character typeclasses
+            level = self.attrs.level.value
+            if level >= BUILDER_LVL:
+                if not self.cmdset.has(
+                        'commands.default_cmdsets.BuilderCmdSet'):
+                    self.cmdset.add('commands.default_cmdsets.BuilderCmdSet')
+                    self.msg("builder_cmds added")
+            if level >= IMM_LVL:
+                imm_cmdset = 'commands.default_cmdsets.ImmCmdSet'
+                if not self.cmdset.has(imm_cmdset):
+                    self.cmdset.add(imm_cmdset)
+                    self.msg("immortal_cmds added")
+            if level >= WIZ_LVL:
+                pass
+            if level >= GOD_LVL:
+                pass
 
     @lazy_property
     def attrs(self):
