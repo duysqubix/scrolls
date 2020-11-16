@@ -51,15 +51,12 @@ GLOBAL_SCRIPTS = {
         'persistent': True,
         'desc': 'storage for room data'
     },
-    'booksdb': {
-        'typeclass': 'typeclasses.scripts.EntityDB',
-        'persistent': True,
-        'desc': 'storage room for all books'
-    }
 }
 
 CMDSET_UNLOGGEDIN = "evennia.contrib.menu_login.UnloggedinCmdSet"
 BASE_BATCHPROCESS_PATHS += ["resources"]
+
+BASE_OBJECT_TYPECLASS = "typeclasses.objs.object.Object"
 
 ######################################################################
 # Settings given in secret_settings.py override those in this file.

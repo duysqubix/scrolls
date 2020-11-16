@@ -1,14 +1,6 @@
 """
-Object
-
-The Object is the "naked" base class for things in the game world.
-
-Note that the default Character, Room and Exit does not inherit from
-this Object, but from their respective default implementations in the
-evennia library. If you want to use this class as a parent to change
-the other types, you can do so by adding this as a multiple
-inheritance.
-
+Default Scrolls object
+All objects must inherit this class to work properly
 """
 from evennia import DefaultObject
 
@@ -157,7 +149,25 @@ class Object(DefaultObject):
      at_say(speaker, message)  - by default, called if an object inside this
                                  object speaks
 
-     """
+    """
 
+    __obj_type__ = "'"
+    __obj_specific_fields__ = {}
 
-pass
+    def basetype_setup(self):
+        super().basetype_setup()
+        self.locks.add(";".join(["call:false()", "puppet:false()"]))
+
+        self.name = ""
+        self.sdesc = ""
+        self.ldesc = ""
+        self.adesc = ""
+        self.type = None
+        self.wear_flags = None
+        self.weight = 0
+        self.cost = 0
+        self.level = 0
+        self.applies = []
+
+        for field, value in self.__obj_specific_fields__.items():
+            self.attributes.add(field, value)
