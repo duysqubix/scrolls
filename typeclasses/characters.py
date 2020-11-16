@@ -240,7 +240,7 @@ class Character(DefaultCharacter):
         mg = self.attrs.magicka
         st = self.attrs.stamina
         sp = self.attrs.speed
-        prompt = f"\nHP:{hp.cur}/{hp.max} MG:{mg.cur}/{mg.max} ST:{st.cur}/{st.max} SP:{sp.cur}/{sp.max}"
+        prompt = f"\nHP:{hp.cur}/{hp.max} MG:{mg.cur}/{mg.max} ST:{st.cur}/{st.max} SP:{sp.cur}/{sp.max} > "
         return prompt
 
     def full_restore(self):

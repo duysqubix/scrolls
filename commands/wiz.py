@@ -1,12 +1,39 @@
+from evennia.utils.utils import dedent
+import tabulate
+from world.oedit import OEditMode
 from world.utils.utils import is_invis
 from world.conditions import get_condition
 from world.utils.act import Announce, act
 import evennia
-from evennia.utils.evmenu import EvMenu
+from evennia import EvMenu, EvTable, EvForm
 from commands.command import Command
 from world.globals import BUILDER_LVL, WIZ_LVL, IMM_LVL
 from evennia import GLOBAL_SCRIPTS
-__all__ = ["CmdSpawn", "CmdCharacterGen", "CmdWizInvis", "CmdOEdit"]
+__all__ = [
+    "CmdSpawn", "CmdCharacterGen", "CmdWizInvis", "CmdOEdit", "CmdOList"
+]
+
+
+class CmdOList(Command):
+    """
+    Lists all available objects set in objdb
+
+    Usage:
+        olist
+    """
+    key = "olist"
+    locks = f"attr_ge(level.value, {BUILDER_LVL})"
+
+    def func(self):
+        ch = self.caller
+        objs = []
+        for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
+            objs.append(
+                [f"[{vnum}]", f"{data['sdesc']}", f"{str(data['type'])}"])
+        msg = tabulate.tabulate(objs,
+                                headers=['Vnum', 'Name', 'Type'],
+                                tablefmt='fancy_grid')
+        ch.msg(msg)
 
 
 class CmdOEdit(Command):
@@ -49,15 +76,9 @@ class CmdOEdit(Command):
                 ch.msg("you must supply a valid vnum")
                 return
 
-        EvMenu(ch,
-               "world.edit_menus.oedit",
-               startnode='main_menu',
-               cmdset_mergetype='Replace',
-               cmdset_priority=1,
-               auto_quit=True,
-               auto_help=True,
-               debug=True,
-               vnum=vnum)
+        ch.ndb._oedit = OEditMode(self, vnum)
+        ch.cmdset.add('world.oedit.OEditCmdSet')
+        ch.execute_cmd("look")
 
 
 class CmdWizInvis(Command):

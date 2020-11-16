@@ -39,7 +39,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
 
         cmds = [
             CmdLook, CmdSpawn, CmdCharacterGen, CmdScore, CmdFrenzied,
-            CmdEmote, CmdAffect, CmdWizInvis, CmdOEdit
+            CmdEmote, CmdAffect, CmdWizInvis, CmdOEdit, CmdOList
         ]
         for cmd in cmds:
             self.add(cmd())
