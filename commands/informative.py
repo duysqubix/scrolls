@@ -5,6 +5,8 @@ from evennia import EvForm
 from evennia.utils import evmore, crop
 from evennia.utils.utils import inherits_from
 from commands.command import Command
+from world.utils.act import Announce, act
+from world.utils.utils import is_obj
 
 
 class CmdAffect(Command):
@@ -71,6 +73,136 @@ class CmdRead(Command):
                 evmore.msg(ch, book_contents)
                 return
         ch.msg("You couldn't find anything to read")
+
+
+class CmdGet(Command):
+    """
+    pick up something
+    Usage:
+      get <obj>
+    Picks up an object from your location and puts it in
+    your inventory.
+    """
+
+    key = "get"
+    locks = "cmd:all()"
+    arg_regex = r"\s|$"
+
+    def func(self):
+        """implements the command."""
+
+        ch = self.caller
+        if not self.args:
+            ch.msg("Get what?")
+            return
+
+        args = self.args.strip().split()
+
+        # example of get
+        # get book
+        # get all.book
+        # get 1.book from 1.bag
+        # get all.book from all.bag
+        # get all from 1.corpse
+
+        if len(args) == 1:  #ex: get all.book, get 1.book, get book
+            # attempt to find one item
+            obj_name = args[0]
+            if "." in obj_name:
+                amt, obj_name = obj_name.split('.')
+                if amt == 'all':
+                    matched_objs = []
+                    for obj in ch.location.contents:
+                        if is_obj(obj):
+                            if obj_name in obj.db.name:
+                                matched_objs.append(obj)
+                    if not matched_objs:
+                        ch.msg(f"You couldn't find anything like {obj_name}")
+                        return
+                    for obj in matched_objs:
+                        obj.move_to(ch)
+                        act(f"$n picks up a $p.", True, True, ch, obj, None,
+                            Announce.ToRoom)
+                        act(f"You pick up a $p", False, False, ch, obj, None,
+                            Announce.ToChar)
+                    return
+                else:
+                    try:
+                        amt = int(amt)
+                    except ValueError:
+                        ch.msg("specify integer when using order")
+                        return
+                    cntr = 0
+                    for obj in ch.location.contents:
+                        if is_obj(obj):
+                            if obj_name in obj.db.name:
+                                cntr += 1
+                                if amt == cntr:
+                                    #this is the one
+                                    obj.move_to(ch)
+                                    act(f"$n picks up $p.", True, True, ch,
+                                        obj, None, Announce.ToRoom)
+                                    act(f"You pick up $p", False, False, ch,
+                                        obj, None, Announce.ToChar)
+                                    return
+                    if cntr < amt:
+                        ch.msg("There aren't that many around")
+                        return
+                    if cntr == amt:
+                        ch.msg(
+                            "obj should have returned before getting to this.. contact admin"
+                        )
+                        return
+                    if amt < 0:
+                        ch.msg("indexing with negatives? I don't think so..")
+                        return
+                    if cntr > amt:
+                        ch.msg("this seriously would even make sense...")
+                        return
+            else:
+                # do a find in room, return first match
+                for obj in ch.location.contents:
+                    if is_obj(obj):
+                        if obj_name in obj.db.name:
+                            # move obj to player inv
+                            obj.move_to(ch)
+                            act(f"$n picks up a $p.", True, True, ch, obj,
+                                None, Announce.ToRoom)
+                            act(f"You pick up a $p", False, False, ch, obj,
+                                None, Announce.ToChar)
+                            return
+        # we are using dot notaion
+
+        # if not self.args:
+        #     caller.msg("Get what?")
+        #     return
+        # obj = caller.search(self.args, location=caller.location)
+        # if not obj:
+        #     return
+        # if caller == obj:
+        #     caller.msg("You can't get yourself.")
+        #     return
+        # if not obj.access(caller, "get"):
+        #     if obj.db.get_err_msg:
+        #         caller.msg(obj.db.get_err_msg)
+        #     else:
+        #         caller.msg("You can't get that.")
+        #     return
+
+        # # calling at_before_get hook method
+        # if not obj.at_before_get(caller):
+        #     return
+
+        # success = obj.move_to(caller, quiet=True)
+        # if not success:
+        #     caller.msg("This can't be picked up.")
+        # else:
+        #     caller.msg("You pick up %s." % obj.name)
+        #     caller.location.msg_contents("%s picks up %s." %
+        #                                  (caller.name, obj.name),
+        #                                  exclude=caller)
+        #     # calling at_get hook method
+        #     obj.at_get(caller)
 
 
 class CmdInventory(Command):

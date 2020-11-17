@@ -59,9 +59,11 @@ class CmdLoad(Command):
         obj_type = CUSTOM_OBJS[obj_bp['type']]
         obj = create_object(obj_type, key=vnum)
         obj.move_to(ch.location)
-        act_msg = "$n waves $s hands around and with a bright flashing light, $e creates"\
-            f" a {obj.db.sdesc}"
+        act_msg = "$n motions $s hands around and $e creates"\
+            f" |G{obj.db.sdesc}|n"
         act(act_msg, False, False, ch, None, None, Announce.ToRoom)
+        act(f"You create |G{obj.db.sdesc}|n", False, False, ch, None, None,
+            Announce.ToChar)
 
 
 class CmdOList(Command):
@@ -156,8 +158,11 @@ class CmdPurge(Command):
             if inherits_from(obj, 'typeclasses.characters.Character'):
                 continue
             obj.delete()
-            
-        act("With an ear splitting bang, $n clears the room", False,False, ch,None, None, Announce.ToRoom)
+
+        act("With an ear splitting bang, $n clears the room", False, False, ch,
+            None, None, Announce.ToRoom)
+        act("You clear the room", False, False, ch, None, None,
+            Announce.ToChar)
 
 
 class CmdWizInvis(Command):

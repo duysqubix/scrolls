@@ -1,3 +1,4 @@
+from evennia.utils.utils import inherits_from
 from world.conditions import Hidden, Invisible
 from evennia.utils import make_iter
 
@@ -45,3 +46,8 @@ def is_hidden(caller):
         return False
 
     return caller.conditions.has(Hidden)
+
+
+def is_obj(caller):
+    """checks if caller inherits scrolls object"""
+    return inherits_from(caller, 'typeclasses.objs.object.Object')

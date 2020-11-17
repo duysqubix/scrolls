@@ -43,6 +43,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(info.CmdScore())
         self.add(info.CmdRead())
         self.add(info.CmdInventory())
+        self.add(info.CmdGet())
 
 
 class BuilderCmdSet(CmdSet):

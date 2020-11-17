@@ -154,6 +154,20 @@ class Object(DefaultObject):
     __obj_type__ = ""
     __obj_specific_fields__ = {}
 
+    # make it default quiet
+    def move_to(
+        self,
+        destination,
+        quiet=True,
+        emit_to_obj=None,
+        use_destination=True,
+        to_none=False,
+        move_hooks=True,
+        **kwargs,
+    ):
+        super().move_to(destination, quiet, emit_to_obj, use_destination,
+                        to_none, move_hooks, **kwargs)
+
     def basetype_setup(self):
         super().basetype_setup()
         self.locks.add(";".join(["call:false()", "puppet:false()"]))
