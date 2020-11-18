@@ -75,23 +75,60 @@ class CmdOList(Command):
 
     Usage:
         olist
+        olist <type|desc> <criteria>
     """
     key = "olist"
     locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         ch = self.caller
+        ch.msg(self.args)
+        args = self.args.strip()
+        if not args:
+            table = self.styled_table("VNum",
+                                      "Description",
+                                      "Type",
+                                      border='incols')
+            for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
+                vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
+                table.add_row(vnum, sdesc, f"{data['type']}")
+
+            msg = str(table)
+            ch.msg(msg)
+            return
+
+        args = args.split(' ')
+        if len(args) < 2:
+            ch.msg("Supply either type or desc to search for")
+            return
         table = self.styled_table("VNum",
                                   "Description",
                                   "Type",
                                   border='incols')
-        for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
-            vnum = raw_ansi(f"[|G{vnum:<4}|n]")
-            sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
-            table.add_row(vnum, sdesc, f"{data['type']}")
+        type_ = args[0]
+        if type_ not in ('type', 'name'):
+            ch.msg("Please supply either (type or desc) to searchby")
+            return
 
+        criteria = args[1]
+
+        for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
+            if type_ == 'type':
+                if criteria == data['type']:
+                    vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                    sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
+                    table.add_row(vnum, sdesc, f"{data['type']}")
+                    continue
+            if type_ == 'name':
+                if criteria in data['key']:
+                    vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                    sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
+                    table.add_row(vnum, sdesc, f"{data['type']}")
+                    continue
         msg = str(table)
         ch.msg(msg)
+        return
 
 
 class CmdOEdit(Command):
