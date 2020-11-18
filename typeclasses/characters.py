@@ -9,18 +9,74 @@ creation commands.
 """
 import copy
 from typing import Any, List, Tuple
+from world.utils.utils import is_equipment, is_equippable, is_worn
 from world.gender import Gender
 from world.races import NoRace, get_race
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
 from evennia import DefaultCharacter
-from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, WIZ_LVL
+from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, WIZ_LVL, WEAR_LOCATIONS
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
 from evennia.utils.utils import inherits_from, lazy_property, make_iter
 from world.storagehandler import StorageHandler
 from evennia.utils.evmenu import EvMenu
 from evennia import logger
+
+
+class EquipmentHandler:
+    """
+    Handles equipment based objects that exist in caller.location
+    identified by
+    """
+    _valid_wear_loc = WEAR_LOCATIONS
+
+    def __init__(self, caller):
+        self.caller = caller
+        self.location = {}
+        self.loc_help_msg = {}
+
+        for loc in self._valid_wear_loc:
+            self.location[loc.name] = None  # obj
+
+        # now try to find objects in caller.location
+        # that are 1) is_equippable and 2)is_worn
+        for obj in self.caller.contents:
+            if is_equippable(obj) and is_worn(obj):
+                self.location[obj.db.wear_loc] = obj
+
+    def add(self, obj):
+        """ 
+        add piece of equipment from inventory to and make worn
+        include any stat changes and affects to player here
+        """
+        if self.location[obj.db.wear_loc] is not None:
+            return False
+
+        obj.db.is_worn = True
+        self.location[obj.db.wear_loc] = obj
+        return True
+
+    def wield(self, obj):
+        if self.location['wield'] is not None:
+            return False
+        obj.db.is_wielded = True
+        self.location['wield'] = obj
+        return True
+
+    def unwield(self, obj):
+        obj.db.is_wielded = False
+        self.location['wield'] = None
+        return True
+
+    def remove(self, obj):
+        """ 
+        remove piece of equipment from inventory
+        remove any stat changes and affects to player here
+        """
+        obj.db.is_worn = False
+        self.location[obj.db.wear_loc] = None
+        return True
 
 
 class SkillHandler(StorageHandler):
@@ -201,6 +257,10 @@ class Character(DefaultCharacter):
     def at_after_move(self, src_location):
         self.execute_cmd("look")
 
+    def at_post_puppet(self, **kwargs):
+        self.msg(f"\nYou become |c{self.name.capitalize()}|n")
+        self.execute_cmd('look')
+
     def save_character(self):
         self.db.stats = dict(self.db.stats)
         self.db.skills = dict(self.db.skills)
@@ -216,6 +276,9 @@ class Character(DefaultCharacter):
 
     def at_server_shutdown(self):
         self.save_character()
+
+    def at_after_move(self, src, **kwargs):
+        self.execute_cmd('look')
 
     def at_cmdset_get(self, **kwargs):
 
@@ -256,6 +319,10 @@ class Character(DefaultCharacter):
     def traits(self):
         return TraitHandler(self)
 
+    @lazy_property
+    def equipment(self):
+        return EquipmentHandler(self)
+
     def get_prompt(self):
         self.attrs.update()
         hp = self.attrs.health
@@ -286,9 +353,6 @@ class Character(DefaultCharacter):
         level = None
         if self.is_superuser and self.id == 1:
             level = GOD_LVL
-
-        elif self.is_superuser:
-            level = WIZ_LVL
         else:
             level = 1
         # attributes

@@ -153,6 +153,7 @@ class Object(DefaultObject):
 
     __obj_type__ = ""
     __obj_specific_fields__ = {}
+    __help_msg__ = ""
 
     # make it default quiet
     def move_to(
@@ -178,12 +179,12 @@ class Object(DefaultObject):
         self.db.edesc = ""  # extra description when specifically looked at
         self.db.adesc = ""
         self.db.type = None
-        self.db.wear_flags = None
         self.db.weight = 0
         self.db.cost = 0
         self.db.level = 0
         self.db.applies = []
         self.db.extras = {}
+        self.db.is_obj = True
 
         for field, value in self.__obj_specific_fields__.items():
             self.attributes.add(field, value)
@@ -203,7 +204,6 @@ class Object(DefaultObject):
         self.db.adesc = obj['adesc']
         self.db.edesc = obj['edesc']
         self.db.type = obj['type']
-        self.db.wear_flats = obj['wear_flags']
         self.db.weight = obj['weight']
         self.db.cost = obj['cost']
         self.db.level = obj['level']

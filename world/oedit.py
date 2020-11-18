@@ -2,6 +2,8 @@
 Main EvMenu that handles editing objects
 """
 import copy
+
+from evennia.utils.utils import inherits_from
 from typeclasses.objs.custom import CUSTOM_OBJS
 from evennia import GLOBAL_SCRIPTS
 from evennia import CmdSet, EvEditor, EvMenu
@@ -16,7 +18,6 @@ _DEFAULT_OBJ_STRUCT = {
     "adesc": None,  # action desciption, message string announced when used
     "type":
     'default',  # type of object: book, weapon, equipment, scroll, etc...
-    "wear_flags": None,  #take, head, armor, wield, shield, etc..
     "weight": 0,
     "cost": 0,
     "level": 0,  # minimum level that can use this object
@@ -72,6 +73,16 @@ class OEditMode:
 
     def save(self, override=False):
         if (self.orig_obj != self.obj) or override:
+            # custom object checks here
+            if inherits_from(self.obj, 'typeclasses.objs.custom.Equipment'):
+                wear_loc = self.obj['extra']['wear_loc']
+                wear_loc = wear_loc.split(' ')
+                self.obj['extra']['wear_loc'] = wear_loc
+
+            if inherits_from(self.obj, 'typeclasses.objs.custom.Weapon'):
+                dual_wield = self.obj['extra']['dual_wield']
+                self.obj['extra']['dual_wield'] = bool(dual_wield)
+
             self.db.vnum[self.vnum] = self.obj
             self.caller.msg("object saved.")
 
@@ -94,7 +105,6 @@ ldesc  :
 edesc  : {self._cut_long_text(self.obj['edesc'])}
 adesc  : {self.obj['adesc']}
 type   : {self.obj['type']}
-wear   : {self.obj['wear_flags']}
 weight : {self.obj['weight']}
 cost   : {self.obj['cost']}
 level  : {self.obj['level']}
@@ -237,7 +247,9 @@ class Set(OEditCommand):
                 # list available extras that can be set
                 msg = "Available Extra Fields:\n"
                 for efield in obj['extra'].keys():
-                    msg += f"{efield}\n"
+                    help_msg = CUSTOM_OBJS[obj['type']].__help_msg__
+                    msg += f"{efield}\n  {help_msg}\n"
+
                 ch.msg(msg)
 
 

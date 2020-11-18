@@ -23,6 +23,7 @@ several more options for customizing the Guest account system.
 """
 
 from evennia import DefaultAccount, DefaultGuest
+from evennia.settings_default import MULTISESSION_MODE
 
 
 class Account(DefaultAccount):
@@ -91,8 +92,6 @@ class Account(DefaultAccount):
      at_server_shutdown()
 
     """
-
-    pass
 
 
 class Guest(DefaultGuest):

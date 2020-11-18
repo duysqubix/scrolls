@@ -48,6 +48,57 @@ def is_hidden(caller):
     return caller.conditions.has(Hidden)
 
 
-def is_obj(caller):
+def is_obj(obj):
     """checks if caller inherits scrolls object"""
-    return inherits_from(caller, 'typeclasses.objs.object.Object')
+    return inherits_from(obj,
+                         'typeclasses.objs.object.Object') and obj.db.is_obj
+
+
+def is_equipment(obj):
+    """ checks if obj is of equipment type"""
+    return is_obj(obj) and obj.__obj_type__ == 'equipment'
+
+
+def is_weapon(obj):
+    """ checks if obj is of weapon type"""
+    return is_obj(obj) and obj.__obj_type__ == 'weapon'
+
+
+def can_pickup(caller, obj):
+    """ tests whether obj can be picked up based on caller """
+    if obj.db.level > caller.attrs.level.value:
+        return False
+
+    return True
+
+
+def is_equippable(obj):
+    """
+    tests whether obj can be equipped or not
+    """
+    # both these attributes are unique and is not set to None
+    # on Equipment Objects
+    return is_equipment(obj) and obj.db.equippable
+
+
+def is_wieldable(obj):
+    """ tests if obj is a weapon and wieldable"""
+    return is_weapon(obj) and obj.db.wieldable
+
+
+def is_wielded(obj):
+    if not is_weapon(obj):
+        return False
+    return obj.db.is_wielded
+
+
+def is_worn(obj):
+    """ tests if object is currently set as worn"""
+    if not is_equipment(obj):
+        return False
+    return obj.db.is_worn
+
+
+def is_cursed(obj):
+    """ check to see if object can be removed"""
+    return False  #TODO: Implement is_cursed()

@@ -9,6 +9,26 @@ BUILDER_LVL = 202
 HERO_LVL = 201
 
 
+class WearLocation:
+    def __init__(self, name, display_msg=None):
+        self.name = name
+        self.display_msg = display_msg if display_msg else f"[|GWorn on {name.capitalize():<10}|n]"
+
+
+WEAR_LOCATIONS = [
+    WearLocation("light", display_msg=f"[|GUsed as {'Light':<10}|n]"),
+    WearLocation('wield', display_msg=f"[|GWielded {'':<10}|n]"),
+    WearLocation('off-hand', display_msg=f"[|GOff-Hand {'':<9}|n]"),
+    WearLocation('head'),
+    WearLocation('shoulders'),
+    WearLocation('arms'),
+    WearLocation('hands'),
+    WearLocation('chest'),
+    WearLocation('legs'),
+    WearLocation('feet')
+]
+
+
 class Size:
     """
     Defines sizes of objects. Overrides multiple magic methods

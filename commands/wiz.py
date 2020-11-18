@@ -11,6 +11,9 @@ from commands.command import Command
 from world.globals import BUILDER_LVL, WIZ_LVL, IMM_LVL
 from evennia import GLOBAL_SCRIPTS
 from evennia.utils.ansi import ANSIParser
+from evennia.utils import crop
+from evennia.utils.ansi import raw as raw_ansi
+
 __all__ = [
     "CmdSpawn", "CmdCharacterGen", "CmdWizInvis", "CmdOEdit", "CmdOList",
     "CmdLoad"
@@ -78,20 +81,16 @@ class CmdOList(Command):
 
     def func(self):
         ch = self.caller
-        objs = []
-
-        color_codes = ANSIParser.ansi_map
+        table = self.styled_table("VNum",
+                                  "Description",
+                                  "Type",
+                                  border='incols')
         for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
-            obj = [f"[{vnum}]", f"{data['sdesc']}", f"{data['type']}"]
+            vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+            sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
+            table.add_row(vnum, sdesc, f"{data['type']}")
 
-            # strip color here, so it displays nicely
-            for color_code, _ in color_codes:
-                obj = [str(x).replace(color_code, "") for x in obj]
-            objs.append(obj)
-
-        msg = tabulate.tabulate(objs,
-                                headers=['Vnum', 'Name', 'Type'],
-                                tablefmt='fancy_grid')
+        msg = str(table)
         ch.msg(msg)
 
 
