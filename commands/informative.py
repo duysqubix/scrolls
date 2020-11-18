@@ -6,7 +6,7 @@ from evennia.utils import evmore, crop
 from evennia.utils.utils import inherits_from
 from commands.command import Command
 from world.utils.act import Announce, act
-from world.utils.utils import is_obj, can_pickup, is_worn
+from world.utils.utils import is_obj, can_pickup, is_wielded, is_worn
 
 
 class CmdAffect(Command):
@@ -128,7 +128,7 @@ class CmdInventory(Command):
 
             table = self.styled_table(border="header")
             for item in items:
-                if is_worn(item):
+                if is_worn(item) or is_wielded(item):
                     continue
 
                 sdesc = f"{item.db.sdesc}"

@@ -9,6 +9,7 @@ creation commands.
 """
 import copy
 from typing import Any, List, Tuple
+from world.utils.act import Announce, act
 from world.utils.utils import is_equipment, is_equippable, is_worn
 from world.gender import Gender
 from world.races import NoRace, get_race
@@ -21,7 +22,6 @@ from world.skills import Skill
 from evennia.utils.utils import inherits_from, lazy_property, make_iter
 from world.storagehandler import StorageHandler
 from evennia.utils.evmenu import EvMenu
-from evennia import logger
 
 
 class EquipmentHandler:
@@ -51,22 +51,34 @@ class EquipmentHandler:
         include any stat changes and affects to player here
         """
         if self.location[obj.db.wear_loc] is not None:
-            return False
+            self.caller.msg(
+                f"You are already wearing something for your {obj.db.wear_loc}"
+            )
+            return
 
         obj.db.is_worn = True
         self.location[obj.db.wear_loc] = obj
-        return True
+        act("$n wears $p", True, True, self.caller, obj, None, Announce.ToRoom)
+        act("You wear $p", True, True, self.caller, obj, None, Announce.ToChar)
 
     def wield(self, obj):
         if self.location['wield'] is not None:
-            return False
+            self.caller.msg("You are already wielding something.")
+            return
         obj.db.is_wielded = True
         self.location['wield'] = obj
-        return True
+        act("$n wields $p", True, True, self.caller, obj, None,
+            Announce.ToRoom)
+        act("You wield $p", True, True, self.caller, obj, None,
+            Announce.ToChar)
 
     def unwield(self, obj):
         obj.db.is_wielded = False
         self.location['wield'] = None
+        act("$n unwields $p", True, True, self.caller, obj, None,
+            Announce.ToRoom)
+        act("You unwield $p", True, True, self.caller, obj, None,
+            Announce.ToChar)
         return True
 
     def remove(self, obj):
@@ -76,6 +88,10 @@ class EquipmentHandler:
         """
         obj.db.is_worn = False
         self.location[obj.db.wear_loc] = None
+        act("$n removes $p", True, True, self.caller, obj, None,
+            Announce.ToRoom)
+        act("You remove $p", True, True, self.caller, obj, None,
+            Announce.ToChar)
         return True
 
 

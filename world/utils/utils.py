@@ -93,7 +93,7 @@ def is_wielded(obj):
 
 
 def is_worn(obj):
-    """ tests if object is currently set as worn"""
+    """ tests if object is currently set as worn """
     if not is_equipment(obj):
         return False
     return obj.db.is_worn
