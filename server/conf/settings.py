@@ -65,3 +65,10 @@ try:
     from server.conf.secret_settings import *
 except ImportError:
     print("secret_settings.py file not found or failed to import.")
+
+
+try:
+    # Created by the `evennia connections` wizard
+    from .connection_settings import *
+except ImportError:
+    pass
