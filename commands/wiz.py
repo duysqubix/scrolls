@@ -218,12 +218,12 @@ class CmdHolyLight(Command):
         detect_invis = get_condition('detect_invis')
         if not ch.conditions.has(DetectInvis):
             ch.conditions.add(detect_invis)
-            act("You vanish into another dimension.", True, True, ch, None,
-                None, Announce.ToChar)
+            act("Your eyes adjust to the true nature of the world.", True,
+                True, ch, None, None, Announce.ToChar)
             ch.db.holylight = True
         else:
             ch.conditions.remove(detect_invis)
-            act("You slowly fade back into existence.", True, True, ch, None,
+            act("You see the world as normal again.", True, True, ch, None,
                 None, Announce.ToChar)
             del ch.db.holylight
 

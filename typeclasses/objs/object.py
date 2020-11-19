@@ -194,7 +194,10 @@ class Object(DefaultObject):
     def obj_desc(self, ldesc=False):
         """ returns string of tags currently set on obj"""
         if not self.db.tags:
-            return ""
+            if not ldesc:
+                return self.db.sdesc
+            else:
+                return self.db.ldesc
 
         tags = ""
         if 'invis' in self.db.tags:
