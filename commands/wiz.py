@@ -3,7 +3,7 @@ from evennia.utils.utils import dedent, inherits_from
 import tabulate
 from world.oedit import OEditMode
 from world.utils.utils import is_invis
-from world.conditions import DetectInvis, get_condition
+from world.conditions import DetectInvis, HolyLight, get_condition
 from world.utils.act import Announce, act
 import evennia
 from evennia import EvMenu, create_object
@@ -215,17 +215,11 @@ class CmdHolyLight(Command):
     def func(self):
         ch = self.caller
 
-        detect_invis = get_condition('detect_invis')
-        if not ch.conditions.has(DetectInvis):
-            ch.conditions.add(detect_invis)
-            act("Your eyes adjust to the true nature of the world.", True,
-                True, ch, None, None, Announce.ToChar)
-            ch.db.holylight = True
+        holylight = get_condition('holy_light')
+        if not ch.conditions.has(HolyLight):
+            ch.conditions.add(holylight)
         else:
-            ch.conditions.remove(detect_invis)
-            act("You see the world as normal again.", True, True, ch, None,
-                None, Announce.ToChar)
-            del ch.db.holylight
+            ch.conditions.remove(holylight)
 
 
 class CmdWizInvis(Command):
@@ -271,7 +265,10 @@ class CmdRestore(Command):
     def func(self):
         ch = self.caller
         if not self.args:
-            act()
+            act("You are restored", False, False, ch, None, None,
+                Announce.ToRoom)
+            act("You restore the room", False, False, ch, None, None,
+                Announce.ToChar)
             ch.full_restore()
             return
 

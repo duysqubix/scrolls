@@ -20,10 +20,13 @@ WEAR_LOCATIONS = [
     WearLocation('wield', display_msg=f"[|GWielded {'':<10}|n]"),
     WearLocation('off-hand', display_msg=f"[|GOff-Hand {'':<9}|n]"),
     WearLocation('head'),
+    WearLocation('back'),
     WearLocation('shoulders'),
+    WearLocation('chest'),
     WearLocation('arms'),
     WearLocation('hands'),
-    WearLocation('chest'),
+    WearLocation('l-finger'),
+    WearLocation('r-finger'),
     WearLocation('legs'),
     WearLocation('feet')
 ]

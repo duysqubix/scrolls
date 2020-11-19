@@ -1,5 +1,5 @@
 from enum import Enum
-from world.utils.utils import is_hidden, is_invis, is_pc
+from world.utils.utils import can_see_obj, is_hidden, is_invis, is_pc, is_sleeping
 from world.conditions import Sleeping
 from world.gender import is_female, is_male, is_nogender
 
@@ -128,18 +128,27 @@ def act(msg, hide_invisible, hide_sleep, ch, obj, vict_obj, announce_type):
 
     if "$p" in msg:
         #TODO: had invis and basic effects to objects
-        msg = msg.replace('$p', obj.db.sdesc)
+
+        sdesc = obj.db.sdesc
+        msg = msg.replace('$p', sdesc)
 
     if announce_type == Announce.ToRoom:
-        ch.location.announce(msg, exclude=[ch])
+        for obj in ch.location.contents:
+            if is_pc(obj):
+                if (hide_invisible and is_invis(obj)) or (
+                        hide_sleep and is_sleeping(obj)) or (obj.id == ch.id):
+                    continue
+                obj.msg(msg)
         return
     if announce_type == Announce.ToChar:
         ch.msg(msg)
         return
     if announce_type == Announce.ToVict:
         if is_pc(vict_obj):
-            if not vict_obj.conditions.has(Sleeping):
-                vict_obj.msg(msg)
+            if is_sleeping(vict_obj) and hide_sleep:
+                return
+
+            vict_obj.msg(msg)
         return
     if announce_type == Announce.ToNotVict:
         ch.location.announce(msg, exclude=[vict_obj])

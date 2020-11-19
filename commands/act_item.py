@@ -1,6 +1,7 @@
+from evennia.utils.utils import uses_database
 from commands.command import Command
 from world.utils.act import Announce, act
-from world.utils.utils import can_see, is_cursed, is_equippable, is_obj, can_pickup, is_weapon, is_wieldable, is_wielded, is_worn
+from world.utils.utils import can_drop, can_see_obj, is_cursed, is_equippable, is_equipped, is_obj, can_pickup, is_weapon, is_wieldable, is_wielded, is_worn
 
 
 class CmdGet(Command):
@@ -47,7 +48,7 @@ class CmdGet(Command):
                 if amt == 'all':
                     matched_objs = []
                     for obj in ch.location.contents:
-                        if is_obj(obj) and can_see(ch, obj):
+                        if is_obj(obj) and can_see_obj(ch, obj):
                             if obj_name in obj.db.name:
                                 matched_objs.append(obj)
                     if not matched_objs:
@@ -72,7 +73,7 @@ class CmdGet(Command):
                         return
                     cntr = 0
                     for obj in ch.location.contents:
-                        if is_obj(obj) and can_see(ch, obj):
+                        if is_obj(obj) and can_see_obj(ch, obj):
                             if obj_name in obj.db.name:
                                 cntr += 1
                                 if amt == cntr:
@@ -105,7 +106,7 @@ class CmdGet(Command):
                         return
             elif obj_name == 'all':
                 for obj in ch.location.contents:
-                    if is_obj(obj) and can_see(ch, obj):
+                    if is_obj(obj) and can_see_obj(ch, obj):
                         if can_pickup(ch, obj):
                             obj.move_to(ch, quiet=True)
                             act(f"$n picks up a $p.", True, True, ch, obj,
@@ -199,40 +200,37 @@ class CmdDrop(Command):
             ch.msg("Drop what?")
             return
 
-        # Because the DROP command by definition looks for items
-        # in inventory, call the search function using location = caller
         args = self.args.strip().split(' ')
         if len(args) == 1:
 
+            def success_drop(obj):
+                act("$n drops $p", True, True, ch, obj, None, Announce.ToRoom)
+                act("You drop $p", True, True, ch, obj, None, Announce.ToChar)
+
             all_objs = False
             for obj in ch.contents:
-                if is_worn(obj) or is_wielded(obj):
+                if is_equipped(obj):
                     continue
 
-                success_drop = False
                 if args[0] == 'all':
-                    if is_cursed(obj):
-                        ch.msg("Something prevents you from dropping that.")
-                    else:
+                    if can_drop(ch, obj):
                         obj.move_to(ch.location, quiet=True)
-                        success_drop = all_objs = True
+                        success_drop(obj)
+
+                    else:
+                        act("You can't drop $p", False, False, ch, obj, None,
+                            Announce.ToChar)
+                    continue
+
                 elif args[0] in obj.db.name:
-                    if is_cursed(obj):
-                        ch.msg("Something prevents you from dropping that.")
+                    if can_drop(ch, obj):
+                        obj.move_to(ch.location, quiet=True)
+                        success_drop(obj)
                         return
                     else:
-                        obj.move_to(ch.location, quiet=True)
-                        success_drop = True
-
-                if success_drop:
-                    act("$n drops $p", True, True, ch, obj, None,
-                        Announce.ToRoom)
-                    act("You drop $p", True, True, ch, obj, None,
-                        Announce.ToChar)
-                else:
-                    ch.msg("You can't drop that")
-                if not all_objs:
-                    return
+                        act("You can't drop $p", False, False, ch, obj, None,
+                            Announce.ToChar)
+                        return
 
 
 class CmdWield(Command):

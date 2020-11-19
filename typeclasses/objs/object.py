@@ -2,7 +2,10 @@
 Default Scrolls object
 All objects must inherit this class to work properly
 """
-from world.conditions import Invisible
+from world.characteristics import CHARACTERISTICS
+import evennia
+from world.utils.utils import is_obj, is_pc_npc
+from world.conditions import ALL_CONDITIONS, Invisible, get_condition
 from evennia import DefaultObject, GLOBAL_SCRIPTS
 
 
@@ -193,7 +196,7 @@ class Object(DefaultObject):
 
     def obj_desc(self, ldesc=False):
         """ returns string of tags currently set on obj"""
-        if not self.db.tags:
+        if not self.db.tags:  # list is empty
             if not ldesc:
                 return self.db.sdesc
             else:
@@ -243,4 +246,63 @@ class Object(DefaultObject):
                 self.attributes.add(efield, evalue)
 
 
+def apply_obj_effects(ch, obj):
+    """
+    apply the loaded effects from obj onto ch
+    """
+    if not is_pc_npc(ch) or not is_obj(obj):
+        return
+
+    applies = list(obj.db.applies)
+    if not applies:
+        return
+    for effect in applies:
+        if len(effect) == 2:
+            apply_type, mod = effect
+
+            if apply_type in VALID_OBJ_APPLIES['attrs']:
+                ch.attrs.modify_vital(apply_type, by=mod)
+
+            elif apply_type in VALID_OBJ_APPLIES['stats']:
+                ch.stats.modify_stat(apply_type, by=mod)
+
+        if len(effect) == 3:
+            condition, x, y = effect
+            if condition in VALID_OBJ_APPLIES['conditions']:
+                con = get_condition(condition)
+                ch.conditions.add(con)
+
+
+def remove_obj_effects(ch, obj):
+    """
+    remove the loaded effects from obj onto ch
+    """
+    if not is_pc_npc(ch) or not is_obj(obj):
+        return
+
+    applies = list(obj.db.applies)
+    if not applies:
+        return
+
+    for effect in applies:
+        if len(effect) == 2:
+            apply_type, mod = effect
+            if apply_type in VALID_OBJ_APPLIES['attrs']:
+                ch.attrs.modify_vital(apply_type, by=-mod)
+
+            elif apply_type in VALID_OBJ_APPLIES['stats']:
+                ch.stats.modify_stat(apply_type, by=-mod)
+        if len(effect) == 3:
+            condition, x, y = effect
+            if condition in VALID_OBJ_APPLIES['conditions']:
+                con = get_condition(condition)
+                ch.conditions.remove(con)
+
+
 VALID_OBJ_TAGS = ('invis', 'cursed', 'quest_item', 'no_sell', 'daedric')
+
+VALID_OBJ_APPLIES = {
+    'attrs': ('health', 'magicka', 'carry', 'speed', 'stamina'),
+    'stats': ('str', 'end', 'agi', 'int', 'wp', 'prc', 'prs', 'lck'),
+    'conditions': tuple((x.__obj_name__ for x in ALL_CONDITIONS))
+}

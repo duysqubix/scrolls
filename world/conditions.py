@@ -2,9 +2,6 @@
 Things that externally affect the character and their capabilities intead of
 features of the characters nature
 """
-from collections import namedtuple
-from evennia.utils import dedent, lazy_property
-import evennia
 
 
 class Condition:
@@ -47,7 +44,10 @@ class Condition:
                 # your code here.
     """
     __obj_name__ = ""
-    __msg__ = ""
+    __activate_msg__ = ""
+    __deactivate_msg__ = ""
+    __default_x__ = None
+    __default_y__ = None
 
     def __init__(self, X=None, Y=None):
         self.meta = dict()
@@ -108,10 +108,13 @@ class Condition:
 
 class Bleeding(Condition):
     __obj_name__ = "bleeding"
+    __activate_msg__ = "You begin bleeding profusely."
+    __deactivate_msg__ = "Your bleeding is under control."
+    __default_x__ = 1
 
-    def at_condition(self):
+    def at_condition(self, caller):
         if self.X is None:
-            raise ValueError("bleeding condition must have X defined")
+            self.X = self.__default_x__  # default 1
 
     def effect(self, caller, **kwargs):
         # take damage to caller of value X and end condition
@@ -122,10 +125,19 @@ class Bleeding(Condition):
 
 class Blinded(Condition):
     __obj_name__ = "blinded"
+    __activate_msg__ = "You can't see a thing!"
+    __deactivate_msg__ = "Your sight returns to you."
 
 
 class Burning(Condition):
     __obj_name__ = 'burning'
+    __activate_msg__ = "You are engulfed in flames!"
+    __deactivate_msg__ = "The flames around you die down."
+    __default_x__ = 1
+
+    def at_condition(self, caller):
+        if self.X is None:
+            self.X = self.__default_x__
 
     def effect(self, caller, **kwargs):
         caller.attrs.health.cur -= self.X
@@ -134,6 +146,8 @@ class Burning(Condition):
 
 class Chameleon(Condition):
     __obj_name__ = "chameleon"
+    __activate_msg__ = "Your body blends into the background."
+    __deactivate_msg__ = "You become more noticeable."
 
 
 class Crippled(Condition):
@@ -146,6 +160,8 @@ class Crippled(Condition):
 
 class Dazed(Condition):
     __obj_name__ = 'dazed'
+    __activate_msg__ = "Your head begins to spin."
+    __deactivate_msg__ = "You regain your concentration."
 
     def effect(self, caller, **kwargs):
         if self.enabled:
@@ -155,19 +171,30 @@ class Dazed(Condition):
 
 class Deafened(Condition):
     __obj_name__ = 'deafened'
+    __activate_msg__ = "You lose your hearing!"
+    __deactivate_msg__ = "Your hearing comes back."
 
 
 class DetectInvis(Condition):
     __obj_name__ = 'detect_invis'
+    __activate_msg__ = "Your eyes tingle."
+    __deactivate_msg__ = "Your eyes go back to normal."
 
 
 class DetectHidden(Condition):
     __obj_name__ = 'detect_hidden'
+    __activate_msg__ = "Your eyes focus."
+    __deactivate_msg__ = "Your eyes go back to normal."
 
 
 class Fatigued(Condition):
     """Fatigued.X refers to level of Fatigue """
     __obj_name__ = 'fatigued'
+    __default_x__ = 1
+
+    def at_condition(self, caller):
+        if self.X is None:
+            self.X = self.__default_x__
 
     def effect(self, caller, **kwargs):
         if self.enabled:
@@ -185,6 +212,8 @@ class Fatigued(Condition):
 
 class Frenzied(Condition):
     __obj_name__ = "frenzied"
+    __activate_msg__ = "You enter a state of frenzy."
+    __deactivate_msg__ = "You feel yourself again."
 
     def at_condition(self, caller):
         self.meta['penalty'] = {
@@ -206,8 +235,15 @@ class Frenzied(Condition):
         caller.stats.end.bonus -= 1
 
 
+class HolyLight(Condition):
+    __obj_name__ = "holy_light"
+    __activate_msg__ = "Your eyes adjust to the true nature of the world."
+    __deactivate_msg__ = "You see the world as normal again."
+
+
 class Hidden(Condition):
     __obj_name__ = 'hidden'
+    __activate_msg__ = "You blend into the shadows."
 
 
 class Immobilized(Condition):
@@ -216,14 +252,19 @@ class Immobilized(Condition):
 
 class Invisible(Condition):
     __obj_name__ = 'invisible'
+    __activate_msg__ = "You fade into the shadows."
+    __deactivate_msg__ = "You step out from the shadows."
 
 
 class Muffled(Condition):
     __obj_name__ = 'muffled'
+    __activate_msg__ = "You move more carefully."
 
 
 class Prone(Condition):
     __obj_name__ = 'prone'
+    __activate_msg__ = "You lie down on the ground."
+    __deactivate_msg__ = "You get off from the ground."
 
     def at_condition(self):
         self.meta['penalty'] = {'fight': -20}
@@ -250,18 +291,24 @@ class Paralyzed(Condition):
     They may only cast spells that do not require speech or motion
     """
     __obj_name__ = 'paralyzed'
+    __activate_msg__ = "You find it impossible to move."
+    __deactivate_msg__ = "You regain control in your limbs."
 
 
 class Restrained(Condition):
     """
-    A character is restrained, and thus unable to move, attach or defend themselves.
+    A character is restrained, and thus unable to move, attack or defend themselves.
     Only spells can be cast that do not require motion.
     """
     __obj_name__ = 'restrained'
+    __activate_msg__ = "You are restrained."
+    __deactivate_msg__ = "You regain control of your body."
 
 
 class Silenced(Condition):
     __obj_name__ = "silenced"
+    __activate_msg__ = "You find it difficult to remember spells."
+    __deactivate_msg__ = "The mental block vanishes."
 
     def at_condition(self, caller):
         self.meta['penalty'] = {'spell': -20}
@@ -269,6 +316,7 @@ class Silenced(Condition):
 
 class Slowed(Condition):
     __obj_name__ = "slowed"
+    __activate_msg__ = "You find your body is sluggish to move"
 
     def at_condition(self, caller):
         cur_speed = caller.attrs.speed.max
@@ -283,6 +331,8 @@ class Slowed(Condition):
 
 class Sleeping(Condition):
     __obj_name__ = "sleeping"
+    __activate_msg__ = "You fall asleep"
+    __deactivate_msg__ = "You wake up"
 
 
 class Stunned(Condition):
@@ -315,10 +365,14 @@ class Unconscious(Condition):
 
 class BreathUnderWater(Condition):
     __obj_name__ = "breath_underwater"
+    __activate_msg__ = "Gills grow from your neck"
+    __deactivate_msg__ = "Your neck slowly morphs back to normal"
 
 
 class DarkSight(Condition):
     __obj_name__ = "dark_sight"
+    __activate_msg__ = "Your eyes adjust to darkness."
+    __deactivate_msg__ = "Your eyes go back to normal."
 
 
 class Deaf(Condition):
@@ -335,15 +389,43 @@ class Intangible(Condition):
 
 class Flying(Condition):
     __obj_name__ = "flying"
+    __activate_msg__ = "You feel lighter than a feather"
+    __deactivate_msg__ = "Your feet touch the ground."
 
 
-ALL_CONDITIONS = [
-    Bleeding, Blinded, Burning, Chameleon, Crippled, DarkSight, Dazed,
-    Deafened, DetectHidden, DetectInvis, Fatigued, Frenzied, Hidden, Muffled,
-    Immobilized, Invisible, Muffled, Prone, Paralyzed, Restrained, Silenced,
-    Slowed, Sleeping, Stunned, Unconscious, BreathUnderWater, Deaf, Fear,
-    Intangible, Flying
-]
+ALL_CONDITIONS = (
+    Bleeding,
+    Blinded,
+    Burning,
+    BreathUnderWater,
+    Chameleon,
+    #Crippled,
+    DarkSight,
+    Dazed,
+    Deaf,
+    Deafened,
+    DetectHidden,
+    DetectInvis,
+    Fatigued,
+    Fear,
+    Flying,
+    Frenzied,
+    Hidden,
+    HolyLight,
+    Immobilized,
+    Intangible,
+    Invisible,
+    Muffled,
+    Muffled,
+    Prone,
+    Paralyzed,
+    Restrained,
+    Silenced,
+    Slowed,
+    Sleeping,
+    Stunned,
+    Unconscious,
+)
 
 
 def get_condition(con_name, x=None, y=None):

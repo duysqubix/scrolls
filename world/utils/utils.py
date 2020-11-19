@@ -1,6 +1,6 @@
 from world.globals import BUILDER_LVL
 from evennia.utils.utils import inherits_from
-from world.conditions import DetectHidden, DetectInvis, Hidden, Invisible
+from world.conditions import DetectHidden, DetectInvis, Hidden, HolyLight, Invisible, Sleeping
 from evennia.utils import make_iter
 
 
@@ -16,46 +16,57 @@ def highlight_words(block, key_targets, color_codes):
     return block
 
 
-def is_wiz(caller):
+def is_wiz(obj):
     """ checks to see if player is immortal """
-    if not is_npc(caller) or not is_pc(caller):
+
+    if not is_pc_npc(obj):
         return False
 
-    if caller.attrs.level.value <= BUILDER_LVL:
+    if obj.attrs.level.value > BUILDER_LVL:
+        return True
+    return False
+
+
+def is_pc(obj):
+    """ checks to see if obj is pc """
+    if not obj.db.is_pc:
         return False
-    return True
+    return obj.db.is_pc
 
 
-def is_pc(caller):
-    """ checks to see if caller is pc """
-    if not caller.db.is_pc:
+def is_npc(obj):
+    """ checks to see if obj is npc """
+    if not obj.db.is_npc:
         return False
-    return caller.db.is_pc
+    return obj.db.is_npc
 
 
-def is_npc(caller):
-    """ checks to see if caller is npc """
-    if not caller.db.is_npc:
-        return False
-    return caller.db.is_npc
+def is_pc_npc(obj):
+    """ checks to see if obj is a playable character or mob"""
+    return is_pc(obj) or is_npc(obj)
 
 
-def is_invis(caller):
+def is_invis(obj):
     """
-    checks if caller has invisible condition
-    caller could be pc/npc/or obj
+    checks if obj has invisible condition
+    obj could be pc/npc/or obj
     """
 
-    if is_obj(caller):
-        return "invis" in caller.db.tags
+    if is_obj(obj):
+        return "invis" in obj.db.tags
 
-    if not is_npc(caller) or not is_pc(caller):
+    if not is_pc_npc(obj):
         return False
 
-    return caller.conditions.has(Invisible)
+    return obj.conditions.has(Invisible)
 
 
-def can_see(target, vict):
+def can_see_room(target, room=None):
+    """checks to see if target can see room"""
+    pass
+
+
+def can_see_obj(target, vict):
     """
     first argument must be a pc/npc character
     second argument can either be obj or pc/npc
@@ -64,7 +75,10 @@ def can_see(target, vict):
     if not is_pc(target) and not is_npc(target):
         return False
 
-    if is_pc(vict) or is_npc(vict):
+    if target.conditions.has(HolyLight):
+        return True
+
+    if is_pc_npc(vict):
         # check here for pc 2 pc if they can see each other
 
         if not target.conditions.has(DetectInvis) and is_invis(vict):
@@ -77,6 +91,7 @@ def can_see(target, vict):
     if not is_obj(vict):
         return False
 
+    # if we got here, we can be sure that vict is obj
     if not is_invis(vict):
         return True
     else:
@@ -86,16 +101,26 @@ def can_see(target, vict):
             return True
 
 
-def is_hidden(caller):
-    """ checks if caller is hidden """
-    if not is_npc(caller) and not is_pc(caller):
+def is_hidden(obj):
+    """ checks if obj is hidden """
+    if not is_pc_npc(obj):
         return False
 
-    return caller.conditions.has(Hidden)
+    return obj.conditions.has(Hidden)
+
+
+def is_sleeping(obj):
+    """checks to see if obj is sleeping"""
+    # only pc and npc can be sleeping
+    if not is_pc_npc(obj):
+        return False
+    if obj.conditions.has(Sleeping):
+        return True
+    return False
 
 
 def is_obj(obj):
-    """checks if caller inherits scrolls object"""
+    """checks if obj inherits scrolls object"""
     return inherits_from(obj,
                          'typeclasses.objs.object.Object') and obj.db.is_obj
 
@@ -110,11 +135,17 @@ def is_weapon(obj):
     return is_obj(obj) and obj.__obj_type__ == 'weapon'
 
 
-def can_pickup(caller, obj):
-    """ tests whether obj can be picked up based on caller """
-    if obj.db.level > caller.attrs.level.value:
+def can_pickup(ch, obj):
+    """ tests whether obj can be picked up based on obj """
+    if obj.db.level > ch.attrs.level.value:
         return False
 
+    return True
+
+
+def can_drop(ch, obj):
+    if is_cursed(obj) or is_equipped(obj):
+        return False
     return True
 
 

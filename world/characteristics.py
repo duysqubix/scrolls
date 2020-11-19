@@ -1,4 +1,6 @@
 class Characteristic:
+    __obj_name__ = ""
+
     def __init__(self, name, short, base=0, bonus=0, favored=False):
         self.name = str(name)
         self.short = short
@@ -39,44 +41,60 @@ class Characteristic:
 
 
 class StrChar(Characteristic):
+    __obj_name__ = "str"
+
     def __init__(self, base=0, bonus=0, favored=False):
         super(StrChar, self).__init__('strength', 'str', base, bonus, favored)
 
 
 class EndChar(Characteristic):
+    __obj_name__ = "end"
+
     def __init__(self, base=0, bonus=0, favored=False):
         super(EndChar, self).__init__('endurance', 'end', base, bonus, favored)
 
 
 class AgiChar(Characteristic):
+    __obj_name__ = "agi"
+
     def __init__(self, base=0, bonus=0, favored=False):
         super(AgiChar, self).__init__('agility', 'agi', base, bonus, favored)
 
 
 class IntChar(Characteristic):
+    __obj_name__ = "int"
+
     def __init__(self, base=0, bonus=0, favored=False):
         super(IntChar, self).__init__('intelligence', 'int', base, bonus,
                                       favored)
 
 
 class WpChar(Characteristic):
+    __obj_name__ = "wp"
+
     def __init__(self, base=0, bonus=0, favored=False):
         super(WpChar, self).__init__('willpower', 'wp', base, bonus, favored)
 
 
 class PrcChar(Characteristic):
+    __obj_name__ = "prc"
+
     def __init__(self, base=0, bonus=0, favored=False):
         super(PrcChar, self).__init__('persuasion', 'prc', base, bonus,
                                       favored)
 
 
 class PrsChar(Characteristic):
+    __obj_name__ = "prs"
+
     def __init__(self, base=0, bonus=0, favored=False):
         super(PrsChar, self).__init__('perception', 'prs', base, bonus,
                                       favored)
 
 
 class LckChar(Characteristic):
+    __obj_name__ = "lck"
+
     def __init__(self, base=0, bonus=0, favored=False):
         super(LckChar, self).__init__('luck', 'lck', base, bonus, favored)
 

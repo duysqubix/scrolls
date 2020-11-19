@@ -8,7 +8,9 @@ creation commands.
 
 """
 import copy
+from typeclasses.objs.object import apply_obj_effects, remove_obj_effects
 from typing import Any, List, Tuple
+from world.conditions import HolyLight
 from world.utils.act import Announce, act
 from world.utils.utils import is_equipment, is_equippable, is_wiz, is_worn
 from world.gender import Gender
@@ -52,14 +54,14 @@ class EquipmentHandler:
         """
         if self.location[obj.db.wear_loc] is not None:
             self.caller.msg(
-                f"You are already wearing something for your {obj.db.wear_loc}"
-            )
+                f"You are already wearing something on your {obj.db.wear_loc}")
             return
 
         obj.db.is_worn = True
         self.location[obj.db.wear_loc] = obj
         act("$n wears $p", True, True, self.caller, obj, None, Announce.ToRoom)
         act("You wear $p", True, True, self.caller, obj, None, Announce.ToChar)
+        apply_obj_effects(self.caller, obj)
 
     def wield(self, obj):
         if self.location['wield'] is not None:
@@ -67,10 +69,12 @@ class EquipmentHandler:
             return
         obj.db.is_wielded = True
         self.location['wield'] = obj
+
         act("$n wields $p", True, True, self.caller, obj, None,
             Announce.ToRoom)
         act("You wield $p", True, True, self.caller, obj, None,
             Announce.ToChar)
+        apply_obj_effects(self.caller, obj)
 
     def unwield(self, obj):
         obj.db.is_wielded = False
@@ -79,6 +83,8 @@ class EquipmentHandler:
             Announce.ToRoom)
         act("You unwield $p", True, True, self.caller, obj, None,
             Announce.ToChar)
+        remove_obj_effects(self.caller, obj)
+
         return True
 
     def remove(self, obj):
@@ -88,10 +94,13 @@ class EquipmentHandler:
         """
         obj.db.is_worn = False
         self.location[obj.db.wear_loc] = None
+
         act("$n removes $p", True, True, self.caller, obj, None,
             Announce.ToRoom)
         act("You remove $p", True, True, self.caller, obj, None,
             Announce.ToChar)
+        remove_obj_effects(self.caller, obj)
+
         return True
 
 
@@ -112,6 +121,13 @@ class SkillHandler(StorageHandler):
 class StatHandler(StorageHandler):
     __attr_name__ = "stats"
 
+    def modify_stat(self, stat_name, by=0):
+        _s = self.caller.stats.get(stat_name)
+        if _s is None:
+            raise ValueError("No stat like that exists to be modified")
+        _s.bonus += by
+        self.set(stat_name, _s)
+
 
 class ConditionHandler(StorageHandler):
     __attr_name__ = 'conditions'
@@ -119,7 +135,7 @@ class ConditionHandler(StorageHandler):
     def has(self, condition):
         return True if self.get(condition) is not None else False
 
-    def add(self, *conditions):
+    def add(self, *conditions, quiet=False):
         """
         Args:
             conditions: list of condition tuples: [(cls, X, Y),]
@@ -135,7 +151,10 @@ class ConditionHandler(StorageHandler):
             c.at_condition(self.caller)  # fire at condition
             self.set(c)
 
-    def remove(self, *condition):
+            if not quiet and (c.__activate_msg__ != ""):
+                self.caller.msg(c.__activate_msg__)
+
+    def remove(self, *condition, quiet=False):
         for con in condition:
             cls, x, y = con
             if not self.has(cls):  # trying to remove a non-existant condition
@@ -157,6 +176,8 @@ class ConditionHandler(StorageHandler):
 
             if match is not None:
                 self.__getattr__(self.__attr_name__).remove(match)
+                if not quiet and (c.__deactivate_msg__ != ""):
+                    self.caller.msg(c.__deactivate_msg__)
 
     def get(self, condition):
         name = self.__attr_name__
@@ -198,19 +219,75 @@ class AttrHandler(StorageHandler):
         valid key that points to attributes on AttributeHandler, and must
         be a valid VitalAttribute object
         """
-        attr = self.__dict__[attr_type]
+        attr = self.__getattr__(attr_type)
         if not inherits_from(attr, 'world.attributes.VitalAttribute'):
             raise NotImplementedError(
                 'change_vital function doesnt support changing attribute that are NOT VitalAttributes'
             )
         cur = attr.cur
+
         cur += by
         if cur < 0:
-            cu = 0
+            cur = 0
         if cur > attr.max:
             cur = attr.max
+        attr.cur = cur
+        self.__setattr__(attr_type, attr)
+        self.update()
 
-        self.__dict__[attr_type].cur = cur
+    def modify_vital(self, attr_type, by=0):
+        """
+        same as change_vital except  adds it to modifier list
+        attr_type must be a vald key on AttributeHandler
+        """
+
+        attr = self.__getattr__(attr_type)
+        if not inherits_from(attr, 'world.attributes.VitalAttribute'):
+            raise NotImplementedError(
+                'modify_vital function doesnt support changing attribute that are NOT VitalAttributes'
+            )
+
+        #
+        # Nifty piece of code  here, instead of tracking individual
+        # objects that modify vitals, instead I turned it into a math
+        # game. If your mod list looks like this:
+        #
+        # mod = [1,1,-2,5], your a cum modifier of 5
+        #
+        # when you add a modifer to the list, instead of it growing
+        # forever, it will first try to find the oppositve value
+        # and attempt to remove that, if it can't find it, it will a
+        # add it. For example
+        #
+        # health_mod = [2,2,-3,5,10] (16)
+        # modify_vital('health', by=3) # adding three to modifer
+        #
+        # results would be:
+        #
+        # health_mod = [2,2,5,10] (19)
+        # it found a opposite of 3 (-3)
+        # and removed that.
+
+        # modify_vital('health', by=-10) # deduct 10 from mod
+        # health_mod = [2,2,5] (9)
+
+        # doing it again though: modify_vital('health', by=-10)
+        # health_mod = [2,2,5,-10] (-1)
+        #
+        #
+
+        if by != 0:
+            # attempt to remove a positive equiv
+            # mod, if it doesn't exist add it
+            tmp = -by
+            try:
+                idx = attr.mod.index(tmp)
+                attr.mod.remove(attr.mod[idx])
+            except ValueError:
+                # it doesn't exist, just add it to list
+                attr.mod.append(by)
+        self.__setattr__(attr_type, attr)
+        self.update()
 
     def change_race(self, race):
         new_race = get_race(race)
@@ -218,33 +295,44 @@ class AttrHandler(StorageHandler):
 
     def max_health(self):
         health = (self.caller.stats.end.base // 2 + 1)
-        self.health.max = health
-        return health + self.health.mods
+        tot = health + self.health.mods
+
+        self.health.max = tot
+        return tot
 
     def max_stamina(self):
         stamina = self.caller.stats.end.bonus
-        self.stamina.max = stamina
-        return stamina + self.stamina.mods
+        tot = stamina + self.stamina.mods
+
+        self.stamina.max = tot
+        return tot
 
     def max_magicka(self):
         magicka = self.caller.stats.int.base
-        self.magicka.max = magicka
-        return magicka + self.magicka.mods
+
+        tot = magicka + self.magicka.mods
+
+        self.magicka.max = tot
+        return tot
 
     def max_speed(self):
         sb = self.caller.stats.str.bonus
         ab = self.caller.stats.agi.bonus
         speed = sb + (2 * ab)
-        self.speed.max = speed
-        return speed + self.speed.mods
+
+        tot = speed + self.speed.mods
+        self.speed.max = tot
+        return tot
 
     def max_carry(self):
         # carry rating
         sb = self.caller.stats.str.bonus
         eb = self.caller.stats.end.bonus
         carry = ((4 * sb) + (2 * eb))
-        self.carry.max = carry
-        return carry + self.carry.mods
+
+        tot = carry + self.carry.mods
+        self.carry.max = tot
+        return tot
 
 
 class Character(DefaultCharacter):
@@ -342,10 +430,13 @@ class Character(DefaultCharacter):
         mg = self.attrs.magicka
         st = self.attrs.stamina
         sp = self.attrs.speed
-        prompt = f"\nHP:{hp.cur}/{hp.max} MG:{mg.cur}/{mg.max} ST:{st.cur}/{st.max} SP:{sp.cur}/{sp.max} > "
+        prompt = "\n"
 
-        if is_wiz(self):
-            prompt = "(holylight)" if self.db.holylight else "" + prompt
+        if is_wiz(self) and self.conditions.has(HolyLight):
+            prompt += "(|wholy|ylight|n)"
+
+        prompt += f" HP:{hp.cur}/{hp.max} MG:{mg.cur}/{mg.max} ST:{st.cur}/{st.max} SP:{sp.cur}/{sp.max} > "
+
         return prompt
 
     def full_restore(self):

@@ -7,7 +7,7 @@ from evennia.utils import evmore, crop
 from evennia.utils.utils import inherits_from
 from commands.command import Command
 from world.utils.act import Announce, act
-from world.utils.utils import can_see, is_equipment, is_equipped, is_invis, is_obj, can_pickup, is_wielded, is_worn
+from world.utils.utils import can_see_obj, is_equipment, is_equipped, is_invis, is_obj, can_pickup, is_wielded, is_worn
 
 
 class CmdAffect(Command):
@@ -98,7 +98,7 @@ class CmdEquipment(Command):
         for loc in wear_loc:
             obj = ch.equipment.location[loc.name]
             if is_obj(obj):
-                if not can_see(ch, obj):
+                if not can_see_obj(ch, obj):
                     sdesc = "|C<something>|n"
                 else:
                     sdesc = obj.obj_desc()
@@ -138,7 +138,7 @@ class CmdInventory(Command):
                 if is_worn(item) or is_wielded(item):
                     continue
 
-                if not can_see(ch, item):
+                if not can_see_obj(ch, item):
                     sdesc = "<something>"
                 else:
                     sdesc = f"{item.obj_desc()}"

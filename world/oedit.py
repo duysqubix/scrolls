@@ -2,7 +2,7 @@
 Main EvMenu that handles editing objects
 """
 import copy
-from typeclasses.objs.object import VALID_OBJ_TAGS
+from typeclasses.objs.object import VALID_OBJ_APPLIES, VALID_OBJ_TAGS
 
 from evennia.utils.utils import inherits_from
 from typeclasses.objs.custom import CUSTOM_OBJS
@@ -88,6 +88,26 @@ class OEditMode:
             self.caller.msg("object saved.")
 
     def summarize(self):
+        def applies_to_pretty(x):
+            self.caller.msg(x)
+            msg = ""
+            split = 3
+            cntr = 0
+            for c in x:
+                if cntr == split:
+                    msg += "\n"
+                    cntr = 0
+                msg += f"|g{c[0]}|n"
+                for i in c[1:]:
+                    if i is None:
+                        break
+                    else:
+                        msg += f"[{i}]"
+                msg += ", "
+                cntr += 1
+            return msg
+
+        applies = applies_to_pretty(self.obj['applies'])
         msg = f"""
 ********Summary*******
 
@@ -104,7 +124,10 @@ type   : {self.obj['type']}
 weight : {self.obj['weight']}
 cost   : {self.obj['cost']}
 level  : {self.obj['level']}
-applies: {", ".join(self.obj['applies'])}
+applies: 
+
+{applies}
+
 tags   : {", ".join(self.obj['tags'])}
 ----------------Extras---------------------
 """
@@ -223,6 +246,102 @@ class Set(OEditCommand):
             ch.msg(f'{keyword} set.')
             return
 
+        elif keyword == 'applies':
+            #args=    [0]     [1]    [2]    [3]  [4]
+            # ex: set applies attrs [attr] [mod]
+            # ex: set applies stats [stat] [mod]
+            # ex: set applies conditions blinded x,y
+            if len(args) > 1:
+                if args[1] == 'clear':
+                    obj[keyword].clear()
+                    return
+                if len(args) < 3:
+                    ch.msg("invalid entry, see |chelp oedit-menu-applies|n")
+                    return
+
+                apply_type = args[1]
+                if apply_type not in VALID_OBJ_APPLIES.keys():
+                    ch.msg("not a valid apply type")
+                    return
+
+                if apply_type == 'attrs':
+                    attr = args[2]
+                    if attr not in VALID_OBJ_APPLIES['attrs']:
+                        ch.msg("not a valid attribute to modify")
+                        return
+                    try:
+                        mod = int(args[3])
+                    except:
+                        ch.msg("not a valid number for modifier")
+                        return
+
+                    pair = (attr, mod)
+                    if pair in obj[keyword]:
+                        obj[keyword].remove(pair)
+                        return
+                    obj[keyword].append(pair)
+
+                elif apply_type == 'stats':
+                    stat = args[2]
+                    if stat not in VALID_OBJ_APPLIES['stats']:
+                        ch.msg("not a valid stat to modify")
+                        return
+                    try:
+                        mod = int(args[3])
+                    except:
+                        ch.msg("not a valid number for modifier")
+                        return
+
+                    pair = (stat, mod)
+                    if pair in obj[keyword]:
+                        obj[keyword].remove(pair)
+                        return
+                    obj[keyword].append(pair)
+
+                elif apply_type == 'conditions':
+                    # ex: set applies conditions <condition> x y
+                    condition = args[2]
+                    if condition not in VALID_OBJ_APPLIES['conditions']:
+                        ch.msg("not a valid condition")
+                        return
+
+                    x, y = None, None
+                    if len(args) == 4:
+                        # only x is given
+                        try:
+                            #TODO: sometimes x can be float depending on condition
+                            x = int(args[3])
+                        except:
+                            ch.msg("X must be valid number")
+                            return
+                    elif len(args) == 5:
+                        # x and y is given
+                        try:
+                            x = int(args[3])
+                            y = int(args[4])
+                        except:
+                            ch.msg("XY must be a valid number")
+                            return
+
+                    pair = (condition, x, y)
+                    if pair in obj[keyword]:
+                        obj[keyword].remove(pair)
+                        return
+                    obj[keyword].append(pair)
+                else:
+                    raise ValueError(
+                        "bug encountered, you shouldn't have gotten here.")
+            else:
+                # show all applies
+                applies = ""
+                for apply_type, components in VALID_OBJ_APPLIES.items():
+                    applies += f"\n|c{apply_type}|n\n    "
+                    c = ", ".join(components)
+                    applies += c
+
+                ch.msg(applies)
+                return
+
         elif keyword == 'tags':
             if len(args) > 1:
                 tag = args[1].strip()
@@ -241,7 +360,7 @@ class Set(OEditCommand):
                     ch.msg(f"{tag} tag applied")
                 return
             else:
-                # show all applies
+                # show all tags
                 tags = ", ".join(VALID_OBJ_TAGS)
                 msg = f"Available Tags:\n{tags}"
                 ch.msg(msg)
