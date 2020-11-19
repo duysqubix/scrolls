@@ -10,7 +10,7 @@ creation commands.
 import copy
 from typing import Any, List, Tuple
 from world.utils.act import Announce, act
-from world.utils.utils import is_equipment, is_equippable, is_worn
+from world.utils.utils import is_equipment, is_equippable, is_wiz, is_worn
 from world.gender import Gender
 from world.races import NoRace, get_race
 from world.attributes import Attribute, VitalAttribute
@@ -132,9 +132,7 @@ class ConditionHandler(StorageHandler):
             if self.has(cls) and c.allow_multi is False:
                 self.caller.msg("you can't be affected by this again")
                 return None
-            print(c, self.caller)
             c.at_condition(self.caller)  # fire at condition
-            print(c, c.name)
             self.set(c)
 
     def remove(self, *condition):
@@ -154,7 +152,6 @@ class ConditionHandler(StorageHandler):
             match = None
             for _c in self.__getattr__(self.__attr_name__):
                 if _c == c:
-                    self.caller.msg(_c)
                     match = _c
                     break
 
@@ -346,6 +343,9 @@ class Character(DefaultCharacter):
         st = self.attrs.stamina
         sp = self.attrs.speed
         prompt = f"\nHP:{hp.cur}/{hp.max} MG:{mg.cur}/{mg.max} ST:{st.cur}/{st.max} SP:{sp.cur}/{sp.max} > "
+
+        if is_wiz(self):
+            prompt = "(holylight)" if self.db.holylight else "" + prompt
         return prompt
 
     def full_restore(self):

@@ -3,7 +3,7 @@ from evennia.utils.utils import dedent, inherits_from
 import tabulate
 from world.oedit import OEditMode
 from world.utils.utils import is_invis
-from world.conditions import get_condition
+from world.conditions import DetectInvis, get_condition
 from world.utils.act import Announce, act
 import evennia
 from evennia import EvMenu, create_object
@@ -75,7 +75,7 @@ class CmdOList(Command):
 
     Usage:
         olist
-        olist <type|desc> <criteria>
+        olist <type|name> <criteria>
     """
     key = "olist"
     locks = f"attr_ge(level.value, {BUILDER_LVL})"
@@ -100,7 +100,7 @@ class CmdOList(Command):
 
         args = args.split(' ')
         if len(args) < 2:
-            ch.msg("Supply either type or desc to search for")
+            ch.msg("Supply either type or name to search for")
             return
         table = self.styled_table("VNum",
                                   "Description",
@@ -108,7 +108,7 @@ class CmdOList(Command):
                                   border='incols')
         type_ = args[0]
         if type_ not in ('type', 'name'):
-            ch.msg("Please supply either (type or desc) to searchby")
+            ch.msg("Please supply either (type or name) to searchby")
             return
 
         criteria = args[1]
@@ -199,6 +199,33 @@ class CmdPurge(Command):
             None, None, Announce.ToRoom)
         act("You clear the room", False, False, ch, None, None,
             Announce.ToChar)
+
+
+class CmdHolyLight(Command):
+    """
+    Cast a holy light around you and be able to see everything
+    
+    Usage:
+        holylight
+    """
+    key = 'holylight'
+    aliases = ['holy']
+    locks = f"attr_ge(level.value, {IMM_LVL})"
+
+    def func(self):
+        ch = self.caller
+
+        detect_invis = get_condition('detect_invis')
+        if not ch.conditions.has(DetectInvis):
+            ch.conditions.add(detect_invis)
+            act("You vanish into another dimension.", True, True, ch, None,
+                None, Announce.ToChar)
+            ch.db.holylight = True
+        else:
+            ch.conditions.remove(detect_invis)
+            act("You slowly fade back into existence.", True, True, ch, None,
+                None, Announce.ToChar)
+            del ch.db.holylight
 
 
 class CmdWizInvis(Command):

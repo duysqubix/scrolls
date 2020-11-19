@@ -1,6 +1,6 @@
 from commands.command import Command
 from world.utils.act import Announce, act
-from world.utils.utils import is_cursed, is_equippable, is_obj, can_pickup, is_weapon, is_wieldable, is_wielded, is_worn
+from world.utils.utils import can_see, is_cursed, is_equippable, is_obj, can_pickup, is_weapon, is_wieldable, is_wielded, is_worn
 
 
 class CmdGet(Command):
@@ -47,7 +47,7 @@ class CmdGet(Command):
                 if amt == 'all':
                     matched_objs = []
                     for obj in ch.location.contents:
-                        if is_obj(obj):
+                        if is_obj(obj) and can_see(ch, obj):
                             if obj_name in obj.db.name:
                                 matched_objs.append(obj)
                     if not matched_objs:
@@ -72,7 +72,7 @@ class CmdGet(Command):
                         return
                     cntr = 0
                     for obj in ch.location.contents:
-                        if is_obj(obj):
+                        if is_obj(obj) and can_see(ch, obj):
                             if obj_name in obj.db.name:
                                 cntr += 1
                                 if amt == cntr:
@@ -105,7 +105,7 @@ class CmdGet(Command):
                         return
             elif obj_name == 'all':
                 for obj in ch.location.contents:
-                    if is_obj(obj):
+                    if is_obj(obj) and can_see(ch, obj):
                         if can_pickup(ch, obj):
                             obj.move_to(ch, quiet=True)
                             act(f"$n picks up a $p.", True, True, ch, obj,
@@ -211,11 +211,18 @@ class CmdDrop(Command):
 
                 success_drop = False
                 if args[0] == 'all':
-                    obj.move_to(ch.location, quiet=True)
-                    success_drop = all_objs = True
+                    if is_cursed(obj):
+                        ch.msg("Something prevents you from dropping that.")
+                    else:
+                        obj.move_to(ch.location, quiet=True)
+                        success_drop = all_objs = True
                 elif args[0] in obj.db.name:
-                    obj.move_to(ch.location, quiet=True)
-                    success_drop = True
+                    if is_cursed(obj):
+                        ch.msg("Something prevents you from dropping that.")
+                        return
+                    else:
+                        obj.move_to(ch.location, quiet=True)
+                        success_drop = True
 
                 if success_drop:
                     act("$n drops $p", True, True, ch, obj, None,

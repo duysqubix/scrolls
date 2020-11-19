@@ -1,5 +1,6 @@
+from world.globals import BUILDER_LVL
 from evennia.utils.utils import inherits_from
-from world.conditions import Hidden, Invisible
+from world.conditions import DetectHidden, DetectInvis, Hidden, Invisible
 from evennia.utils import make_iter
 
 
@@ -15,6 +16,16 @@ def highlight_words(block, key_targets, color_codes):
     return block
 
 
+def is_wiz(caller):
+    """ checks to see if player is immortal """
+    if not is_npc(caller) or not is_pc(caller):
+        return False
+
+    if caller.attrs.level.value <= BUILDER_LVL:
+        return False
+    return True
+
+
 def is_pc(caller):
     """ checks to see if caller is pc """
     if not caller.db.is_pc:
@@ -25,19 +36,54 @@ def is_pc(caller):
 def is_npc(caller):
     """ checks to see if caller is npc """
     if not caller.db.is_npc:
-        return True
+        return False
     return caller.db.is_npc
 
 
 def is_invis(caller):
     """
     checks if caller has invisible condition
+    caller could be pc/npc/or obj
     """
+
+    if is_obj(caller):
+        return "invis" in caller.db.tags
 
     if not is_npc(caller) or not is_pc(caller):
         return False
 
     return caller.conditions.has(Invisible)
+
+
+def can_see(target, vict):
+    """
+    first argument must be a pc/npc character
+    second argument can either be obj or pc/npc
+    """
+
+    if not is_pc(target) and not is_npc(target):
+        return False
+
+    if is_pc(vict) or is_npc(vict):
+        # check here for pc 2 pc if they can see each other
+
+        if not target.conditions.has(DetectInvis) and is_invis(vict):
+            return False
+        elif not target.conditions.has(DetectHidden) and is_hidden(vict):
+            return False
+        else:
+            return True
+
+    if not is_obj(vict):
+        return False
+
+    if not is_invis(vict):
+        return True
+    else:
+        if not target.conditions.has(DetectInvis) and is_invis(vict):
+            return False
+        else:
+            return True
 
 
 def is_hidden(caller):
@@ -99,6 +145,13 @@ def is_worn(obj):
     return obj.db.is_worn
 
 
+def is_equipped(obj):
+    """ checks to see if obj is worn or wielded"""
+    if not is_obj(obj):
+        return False
+    return is_wielded(obj) or is_worn(obj)
+
+
 def is_cursed(obj):
     """ check to see if object can be removed"""
-    return False  #TODO: Implement is_cursed()
+    return 'cursed' in obj.db.tags

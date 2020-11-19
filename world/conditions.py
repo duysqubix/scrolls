@@ -157,6 +157,14 @@ class Deafened(Condition):
     __obj_name__ = 'deafened'
 
 
+class DetectInvis(Condition):
+    __obj_name__ = 'detect_invis'
+
+
+class DetectHidden(Condition):
+    __obj_name__ = 'detect_hidden'
+
+
 class Fatigued(Condition):
     """Fatigued.X refers to level of Fatigue """
     __obj_name__ = 'fatigued'
@@ -331,9 +339,10 @@ class Flying(Condition):
 
 ALL_CONDITIONS = [
     Bleeding, Blinded, Burning, Chameleon, Crippled, DarkSight, Dazed,
-    Deafened, Fatigued, Frenzied, Hidden, Muffled, Immobilized, Invisible,
-    Muffled, Prone, Paralyzed, Restrained, Silenced, Slowed, Sleeping, Stunned,
-    Unconscious, BreathUnderWater, Deaf, Fear, Intangible, Flying
+    Deafened, DetectHidden, DetectInvis, Fatigued, Frenzied, Hidden, Muffled,
+    Immobilized, Invisible, Muffled, Prone, Paralyzed, Restrained, Silenced,
+    Slowed, Sleeping, Stunned, Unconscious, BreathUnderWater, Deaf, Fear,
+    Intangible, Flying
 ]
 
 

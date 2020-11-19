@@ -2,6 +2,7 @@
 Main EvMenu that handles editing objects
 """
 import copy
+from typeclasses.objs.object import VALID_OBJ_TAGS
 
 from evennia.utils.utils import inherits_from
 from typeclasses.objs.custom import CUSTOM_OBJS
@@ -21,8 +22,8 @@ _DEFAULT_OBJ_STRUCT = {
     "weight": 0,
     "cost": 0,
     "level": 0,  # minimum level that can use this object
-    "applies":
-    [],  # temporarily changes stats, attrs, and conditions while using
+    "applies": [],  # affects object has on user (stat change, health, etc...)
+    "tags": [],  # unique meta information about object itself
     "extra": {}  # holds special fields relatd to a special object
 }
 
@@ -87,11 +88,6 @@ class OEditMode:
             self.caller.msg("object saved.")
 
     def summarize(self):
-        # max_len = 50
-        # if len(self.obj['ldesc']) < max_len:
-        #     ldesc = self.obj['ldesc']
-        # else:
-        #     ldesc = self.obj['ldesc'][:max_len] + "[...]"
         msg = f"""
 ********Summary*******
 
@@ -109,6 +105,7 @@ weight : {self.obj['weight']}
 cost   : {self.obj['cost']}
 level  : {self.obj['level']}
 applies: {", ".join(self.obj['applies'])}
+tags   : {", ".join(self.obj['tags'])}
 ----------------Extras---------------------
 """
         self.caller.msg(self.obj['extra'])
@@ -152,10 +149,6 @@ class Set(OEditCommand):
     """
     key = 'set'
 
-    # valid_obj_attributes = [
-    #     'key', 'sdesc', 'ldesc', 'adesc', 'type', 'wear', 'weight', 'cost',
-    #     'level', 'applies', 'extra'
-    # ]
     valid_obj_attributes = list(_DEFAULT_OBJ_STRUCT.keys())
 
     def func(self):
@@ -216,7 +209,43 @@ class Set(OEditCommand):
                 types_str = "\n".join(types)
                 ch.msg(f"Available Types:\n{types_str}")
                 return
+        elif keyword in ('weight', 'cost', 'level'):
+            # set can't be < 0
+            try:
+                weight = int(args[1].strip())
+            except:
+                ch.msg(f"{keyword} not a valid integer")
+                return
 
+            if weight < 0:
+                weight = 0
+            obj[keyword] = weight
+            ch.msg(f'{keyword} set.')
+            return
+
+        elif keyword == 'tags':
+            if len(args) > 1:
+                tag = args[1].strip()
+
+                if tag == 'clear':
+                    obj[keyword].clear()
+                    return
+                if tag not in VALID_OBJ_TAGS:
+                    ch.msg("Not a valid tag")
+                    return
+                if tag in obj[keyword]:
+                    obj[keyword].remove(tag)
+                    ch.msg(f"{tag} tag removed")
+                else:
+                    obj[keyword].append(tag)
+                    ch.msg(f"{tag} tag applied")
+                return
+            else:
+                # show all applies
+                tags = ", ".join(VALID_OBJ_TAGS)
+                msg = f"Available Tags:\n{tags}"
+                ch.msg(msg)
+                return
         elif keyword == 'extra':
             # set extra fields this will be ambiguous depending
             # on custom object type

@@ -1,12 +1,13 @@
 """
 holds informative type of commands
 """
+from world.conditions import DetectInvis
 from evennia import EvForm
 from evennia.utils import evmore, crop
 from evennia.utils.utils import inherits_from
 from commands.command import Command
 from world.utils.act import Announce, act
-from world.utils.utils import is_obj, can_pickup, is_wielded, is_worn
+from world.utils.utils import can_see, is_equipment, is_equipped, is_invis, is_obj, can_pickup, is_wielded, is_worn
 
 
 class CmdAffect(Command):
@@ -96,7 +97,13 @@ class CmdEquipment(Command):
         table = self.styled_table(border=None)
         for loc in wear_loc:
             obj = ch.equipment.location[loc.name]
-            sdesc = obj.db.sdesc if obj is not None else "|Mnothing|n"
+            if is_obj(obj):
+                if not can_see(ch, obj):
+                    sdesc = "|C<something>|n"
+                else:
+                    sdesc = obj.obj_desc()
+            else:
+                sdesc = "|Mnothing|n"
             table.add_row(loc.display_msg, sdesc)
 
         msg = f"You are using\n{table}"
@@ -131,9 +138,11 @@ class CmdInventory(Command):
                 if is_worn(item) or is_wielded(item):
                     continue
 
-                sdesc = f"{item.db.sdesc}"
-                table.add_row(
-                    "{}|n".format(crop(raw_ansi(sdesc), width=50) or ""), )
+                if not can_see(ch, item):
+                    sdesc = "<something>"
+                else:
+                    sdesc = f"{item.obj_desc()}"
+                table.add_row("{}|n".format(raw_ansi(sdesc)))
             string = f"|wYou are carrying:\n{table}"
         ch.msg(string)
 
@@ -146,6 +155,7 @@ class CmdLook(Command):
         look
         look <obj>
         look <character>
+
     """
 
     key = "look"
@@ -155,18 +165,6 @@ class CmdLook(Command):
 
     def func(self):
         ch = self.caller
-        # if not self.args:
-        #     target = ch.location
-        #     if not target:
-        #         ch.msg("You have no location to look at!")
-        #         return
-        # else:
-        #     target = ch.search(self.args)
-        #     if not target:
-        #         ch.msg("You don't see anything like that")
-        #         return
-
-        # room
         if not self.args:
             target = ch.location
             if not target:
@@ -190,8 +188,11 @@ class CmdLook(Command):
                     if obj.id == ch.id:
                         continue
                     room_msg += f"{obj.name.capitalize()}\n"
-                if obj.db.sdesc:
-                    room_msg += f"{obj.db.ldesc}\n"
+                if is_obj(obj):
+                    if is_invis(obj) and not ch.conditions.has(DetectInvis):
+                        continue
+                    else:
+                        room_msg += f"{obj.obj_desc()}\n"
             ch.msg(room_msg)
             return
 
@@ -202,6 +203,13 @@ class CmdLook(Command):
                 if obj_name in obj.db.name:
                     ch.msg(obj.db.edesc)
                     return
+        # try looking for an obj in your inventory, if found send back edesc
+        for obj in ch.contents:
+            if is_equipped(obj):
+                continue
+            if obj_name in obj.db.name:
+                ch.msg(obj.db.edesc)
+                return
         ch.msg("You don't see anything like that.")
 
         # self.msg((ch.at_look(target), {"type": "look"}), options=None)

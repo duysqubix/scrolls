@@ -2,6 +2,7 @@
 Default Scrolls object
 All objects must inherit this class to work properly
 """
+from world.conditions import Invisible
 from evennia import DefaultObject, GLOBAL_SCRIPTS
 
 
@@ -183,11 +184,29 @@ class Object(DefaultObject):
         self.db.cost = 0
         self.db.level = 0
         self.db.applies = []
+        self.db.tags = []
         self.db.extras = {}
         self.db.is_obj = True
 
         for field, value in self.__obj_specific_fields__.items():
             self.attributes.add(field, value)
+
+    def obj_desc(self, ldesc=False):
+        """ returns string of tags currently set on obj"""
+        if not self.db.tags:
+            return ""
+
+        tags = ""
+        if 'invis' in self.db.tags:
+            tags += "(|Cinvis|n)"
+        if 'cursed' in self.db.tags:
+            tags += "(|rcursed|n)"
+        if 'daedric' in self.db.tags:
+            tags += "(|rda|Yed|rric|n)"
+
+        if not ldesc:
+            return tags + " " + self.db.sdesc
+        return tags + " " + self.db.lsdesc
 
     def at_object_creation(self):
         """ 
@@ -208,6 +227,7 @@ class Object(DefaultObject):
         self.db.cost = obj['cost']
         self.db.level = obj['level']
         self.db.applies = obj['applies']
+        self.db.tags = obj['tags']
         self.db.extra = obj['extra']
 
         # set special fields as local attributes to class
@@ -218,3 +238,6 @@ class Object(DefaultObject):
                 self.attributes.add(efield, self.db.extra[efield])
             else:
                 self.attributes.add(efield, evalue)
+
+
+VALID_OBJ_TAGS = ('invis', 'cursed', 'quest_item', 'no_sell', 'daedric')
