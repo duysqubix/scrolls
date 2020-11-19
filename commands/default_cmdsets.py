@@ -68,6 +68,7 @@ class BuilderCmdSet(CmdSet):
         self.add(wiz.CmdRestore())
         self.add(wiz.CmdOList())
         self.add(wiz.CmdHolyLight())
+        self.add(wiz.CmdBookLoad())
 
 
 class ImmCmdSet(CmdSet):

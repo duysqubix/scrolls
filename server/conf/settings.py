@@ -58,6 +58,8 @@ BASE_BATCHPROCESS_PATHS += ["resources"]
 
 BASE_OBJECT_TYPECLASS = "typeclasses.objs.object.Object"
 
+BOOK_JSON = "resources/books/book.json"
+
 ######################################################################
 # Settings given in secret_settings.py override those in this file.
 ######################################################################
@@ -65,7 +67,6 @@ try:
     from server.conf.secret_settings import *
 except ImportError:
     print("secret_settings.py file not found or failed to import.")
-
 
 try:
     # Created by the `evennia connections` wizard

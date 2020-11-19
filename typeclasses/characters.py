@@ -146,7 +146,7 @@ class ConditionHandler(StorageHandler):
             c = cls(X, Y)
             # check to see if caller has condition
             if self.has(cls) and c.allow_multi is False:
-                self.caller.msg("you can't be affected by this again")
+                # self.caller.msg("you can't be affected by this again")
                 return None
             c.at_condition(self.caller)  # fire at condition
             self.set(c)

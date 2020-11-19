@@ -1,3 +1,5 @@
+import json
+import pathlib
 from typeclasses.objs.custom import CUSTOM_OBJS
 from evennia.utils.utils import dedent, inherits_from
 import tabulate
@@ -8,11 +10,12 @@ from world.utils.act import Announce, act
 import evennia
 from evennia import EvMenu, create_object
 from commands.command import Command
-from world.globals import BUILDER_LVL, WIZ_LVL, IMM_LVL
+from world.globals import BUILDER_LVL, GOD_LVL, WIZ_LVL, IMM_LVL
 from evennia import GLOBAL_SCRIPTS
 from evennia.utils.ansi import ANSIParser
 from evennia.utils import crop
 from evennia.utils.ansi import raw as raw_ansi
+from server.conf.settings import BOOK_JSON
 
 __all__ = [
     "CmdSpawn", "CmdCharacterGen", "CmdWizInvis", "CmdOEdit", "CmdOList",
@@ -283,20 +286,51 @@ class CmdRestore(Command):
             return
 
 
-class CmdSpawn(Command):
+class CmdBookLoad(Command):
     """
-    spawn an instance of object or mob based on vnum
-
-    Usage:
-        spawn <obj/mob> <vnum>
+    Creates/adds/overwrites internal database
+    for books based on books.json
     """
 
-    key = "spawn"
-    locks = f"attr_ge(level.value, {BUILDER_LVL}"
+    key = 'book_load'
+    locks = f"attr_ge(level.value, {GOD_LVL}"
+    arg_regex = r"\s|$"
 
     def func(self):
         ch = self.caller
-        ch.msg(f"spawning {self.args} for you")
+        #TODO: find a better way to get book.json file
+        from evennia import GLOBAL_SCRIPTS
+
+        file = (pathlib.Path(__file__).parent.parent / "resources" / "books" /
+                "books.json").absolute()
+        with open(file) as b:
+            books = json.load(b)
+
+        # delete all books in db
+
+        # need to set basic obj settings:
+        # key
+        # sdesc
+        # lsdesc
+        for book in books:
+            book.update({
+                'edesc': "",
+                'type': 'book',
+                'weight': 0,
+                'cost': 0,
+                'level': 1,
+                'applies': [],
+                'extra': {},
+                'tags': []
+            })
+            if book['key'] not in GLOBAL_SCRIPTS.objdb.db.vnum.keys():
+                next_vnum = max(GLOBAL_SCRIPTS.objdb.db.vnum.keys()) + 1
+                GLOBAL_SCRIPTS.objdb.db.vnum[next_vnum] = book
+            else:
+                # overwrite
+                GLOBAL_SCRIPTS.objdb.db.vnum[]
+
+        # ch.msg(data)
 
 
 class CmdCharacterGen(Command):
