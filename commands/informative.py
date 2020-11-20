@@ -7,7 +7,7 @@ from evennia.utils import evmore, crop
 from evennia.utils.utils import inherits_from
 from commands.command import Command
 from world.utils.act import Announce, act
-from world.utils.utils import can_see_obj, is_equipment, is_equipped, is_invis, is_obj, can_pickup, is_wielded, is_worn
+from world.utils.utils import can_see_obj, is_book, is_equipment, is_equipped, is_invis, is_obj, can_pickup, is_wielded, is_worn
 
 
 class CmdAffect(Command):
@@ -85,7 +85,7 @@ class CmdRead(Command):
         cntr = 1
         for obj in ch.contents:
 
-            if inherits_from(obj, 'typeclasses.objs.custom.Book'):
+            if is_book(obj):
                 if obj_name in obj.db.name and not pos and not book:  # using object name instead of dot expression
                     show_book(obj)
                     return
@@ -115,7 +115,7 @@ class CmdEquipment(Command):
         ch = self.caller
         wear_loc = ch.equipment._valid_wear_loc
 
-        # equipment
+        # # equipment
         table = self.styled_table(border=None)
         for loc in wear_loc:
             obj = ch.equipment.location[loc.name]
@@ -149,12 +149,13 @@ class CmdInventory(Command):
     def func(self):
         """check inventory"""
         ch = self.caller
-        items = ch.contents
+        items = list(ch.contents)
         if not items:
             string = "You are not carrying anything."
         else:
             from evennia.utils.ansi import raw as raw_ansi
 
+            items.sort(key=lambda x: x.db.sdesc.lower())
             table = self.styled_table(border="header")
             for item in items:
                 if is_worn(item) or is_wielded(item):

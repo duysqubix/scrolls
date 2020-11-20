@@ -28,6 +28,15 @@ class Book(Object):
     }
 
 
+class Container(Object):
+    """
+    Object that can hold things
+    """
+    __obj_type__ = 'container'
+    __obj_specific_fields__ = {'limit': -1}
+    __help_msg__ = "limit: [int] - number of objects, -1 for infinity"
+
+
 class Weapon(Object):
     """
     Weapon objects, they deal damagne and can be wielded
@@ -35,6 +44,7 @@ class Weapon(Object):
 
     __obj_type__ = "weapon"
     __obj_specific_fields__ = {'dam_roll': "", "dual_wield": "False"}
+    __help_msg__ = "dam_roll: 1d10+4\ndual_wield: true||false"
 
     def at_object_creation(self):
         super().at_object_creation()
@@ -60,5 +70,6 @@ CUSTOM_OBJS = {
     Default.__obj_type__: Default,
     Book.__obj_type__: Book,
     Weapon.__obj_type__: Weapon,
-    Equipment.__obj_type__: Equipment
+    Equipment.__obj_type__: Equipment,
+    Container.__obj_type__: Container
 }

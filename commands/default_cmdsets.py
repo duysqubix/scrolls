@@ -47,6 +47,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(info.CmdInventory())
         self.add(info.CmdEquipment())
 
+        self.add(act_item.CmdPut())
         self.add(act_item.CmdGet())
         self.add(act_item.CmdWear())
         self.add(act_item.CmdRemove())

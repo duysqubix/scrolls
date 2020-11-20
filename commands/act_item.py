@@ -1,7 +1,163 @@
-from evennia.utils.utils import uses_database
+from evennia.utils.utils import make_iter, uses_database
 from commands.command import Command
 from world.utils.act import Announce, act
-from world.utils.utils import can_drop, can_see_obj, is_cursed, is_equippable, is_equipped, is_obj, can_pickup, is_weapon, is_wieldable, is_wielded, is_worn
+from world.utils.utils import can_drop, can_see_obj, is_container, is_cursed, is_equippable, is_equipped, is_obj, can_pickup, is_sleeping, is_weapon, is_wieldable, is_wielded, is_worn, match_name, parse_dot_notation
+
+
+class CmdPut(Command):
+    """
+    Put an object from your inventory into a valid container object
+
+    Usage:
+        put <obj> in <container>                
+        put <obj> in <pos>.<container>          
+        put <pos>.<obj> in <pos>.<container>    
+        put all.<obj> in <pos>.container     
+
+    Examples:
+        put book in bag
+
+    """
+
+    key = 'put'
+    locks = "cmd:all()"
+    arg_regex = r"\s|$"
+
+    def func(self):
+        ch = self.caller
+
+        def success_put(obj, con_obj):
+            act("$n puts $p in $P", True, True, ch, obj, con_obj,
+                Announce.ToRoom)
+            act("You put $p in $P", True, True, ch, obj, con_obj,
+                Announce.ToChar)
+
+        def find_container(con_name, pos=None):
+            if pos is None:
+                # find first container
+                _container = None
+                for obj in ch.contents:
+                    if is_container(obj):
+                        # match
+                        _container = obj
+                        break
+                return _container
+            else:
+                try:
+                    pos = int(pos)
+                except:
+                    raise ValueError('pos should be a integer value')
+
+                # find <pos> container
+                cntr = 1
+                _container = None
+                for obj in ch.contents:
+                    if is_container(obj) and match_name(con_name, obj):
+                        if cntr == con_pos:
+                            # match container
+                            _container = obj
+                            return _container
+                        cntr += 1
+
+        def find_obj(obj_name, pos=None):
+
+            # get all objects
+            if pos is None and obj_name == 'all':
+                # simple return all contents that isn't container type
+                matched_objs = []
+
+                for obj in ch.contents:
+                    if not is_container(obj) and not is_equipped(obj):
+                        matched_objs.append(obj)
+                return matched_objs
+            # get obj with matching obj_name
+            elif pos is None:
+                for obj in ch.contents:
+                    if not is_container(obj) and match_name(
+                            obj_name, obj) and not is_equipped(obj):
+                        return make_iter(obj)
+                return None
+
+            # get all of matching name
+            elif pos == 'all':
+                matched_objs = []
+                for obj in ch.contents:
+                    if not is_container(obj) and match_name(
+                            obj_name, obj) and not is_equipped(obj):
+                        matched_objs.append(obj)
+                return matched_objs
+            else:
+                # get <pos> of matching name
+                cntr = 1
+                for obj in ch.contents:
+                    if not is_container(obj) and match_name(
+                            obj_name, obj) and not is_equipped(obj):
+                        if cntr == pos:
+                            return make_iter(obj)
+                        cntr += 1
+                return None
+
+        args = self.args.strip().split()
+        if not args or len(args) != 3:
+            ch.msg("Put what in what?")
+            return
+
+        obj_name, _filler, container = args
+        if _filler != 'in':
+            ch.msg("You must speicify `in`")
+            return
+
+        all_objs = False
+        obj_pos = con_pos = None
+
+        obj_pos, obj_name = parse_dot_notation(obj_name)
+        if obj_pos == 'all':
+            all_objs = True
+
+        con_pos, container = parse_dot_notation(container)
+
+        if not obj_pos and not con_pos:
+            _container = find_container(container)
+            objs = find_obj(obj_name)
+            if not _container:
+                ch.msg("You couldn't find such container")
+                return
+            if not objs:
+                ch.msg("You couldn't find such item")
+                return
+
+            for obj in objs:
+                if not can_see_obj(ch,
+                                   obj) or is_equipped(obj) or is_cursed(obj):
+                    ch.msg("You can't do that.")
+                    continue
+
+                obj.move_to(_container)
+                success_put(obj, _container)
+
+            return
+
+        # obj=all.<obj>
+        _container = find_container(container, pos=con_pos)
+        if not _container:
+            ch.msg("You could't find that container.")
+            return
+
+        pos = 'all' if all_objs else obj_pos
+
+        objs = find_obj(obj_name, pos=pos)
+        if not objs:
+            ch.msg("You can't find anything like that.")
+            return
+
+        for obj in objs:
+            if not can_see_obj(ch, obj) or is_cursed(obj):
+                ch.msg("You can't do that.")
+                continue
+
+            obj.move_to(_container)
+            success_put(obj, _container)
+        return
 
 
 class CmdGet(Command):
@@ -49,7 +205,7 @@ class CmdGet(Command):
                     matched_objs = []
                     for obj in ch.location.contents:
                         if is_obj(obj) and can_see_obj(ch, obj):
-                            if obj_name in obj.db.name:
+                            if match_name(obj_name, obj):
                                 matched_objs.append(obj)
                     if not matched_objs:
                         ch.msg(f"You couldn't find anything like {obj_name}")
@@ -74,7 +230,7 @@ class CmdGet(Command):
                     cntr = 0
                     for obj in ch.location.contents:
                         if is_obj(obj) and can_see_obj(ch, obj):
-                            if obj_name in obj.db.name:
+                            if match_name(obj_name, obj):
                                 cntr += 1
                                 if amt == cntr:
                                     if can_pickup(ch, obj):
@@ -120,7 +276,7 @@ class CmdGet(Command):
                 # do a find in room, return first match
                 for obj in ch.location.contents:
                     if is_obj(obj):
-                        if obj_name in obj.db.name:
+                        if match_name(obj_name, obj):
                             if can_pickup(ch, obj):
                                 # move obj to player inv
                                 obj.move_to(ch)
@@ -161,7 +317,7 @@ class CmdRemove(Command):
                 if obj_name == 'all':
                     ch.equipment.remove(obj)
                     success_remove = True
-                elif obj_name in obj.db.name:
+                elif match_name(obj_name, obj):
                     ch.equipment.remove(obj)
                     return
 
@@ -171,7 +327,7 @@ class CmdRemove(Command):
                     ch.equipment.unwield(obj)
                     success_remove = True
 
-                elif obj_name in obj.db.name:
+                elif match_name(obj_name, obj):
                     ch.equipment.unwield(obj)
                     return
 
@@ -184,7 +340,7 @@ class CmdDrop(Command):
     drop something
     Usage:
       drop <obj>
-      drop <obj>.all #TODO
+      drop <amt>.<obj> #TODO
       drop all
     """
 
@@ -196,23 +352,61 @@ class CmdDrop(Command):
         """Implement command"""
 
         ch = self.caller
+        args = self.args.strip()
+
         if not self.args:
             ch.msg("Drop what?")
             return
 
-        args = self.args.strip().split(' ')
-        if len(args) == 1:
+        def success_drop(obj):
+            act("$n drops $p", True, True, ch, obj, None, Announce.ToRoom)
+            act("You drop $p", True, True, ch, obj, None, Announce.ToChar)
 
-            def success_drop(obj):
-                act("$n drops $p", True, True, ch, obj, None, Announce.ToRoom)
-                act("You drop $p", True, True, ch, obj, None, Announce.ToChar)
+        if "." in args:
+            pos, obj_name = args.split('.')
+            do_all = False
+            if pos == 'all':
+                do_all = True
+            else:
+                try:
+                    pos = int(pos)
+                except:
+                    ch.msg("pos must be a valid integer")
+                    return
+
+            # handles dot notation
+            cntr = 1
+            for obj in ch.contents:
+                if is_equipped(obj):
+                    continue
+                if match_name(obj_name, obj):
+                    if do_all:
+                        # match
+                        if can_drop(ch, obj):
+                            obj.move_to(ch.location, quiet=True)
+                            success_drop(obj)
+                        else:
+                            ch.msg("You can't drop that.")
+                        continue
+
+                    if cntr == pos:
+                        # match
+                        if can_drop(ch, obj):
+                            obj.move_to(ch.location, quiet=True)
+                            success_drop(obj)
+                        else:
+                            ch.msg("You can't drop that.")
+
+                    cntr += 1
+
+        else:
 
             all_objs = False
             for obj in ch.contents:
                 if is_equipped(obj):
                     continue
 
-                if args[0] == 'all':
+                if args == 'all':
                     if can_drop(ch, obj):
                         obj.move_to(ch.location, quiet=True)
                         success_drop(obj)
@@ -222,7 +416,7 @@ class CmdDrop(Command):
                             Announce.ToChar)
                     continue
 
-                elif args[0] in obj.db.name:
+                elif match_name(args, obj):
                     if can_drop(ch, obj):
                         obj.move_to(ch.location, quiet=True)
                         success_drop(obj)
@@ -254,7 +448,7 @@ class CmdWield(Command):
         for obj in ch.contents:
             if is_weapon(obj) and not is_wielded(obj):
                 # potential candidate
-                if args in obj.db.name:
+                if match_name(args, obj):
                     # match
                     ch.equipment.wield(obj)
                     return
@@ -292,7 +486,7 @@ class CmdWear(Command):
         for obj in ch.contents:
             if is_equippable(obj) and not is_worn(obj) and not is_weapon(obj):
                 # this object is a potential candidate
-                if args in obj.db.name:
+                if match_name(args, obj):
                     # we have a match!
                     ch.equipment.add(obj)
                     return

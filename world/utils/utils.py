@@ -1,5 +1,5 @@
 from world.globals import BUILDER_LVL
-from evennia.utils.utils import inherits_from
+from evennia.utils.utils import inherits_from, string_partial_matching
 from world.conditions import DetectHidden, DetectInvis, Hidden, HolyLight, Invisible, Sleeping
 from evennia.utils import make_iter
 
@@ -14,6 +14,29 @@ def highlight_words(block, key_targets, color_codes):
     for idx, key in enumerate(key_targets):
         block.replace(key, f"{color_codes[idx]}{key}|n")
     return block
+
+
+def match_name(name, obj):
+    if not is_obj(obj):
+        raise ValueError("obj must be object type")
+    return True if string_partial_matching(obj.db.name, name) else False
+
+
+def parse_dot_notation(string):
+    """
+    Parses dot notation string like so:
+
+    ex: 1.book = (1, 'book')
+    ex: all.book = ('all','book')
+    ex: book = (None, 'book')
+    """
+    pos = None
+    if "." in string:
+        pos, name = string.split('.')
+        if pos != 'all':
+            pos = int(pos)
+        return pos, name
+    return pos, string
 
 
 def is_wiz(obj):
@@ -133,6 +156,16 @@ def is_equipment(obj):
 def is_weapon(obj):
     """ checks if obj is of weapon type"""
     return is_obj(obj) and obj.__obj_type__ == 'weapon'
+
+
+def is_book(obj):
+    """ checks if obj is book type"""
+    return is_obj(obj) and obj.__obj_type__ == 'book'
+
+
+def is_container(obj):
+    """checks if obj is container type"""
+    return is_obj(obj) and obj.__obj_type__ == 'container'
 
 
 def can_pickup(ch, obj):

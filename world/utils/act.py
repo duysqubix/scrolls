@@ -35,11 +35,12 @@ def act(msg, hide_invisible, hide_sleep, ch, obj, vict_obj, announce_type):
         $e - he, she, or it depending on gender of ch
         $E - like $e but for vict_objt
         $p - short description or 'something' for obj. 
+        $P Like $p for vict_obj.*
+
 
         TODO Tokens:
         $o Name or 'something' for obj, depending on visibility. 
         $O Like $o, for vict_obj.*
-        $P Like $p for vict_obj.*
         $a 'an' or 'a', depending on the first character of obj's name. 
         $A Like $a, for vict_obj.* 
         $$ Print the character '$' 
@@ -131,6 +132,10 @@ def act(msg, hide_invisible, hide_sleep, ch, obj, vict_obj, announce_type):
 
         sdesc = obj.db.sdesc
         msg = msg.replace('$p', sdesc)
+
+    if "$P" in msg:
+        sdesc = vict_obj.db.sdesc
+        msg = msg.replace("$P", sdesc)
 
     if announce_type == Announce.ToRoom:
         for obj in ch.location.contents:
