@@ -19,7 +19,13 @@ class Book(Object):
     """
 
     __obj_type__ = "book"
-    __obj_specific_fields__ = {"author": "", "title": "", "contents": ""}
+    __obj_specific_fields__ = {
+        "category": "",
+        "date": "",
+        "author": "",
+        "title": "",
+        "contents": ""
+    }
 
 
 class Weapon(Object):

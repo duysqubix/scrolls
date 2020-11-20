@@ -50,29 +50,51 @@ class CmdRead(Command):
 
     Usage:
         read <bookname>
+        read <num>.book
     """
 
     key = 'read'
 
     def func(self):
+        def show_book(book):
+            title = book.db.title
+            author = book.db.author
+            contents = book.db.contents
+            date = book.db.date
+
+            book_contents = f"\n|gTitle|w: {title}\n|gAuthor|w: {author}\n|gDate|w: {date}\n\n|n{contents}"
+            evmore.msg(ch, book_contents)
+
         ch = self.caller
         if not self.args:
             ch.msg("what do you want to read?")
             return
 
         obj_name = self.args.strip()
-
-        for obj in ch.contents:
-            if inherits_from(
-                    obj, 'typeclasses.objs.custom.Book') and (obj_name
-                                                              in obj.db.name):
-                title = obj.db.title
-                author = obj.db.author
-                contents = obj.db.contents
-
-                book_contents = f"Title: {title}\nAuthor: {author}\n\n{contents}"
-                evmore.msg(ch, book_contents)
+        pos, book = None, None
+        if "." in obj_name:
+            pos, book = obj_name.split('.')
+            if book != 'book':
+                ch.msg("if using dot expression, you must use book")
                 return
+            try:
+                pos = int(pos)
+            except:
+                ch.msg("not a valid position number")
+                return
+        cntr = 1
+        for obj in ch.contents:
+
+            if inherits_from(obj, 'typeclasses.objs.custom.Book'):
+                if obj_name in obj.db.name and not pos and not book:  # using object name instead of dot expression
+                    show_book(obj)
+                    return
+                else:
+                    # assume we are using dot expression
+                    if cntr == pos:
+                        show_book(obj)
+                        return
+                    cntr += 1
         ch.msg("You couldn't find anything to read")
 
 

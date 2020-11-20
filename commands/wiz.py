@@ -1,5 +1,6 @@
 import json
 import pathlib
+from collections import OrderedDict
 from typeclasses.objs.custom import CUSTOM_OBJS
 from evennia.utils.utils import dedent, inherits_from
 import tabulate
@@ -87,12 +88,18 @@ class CmdOList(Command):
         ch = self.caller
         ch.msg(self.args)
         args = self.args.strip()
+        objdb = dict(GLOBAL_SCRIPTS.objdb.db.vnum)
+        min_ = min(GLOBAL_SCRIPTS.objdb.db.vnum.keys())
+        max_ = max(GLOBAL_SCRIPTS.objdb.db.vnum.keys())
+
         if not args:
             table = self.styled_table("VNum",
                                       "Description",
                                       "Type",
                                       border='incols')
-            for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
+
+            for vnum in range(min_, max_ + 1):
+                data = objdb[vnum]
                 vnum = raw_ansi(f"[|G{vnum:<4}|n]")
                 sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
                 table.add_row(vnum, sdesc, f"{data['type']}")
@@ -116,7 +123,9 @@ class CmdOList(Command):
 
         criteria = args[1]
 
-        for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
+        for vnum in range(min_, max_ + 1):
+            # for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
+            data = objdb[vnum]
             if type_ == 'type':
                 if criteria == data['type']:
                     vnum = raw_ansi(f"[|G{vnum:<4}|n]")
@@ -307,30 +316,44 @@ class CmdBookLoad(Command):
             books = json.load(b)
 
         # delete all books in db
+        for k, v in dict(GLOBAL_SCRIPTS.objdb.db.vnum).items():
+            if v['type'] == 'book':
+                del GLOBAL_SCRIPTS.objdb.db.vnum[k]
 
-        # need to set basic obj settings:
-        # key
-        # sdesc
-        # lsdesc
-        for book in books:
-            book.update({
-                'edesc': "",
-                'type': 'book',
-                'weight': 0,
-                'cost': 0,
-                'level': 1,
-                'applies': [],
-                'extra': {},
-                'tags': []
-            })
-            if book['key'] not in GLOBAL_SCRIPTS.objdb.db.vnum.keys():
-                next_vnum = max(GLOBAL_SCRIPTS.objdb.db.vnum.keys()) + 1
-                GLOBAL_SCRIPTS.objdb.db.vnum[next_vnum] = book
-            else:
-                # overwrite
-                GLOBAL_SCRIPTS.objdb.db.vnum[]
+        current_vnums = list(GLOBAL_SCRIPTS.objdb.db.vnum.keys())
+        # find missing vnums
+        a = list(range(1, current_vnums[-1] + 1))
 
-        # ch.msg(data)
+        missing_vnums = list(set(current_vnums) ^ set(a))
+
+        obj_info = {
+            'edesc': "",
+            'adesc': "",
+            'type': 'book',
+            'weight': 0,
+            'cost': 0,
+            'level': 1,
+            'applies': [],
+            'tags': []
+        }
+        book_idx = 0
+        # fill in missing vnums first
+        for vnum in missing_vnums:
+
+            books[book_idx].update(obj_info)
+            GLOBAL_SCRIPTS.objdb.db.vnum[vnum] = books[book_idx]
+            book_idx += 1
+
+        next_vnum = max(GLOBAL_SCRIPTS.objdb.db.vnum.keys()) + 1
+        # create new ones
+        ch.msg(str((len(books), book_idx, next_vnum)))
+        for book in books[book_idx:]:
+            ch.msg("adding book")
+            book.update(obj_info)
+            GLOBAL_SCRIPTS.objdb.db.vnum[next_vnum] = book
+            next_vnum += 1
+
+        ch.msg("loaded books")
 
 
 class CmdCharacterGen(Command):
