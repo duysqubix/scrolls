@@ -5,7 +5,7 @@ from typeclasses.objs.custom import CUSTOM_OBJS
 from evennia.utils.utils import dedent, inherits_from
 import tabulate
 from world.oedit import OEditMode
-from world.utils.utils import is_invis
+from world.utils.utils import delete_contents, is_invis
 from world.conditions import DetectInvis, HolyLight, get_condition
 from world.utils.act import Announce, act
 import evennia
@@ -202,11 +202,7 @@ class CmdPurge(Command):
     def func(self):
         ch = self.caller
 
-        for obj in ch.location.contents:
-            if inherits_from(obj, 'typeclasses.characters.Character'):
-                continue
-            obj.delete()
-
+        delete_contents(ch.location)
         act("With an ear splitting bang, $n clears the room", False, False, ch,
             None, None, Announce.ToRoom)
         act("You clear the room", False, False, ch, None, None,

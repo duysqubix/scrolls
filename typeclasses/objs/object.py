@@ -212,7 +212,7 @@ class Object(DefaultObject):
 
         if not ldesc:
             return tags + " " + self.db.sdesc
-        return tags + " " + self.db.lsdesc
+        return tags + " " + self.db.ldesc
 
     def at_object_creation(self):
         """ 
@@ -299,7 +299,8 @@ def remove_obj_effects(ch, obj):
                 ch.conditions.remove(con)
 
 
-VALID_OBJ_TAGS = ('invis', 'cursed', 'quest_item', 'no_sell', 'daedric')
+VALID_OBJ_TAGS = ('invis', 'cursed', 'quest_item', 'no_sell', 'daedric',
+                  'no_pickup')
 
 VALID_OBJ_APPLIES = {
     'attrs': ('health', 'magicka', 'carry', 'speed', 'stamina'),

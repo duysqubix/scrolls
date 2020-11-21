@@ -22,6 +22,34 @@ def match_name(name, obj):
     return True if string_partial_matching(obj.db.name, name) else False
 
 
+def delete_contents(obj, exclude=[], do_not_delete_chars=True):
+    """ 
+    DANGEROUS OPERATION
+
+    recursively delete objs contained within itself 
+    make sure to put appropriate typeclasses in exclude,
+    you can delete yourself if you are not careful..
+    for example. 
+    
+    By default this skips over character typeclasses,
+    but this can be overwritten. 
+
+    # bad!!
+    delete_contents(self.caller.location, do_not_delete_chars=False) # whoopsie.. doooh
+
+    # good!!
+    delete_contents(self.caller.location)
+    """
+
+    for o in obj.contents:
+        if o in exclude or (do_not_delete_chars and inherits_from(
+                o, 'typeclasses.characters.Character')):
+            continue
+        if o.contents:
+            delete_contents(obj=o)
+        o.delete()
+
+
 def parse_dot_notation(string):
     """
     Parses dot notation string like so:
@@ -170,7 +198,7 @@ def is_container(obj):
 
 def can_pickup(ch, obj):
     """ tests whether obj can be picked up based on obj """
-    if obj.db.level > ch.attrs.level.value:
+    if (obj.db.level > ch.attrs.level.value) or ("no_pickup" in obj.db.tags):
         return False
 
     return True

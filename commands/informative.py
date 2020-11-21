@@ -7,7 +7,8 @@ from evennia.utils import evmore, crop
 from evennia.utils.utils import inherits_from
 from commands.command import Command
 from world.utils.act import Announce, act
-from world.utils.utils import can_see_obj, is_book, is_equipment, is_equipped, is_invis, is_obj, can_pickup, is_wielded, is_worn
+from world.utils.utils import can_see_obj, is_book, is_container, is_equipment, is_equipped, is_invis, is_obj, can_pickup, is_pc, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation
+from evennia.utils.ansi import raw as raw_ansi
 
 
 class CmdAffect(Command):
@@ -153,7 +154,6 @@ class CmdInventory(Command):
         if not items:
             string = "You are not carrying anything."
         else:
-            from evennia.utils.ansi import raw as raw_ansi
 
             items.sort(key=lambda x: x.db.sdesc.lower())
             table = self.styled_table(border="header")
@@ -177,7 +177,8 @@ class CmdLook(Command):
     Usage:
         look
         look <obj>
-        look <character>
+        look <pc||npc>
+        look in <container>
 
     """
 
@@ -215,27 +216,65 @@ class CmdLook(Command):
                     if is_invis(obj) and not ch.conditions.has(DetectInvis):
                         continue
                     else:
-                        room_msg += f"{obj.obj_desc()}\n"
+                        room_msg += f"{obj.obj_desc(ldesc=True)}\n"
             ch.msg(room_msg)
             return
 
         # try looking for obj in room based on name or aliases
-        obj_name = self.args.strip()
-        for obj in ch.location.contents:
-            if obj.db.name:
-                if obj_name in obj.db.name:
-                    ch.msg(obj.db.edesc)
-                    return
-        # try looking for an obj in your inventory, if found send back edesc
-        for obj in ch.contents:
-            if is_equipped(obj):
-                continue
-            if obj_name in obj.db.name:
-                ch.msg(obj.db.edesc)
-                return
-        ch.msg("You don't see anything like that.")
+        args = self.args.strip().split()
 
-        # self.msg((ch.at_look(target), {"type": "look"}), options=None)
+        if len(args) == 1:
+            obj_name = args[0]
+            for obj in ch.location.contents:
+                if obj.db.name:
+                    if obj_name in obj.db.name:
+                        ch.msg(obj.db.edesc)
+                        return
+            # try looking for an obj in your inventory, if found send back edesc
+            for obj in ch.contents:
+                if is_equipped(obj):
+                    continue
+                if match_name(obj_name, obj):
+                    edesc = obj.db.edesc
+                    if not edesc:
+                        ch.msg("You see nothing interesting.")
+                    else:
+                        ch.msg(edesc)
+                    return
+            ch.msg("You don't see anything like that.")
+            return
+
+        if len(args) == 2:
+            _filler, con_name = args
+            if _filler != 'in':
+                ch.msg("Supply `in` when looking in a container")
+                return
+            pos, con_name = parse_dot_notation(con_name)
+
+            cntr = 1
+            locs = [ch, ch.location]
+            for loc in locs:
+                for obj in loc.contents:
+                    if not is_container(obj):
+                        continue
+                    if match_name(con_name, obj) and (cntr == pos or not pos):
+                        # found container; display contents, sorted
+                        objs = list(obj.contents)
+                        objs.sort(key=lambda x: x.db.sdesc.lower())
+                        table = self.styled_table(border="header")
+                        for item in objs:
+                            if not can_see_obj(ch, item):
+                                sdesc = "<something>"
+                            else:
+                                sdesc = f"{item.obj_desc()}"
+                            table.add_row("{}|n".format(raw_ansi(sdesc)))
+                        extra = "" if not is_pc_npc(
+                            loc) else ", that you are holding,"
+                        string = f"|w{obj.db.sdesc}{extra} has:\n{table}"
+                        ch.msg(string)
+                        return
+                    cntr += 1
+            ch.msg("You couldn't find anything like that.")
 
 
 class CmdScore(Command):

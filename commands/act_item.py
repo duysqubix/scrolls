@@ -9,6 +9,7 @@ class CmdPut(Command):
     Put an object from your inventory into a valid container object
 
     Usage:
+        put all in <container>
         put <obj> in <container>                
         put <obj> in <pos>.<container>          
         put <pos>.<obj> in <pos>.<container>    
@@ -33,44 +34,46 @@ class CmdPut(Command):
                 Announce.ToChar)
 
         def find_container(con_name, pos=None):
-            if pos is None:
-                # find first container
-                _container = None
-                for obj in ch.contents:
-                    if is_container(obj):
-                        # match
-                        _container = obj
-                        break
-                return _container
-            else:
-                try:
-                    pos = int(pos)
-                except:
-                    raise ValueError('pos should be a integer value')
-
-                # find <pos> container
-                cntr = 1
-                _container = None
-                for obj in ch.contents:
-                    if is_container(obj) and match_name(con_name, obj):
-                        if cntr == con_pos:
-                            # match container
+            locs = [ch, ch.location]
+            for loc in locs:
+                if pos is None:
+                    # find first container
+                    _container = None
+                    for obj in loc.contents:
+                        if is_container(obj) and match_name(con_name, obj):
+                            # match
                             _container = obj
                             return _container
-                        cntr += 1
+                else:
+                    try:
+                        pos = int(pos)
+                    except:
+                        raise ValueError('pos should be a integer value')
+
+                    # find <pos> container
+                    cntr = 1
+                    _container = None
+                    for obj in loc.contents:
+                        if is_container(obj) and match_name(con_name, obj):
+                            if cntr == con_pos:
+                                # match container
+                                _container = obj
+                                return _container
+                            cntr += 1
 
         def find_obj(obj_name, pos=None):
-
             # get all objects
             if pos is None and obj_name == 'all':
                 # simple return all contents that isn't container type
                 matched_objs = []
 
                 for obj in ch.contents:
-                    if not is_container(obj) and not is_equipped(obj):
-                        matched_objs.append(obj)
+                    if is_container(obj) or is_equipped(obj):
+                        continue
+                    matched_objs.append(obj)
                 return matched_objs
-            # get obj with matching obj_name
+
+            # put book in bag
             elif pos is None:
                 for obj in ch.contents:
                     if not is_container(obj) and match_name(
@@ -78,7 +81,7 @@ class CmdPut(Command):
                         return make_iter(obj)
                 return None
 
-            # get all of matching name
+            # put all.book in bag
             elif pos == 'all':
                 matched_objs = []
                 for obj in ch.contents:
@@ -86,6 +89,7 @@ class CmdPut(Command):
                             obj_name, obj) and not is_equipped(obj):
                         matched_objs.append(obj)
                 return matched_objs
+
             else:
                 # get <pos> of matching name
                 cntr = 1
@@ -165,11 +169,13 @@ class CmdGet(Command):
     get an object from room or a valid container
 
     Usage:
-      get|take <obj>
-      get|take 2.obj
-      get|take <obj> from <container>
-      get|take all.<obj> from all.<container>
-    
+      get|take book
+      get|take 2.book
+      get|take book from bag
+      get|take all.book from all.bag
+      get|take book from 2.bag
+      get|take 1.book from all.bag
+      get|take all.book from 1.bag
 
     """
 
@@ -182,6 +188,19 @@ class CmdGet(Command):
         """implements the command."""
 
         ch = self.caller
+
+        def success_get(obj, con=None):
+            if not con:
+                act(f"$n picks up a $p.", True, True, ch, obj, None,
+                    Announce.ToRoom)
+                act(f"You pick up a $p", False, False, ch, obj, None,
+                    Announce.ToChar)
+            else:
+                act(f"$n gets $p from $P", True, True, ch, obj, con,
+                    Announce.ToRoom)
+                act(f"You get $p from $P", False, False, ch, obj, con,
+                    Announce.ToChar)
+
         if not self.args:
             ch.msg("Get what?")
             return
@@ -194,100 +213,194 @@ class CmdGet(Command):
         # get all.book
         # get 1.book from 1.bag
         # get all.book from all.bag
-        # get all from 1.corpse
+        # get all from chest
+
         # TODO: refactor this function
+
+        # arg length == get in room
         if len(args) == 1:  #ex: get all.book, get 1.book, get book
-            # attempt to find one item
-            obj_name = args[0]
-            if "." in obj_name:
-                amt, obj_name = obj_name.split('.')
-                if amt == 'all':
-                    matched_objs = []
-                    for obj in ch.location.contents:
-                        if is_obj(obj) and can_see_obj(ch, obj):
-                            if match_name(obj_name, obj):
-                                matched_objs.append(obj)
-                    if not matched_objs:
-                        ch.msg(f"You couldn't find anything like {obj_name}")
-                        return
-                    for obj in matched_objs:
-                        if can_pickup(ch, obj):
-                            obj.move_to(ch)
-                            act(f"$n picks up a $p.", True, True, ch, obj,
-                                None, Announce.ToRoom)
-                            act(f"You pick up a $p", False, False, ch, obj,
-                                None, Announce.ToChar)
-                        else:
-                            act("You can't pick up $p", False, False, ch, None,
-                                None, Announce.ToChar)
-                    return
-                else:
-                    try:
-                        amt = int(amt)
-                    except ValueError:
-                        ch.msg("specify integer when using order")
-                        return
-                    cntr = 0
-                    for obj in ch.location.contents:
-                        if is_obj(obj) and can_see_obj(ch, obj):
-                            if match_name(obj_name, obj):
-                                cntr += 1
-                                if amt == cntr:
-                                    if can_pickup(ch, obj):
-                                        #this is the one
-                                        obj.move_to(ch)
-                                        act(f"$n picks up $p.", True, True, ch,
-                                            obj, None, Announce.ToRoom)
-                                        act(f"You pick up $p", False, False,
-                                            ch, obj, None, Announce.ToChar)
-                                        return
-                                    else:
-                                        act("You can't pick up $p", False,
-                                            False, ch, None, None,
-                                            Announce.ToChar)
-                                        return
-                    if cntr < amt:
-                        ch.msg("There aren't that many around")
-                        return
-                    if cntr == amt:
-                        ch.msg(
-                            "obj should have returned before getting to this.. contact admin"
-                        )
-                        return
-                    if amt < 0:
-                        ch.msg("indexing with negatives? I don't think so..")
-                        return
-                    if cntr > amt:
-                        ch.msg("this seriously would even make sense...")
-                        return
-            elif obj_name == 'all':
-                for obj in ch.location.contents:
-                    if is_obj(obj) and can_see_obj(ch, obj):
-                        if can_pickup(ch, obj):
+            obj_pos, obj_name = parse_dot_notation(args[0])
+
+            #ex: get all
+            if obj_name == 'all':
+                for obj in ch.location_contents():
+                    if can_pickup(ch, obj):
+                        obj.move_to(ch, quiet=True)
+                        success_get(obj)
+                return
+
+            #ex: get all.book, 1.book
+            cntr = 1
+            got_something = False
+            for obj in ch.location_contents():
+                if can_pickup(ch, obj):
+                    # all.book
+                    if obj_pos == 'all' and match_name(obj_name, obj):
+                        obj.move_to(ch, quiet=True)
+                        success_get(obj)
+                        got_something = True
+                    # 1.book
+                    if match_name(obj_name, obj):
+                        if obj_pos == cntr or not obj_pos:
                             obj.move_to(ch, quiet=True)
-                            act(f"$n picks up a $p.", True, True, ch, obj,
-                                None, Announce.ToRoom)
-                            act(f"You pick up a $p", False, False, ch, obj,
-                                None, Announce.ToChar)
-                        else:
-                            act("You can't pick up $p", False, False, ch, None,
-                                None, Announce.ToChar)
-            else:
-                # do a find in room, return first match
-                for obj in ch.location.contents:
+                            success_get(obj)
+                            return
+                        cntr += 1
+            if not got_something:
+                ch.msg("You can't get that.")
+            return
+
+        # arg length == getting from a container either on self or in room
+        # get 1.book from 1.bag
+        # get book from chest  - in room
+        elif len(args) == 3:
+            obj_name, _filler, con_name = args
+            if "from" != _filler:
+                ch.msg("must supply `in` when getting from a container")
+                return
+            obj_pos, obj_name = parse_dot_notation(obj_name)
+            con_pos, con_name = parse_dot_notation(con_name)
+
+            locs = [ch.contents, ch.location.contents]
+
+            ####### first find container(s) ################
+            matched_containers = []
+            for loc in locs:
+                cntr = 1
+                for obj in loc:
+                    if is_container(obj):
+                        # all.bag
+                        if con_pos == 'all' and match_name(con_name, obj):
+                            matched_containers.append(obj)
+                        # 2.bag or bag <= first find
+                        if match_name(con_name, obj):
+                            if con_pos == cntr or not con_pos:
+                                matched_containers.append(obj)
+
+            if not matched_containers:
+                ch.msg("Could not find that container.")
+                return
+            #################################################
+
+            ###### find items from container ################
+            found_something = False
+            for con in matched_containers:
+                cntr = 1
+                for obj in con.contents:
                     if is_obj(obj):
-                        if match_name(obj_name, obj):
-                            if can_pickup(ch, obj):
-                                # move obj to player inv
-                                obj.move_to(ch)
-                                act(f"$n picks up a $p.", True, True, ch, obj,
-                                    None, Announce.ToRoom)
-                                act(f"You pick up a $p", False, False, ch, obj,
-                                    None, Announce.ToChar)
+                        # all.book
+                        if obj_pos == 'all' and match_name(
+                                obj_name, obj) or obj_name == 'all':
+                            obj.move_to(ch, quiet=True)
+                            success_get(obj, con)
+                            found_something = True
+                        elif match_name(obj_name, obj):
+                            if obj_pos == cntr or not obj_pos:
+                                obj.move_to(ch, quiet=True)
+                                success_get(obj, con)
                                 return
-                            else:
-                                act("You can't pick up $p", False, False, ch,
-                                    None, None, Announce.ToChar)
+            if not found_something:
+                ch.msg("Could not find that item.")
+            return
+            ##################################################
+
+            ch.msg(
+                str((matched_containers,
+                     [x.location for x in matched_containers])))
+
+            # get all
+
+            # # attempt to find one item
+            # obj_name = args[0]
+            # if "." in obj_name:
+            #     amt, obj_name = obj_name.split('.')
+            #     if amt == 'all':
+            #         matched_objs = []
+            #         for obj in ch.location.contents:
+            #             if is_obj(obj) and can_see_obj(ch, obj):
+            #                 if match_name(obj_name, obj):
+            #                     matched_objs.append(obj)
+            #         if not matched_objs:
+            #             ch.msg(f"You couldn't find anything like {obj_name}")
+            #             return
+            #         for obj in matched_objs:
+            #             if can_pickup(ch, obj):
+            #                 obj.move_to(ch)
+            #                 act(f"$n picks up a $p.", True, True, ch, obj,
+            #                     None, Announce.ToRoom)
+            #                 act(f"You pick up a $p", False, False, ch, obj,
+            #                     None, Announce.ToChar)
+            #             else:
+            #                 act("You can't pick up $p", False, False, ch, None,
+            #                     None, Announce.ToChar)
+            #         return
+            #     else:
+            #         try:
+            #             amt = int(amt)
+            #         except ValueError:
+            #             ch.msg("specify integer when using order")
+            #             return
+            #         cntr = 0
+            #         for obj in ch.location.contents:
+            #             if is_obj(obj) and can_see_obj(ch, obj):
+            #                 if match_name(obj_name, obj):
+            #                     cntr += 1
+            #                     if amt == cntr:
+            #                         if can_pickup(ch, obj):
+            #                             #this is the one
+            #                             obj.move_to(ch)
+            #                             act(f"$n picks up $p.", True, True, ch,
+            #                                 obj, None, Announce.ToRoom)
+            #                             act(f"You pick up $p", False, False,
+            #                                 ch, obj, None, Announce.ToChar)
+            #                             return
+            #                         else:
+            #                             act("You can't pick up $p", False,
+            #                                 False, ch, None, None,
+            #                                 Announce.ToChar)
+            #                             return
+            #         if cntr < amt:
+            #             ch.msg("There aren't that many around")
+            #             return
+            #         if cntr == amt:
+            #             ch.msg(
+            #                 "obj should have returned before getting to this.. contact admin"
+            #             )
+            #             return
+            #         if amt < 0:
+            #             ch.msg("indexing with negatives? I don't think so..")
+            #             return
+            #         if cntr > amt:
+            #             ch.msg("this seriously would even make sense...")
+            #             return
+            # elif obj_name == 'all':
+            #     for obj in ch.location.contents:
+            #         if is_obj(obj) and can_see_obj(ch, obj):
+            #             if can_pickup(ch, obj):
+            #                 obj.move_to(ch, quiet=True)
+            #                 act(f"$n picks up a $p.", True, True, ch, obj,
+            #                     None, Announce.ToRoom)
+            #                 act(f"You pick up a $p", False, False, ch, obj,
+            #                     None, Announce.ToChar)
+            #             else:
+            #                 act("You can't pick up $p", False, False, ch, None,
+            #                     None, Announce.ToChar)
+            # else:
+            #     # do a find in room, return first match
+            #     for obj in ch.location.contents:
+            #         if is_obj(obj):
+            #             if match_name(obj_name, obj):
+            #                 if can_pickup(ch, obj):
+            #                     # move obj to player inv
+            #                     obj.move_to(ch)
+            #                     act(f"$n picks up a $p.", True, True, ch, obj,
+            #                         None, Announce.ToRoom)
+            #                     act(f"You pick up a $p", False, False, ch, obj,
+            #                         None, Announce.ToChar)
+            #                     return
+            #                 else:
+            #                     act("You can't pick up $p", False, False, ch,
+            #                         None, None, Announce.ToChar)
 
 
 class CmdRemove(Command):
@@ -400,8 +513,6 @@ class CmdDrop(Command):
                     cntr += 1
 
         else:
-
-            all_objs = False
             for obj in ch.contents:
                 if is_equipped(obj):
                     continue

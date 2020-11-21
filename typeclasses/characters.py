@@ -12,7 +12,7 @@ from typeclasses.objs.object import apply_obj_effects, remove_obj_effects
 from typing import Any, List, Tuple
 from world.conditions import HolyLight
 from world.utils.act import Announce, act
-from world.utils.utils import is_equipment, is_equippable, is_wiz, is_worn
+from world.utils.utils import delete_contents, is_equipment, is_equippable, is_obj, is_wiz, is_worn
 from world.gender import Gender
 from world.races import NoRace, get_race
 from world.attributes import Attribute, VitalAttribute
@@ -445,6 +445,21 @@ class Character(DefaultCharacter):
         self.attrs.magicka.cur = self.attrs.magicka.max
         self.attrs.speed.cur = self.attrs.speed.max
         self.attrs.stamina.cur = self.attrs.stamina.max
+
+    def clear_inventory(self):
+        """ recurively delete all objs within self.contents """
+        delete_contents(self)
+
+    def location_contents(self):
+        objs = []
+        for obj in self.location.contents:
+            if is_obj(obj):
+                objs.append(obj)
+        return objs
+
+    def debug_msg(self, *args):
+        x = tuple(args)
+        self.msg(str(x))
 
     def at_object_creation(self):
         self.db.attrs = {}
