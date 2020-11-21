@@ -8,6 +8,22 @@ IMM_LVL = 203
 BUILDER_LVL = 202
 HERO_LVL = 201
 
+_DEFAULT_OBJ_STRUCT = {
+    'key': "an unfinshed object",
+    'sdesc': "an unfinshed object",
+    'ldesc': "an unfinished object is lying here",
+    "edesc": "",  # extra descrition when looked at
+    "adesc": None,  # action desciption, message string announced when used
+    "type":
+    'default',  # type of object: book, weapon, equipment, scroll, etc...
+    "weight": 0,
+    "cost": 0,
+    "level": 0,  # minimum level that can use this object
+    "applies": [],  # affects object has on user (stat change, health, etc...)
+    "tags": [],  # unique meta information about object itself
+    "extra": {}  # holds special fields relatd to a special object
+}
+
 
 class WearLocation:
     def __init__(self, name, display_msg=None):

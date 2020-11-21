@@ -10,22 +10,7 @@ from evennia import GLOBAL_SCRIPTS
 from evennia import CmdSet, EvEditor, EvMenu
 from commands.command import Command
 from evennia.commands.default.help import CmdHelp
-
-_DEFAULT_OBJ_STRUCT = {
-    'key': "an unfinshed object",
-    'sdesc': "an unfinshed object",
-    'ldesc': "an unfinished object is lying here",
-    "edesc": "",  # extra descrition when looked at
-    "adesc": None,  # action desciption, message string announced when used
-    "type":
-    'default',  # type of object: book, weapon, equipment, scroll, etc...
-    "weight": 0,
-    "cost": 0,
-    "level": 0,  # minimum level that can use this object
-    "applies": [],  # affects object has on user (stat change, health, etc...)
-    "tags": [],  # unique meta information about object itself
-    "extra": {}  # holds special fields relatd to a special object
-}
+from world.globals import _DEFAULT_OBJ_STRUCT
 
 _OEDIT_PROMPT = "(|goedit|n) > "
 
@@ -78,11 +63,15 @@ class OEditMode:
             if inherits_from(self.obj, 'typeclasses.objs.custom.Equipment'):
                 wear_loc = self.obj['extra']['wear_loc']
                 wear_loc = wear_loc.split(' ')
-                self.obj['extra']['wear_loc'] = wear_loc
+                self.obj['extra']['wear_loc'] = wear_loc[0]
 
             if inherits_from(self.obj, 'typeclasses.objs.custom.Weapon'):
                 dual_wield = self.obj['extra']['dual_wield']
                 self.obj['extra']['dual_wield'] = bool(dual_wield)
+
+            if inherits_from(self.obj, 'typeclasses.objs.custom.Container'):
+                limit = self.obj['extra']['limit']
+                self.obj['extra']['limit'] = int(limit)
 
             self.db.vnum[self.vnum] = self.obj
             self.caller.msg("object saved.")

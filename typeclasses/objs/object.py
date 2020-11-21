@@ -2,6 +2,7 @@
 Default Scrolls object
 All objects must inherit this class to work properly
 """
+from world.globals import _DEFAULT_OBJ_STRUCT
 from world.characteristics import CHARACTERISTICS
 import evennia
 from world.utils.utils import is_obj, is_pc_npc
@@ -176,23 +177,6 @@ class Object(DefaultObject):
     def basetype_setup(self):
         super().basetype_setup()
         self.locks.add(";".join(["call:false()", "puppet:false()"]))
-        super().at_object_creation()
-        self.db.name = ""
-        self.db.sdesc = ""
-        self.db.ldesc = ""
-        self.db.edesc = ""  # extra description when specifically looked at
-        self.db.adesc = ""
-        self.db.type = None
-        self.db.weight = 0
-        self.db.cost = 0
-        self.db.level = 0
-        self.db.applies = []
-        self.db.tags = []
-        self.db.extras = {}
-        self.db.is_obj = True
-
-        for field, value in self.__obj_specific_fields__.items():
-            self.attributes.add(field, value)
 
     def obj_desc(self, ldesc=False):
         """ returns string of tags currently set on obj"""
@@ -219,8 +203,19 @@ class Object(DefaultObject):
         Construct contents on object based on obj vnum
         which caller sets the key == vnum
         """
+        self.db.is_obj = True
 
-        obj = GLOBAL_SCRIPTS.objdb.vnum[int(self.key)]
+        obj = dict(GLOBAL_SCRIPTS.objdb.vnum[int(self.key)])
+
+        # set fields that didn't exist before, mostly used
+        # if future fields are added and old already created objs
+        # don't know about them.
+        for field, default_value in _DEFAULT_OBJ_STRUCT.items():
+            try:
+                _ = obj[field]
+            except KeyError:
+                obj[field] = default_value
+
         keys_aliases = obj['key'].split()
 
         self.db.name = keys_aliases
@@ -235,6 +230,9 @@ class Object(DefaultObject):
         self.db.applies = obj['applies']
         self.db.tags = obj['tags']
         self.db.extra = obj['extra']
+
+        for field, value in self.__obj_specific_fields__.items():
+            self.attributes.add(field, value)
 
         # set special fields as local attributes to class
         # incase efield isn't found, it will replace with default
