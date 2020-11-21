@@ -446,6 +446,13 @@ class Character(DefaultCharacter):
         self.attrs.speed.cur = self.attrs.speed.max
         self.attrs.stamina.cur = self.attrs.stamina.max
 
+    def tick_heal_player(self):
+        # called by global ticker  handler
+        # heals the player based on vitals restore rate
+        # up until the player is fully healed.
+        # then remove subscription until damaged again.
+        pass
+
     def clear_inventory(self):
         """ recurively delete all objs within self.contents """
         delete_contents(self)
