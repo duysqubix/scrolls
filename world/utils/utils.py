@@ -196,6 +196,23 @@ def is_container(obj):
     return is_obj(obj) and obj.__obj_type__ == 'container'
 
 
+def can_contain_more(obj):
+    """ checks to see if container can store more items """
+    if not is_container(obj):
+        return False
+
+    obj_limit = int(obj.db.limit)
+
+    # can hold infinite amount
+    if obj_limit < 0:
+        return True
+
+    cur_item_count = len(obj.contents)
+    if obj_limit < cur_item_count + 1:  # for the maybe extra added item
+        return False
+    return True
+
+
 def can_pickup(ch, obj):
     """ tests whether obj can be picked up based on obj """
     if (obj.db.level > ch.attrs.level.value) or ("no_pickup" in obj.db.tags):

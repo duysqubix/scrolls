@@ -1,7 +1,7 @@
 from evennia.utils.utils import make_iter, uses_database
 from commands.command import Command
 from world.utils.act import Announce, act
-from world.utils.utils import can_drop, can_see_obj, is_container, is_cursed, is_equippable, is_equipped, is_obj, can_pickup, is_sleeping, is_weapon, is_wieldable, is_wielded, is_worn, match_name, parse_dot_notation
+from world.utils.utils import can_contain_more, can_drop, can_see_obj, is_container, is_cursed, is_equippable, is_equipped, is_obj, can_pickup, is_sleeping, is_weapon, is_wieldable, is_wielded, is_worn, match_name, parse_dot_notation
 
 
 class CmdPut(Command):
@@ -136,8 +136,11 @@ class CmdPut(Command):
                     ch.msg("You can't do that.")
                     continue
 
-                obj.move_to(_container)
-                success_put(obj, _container)
+                if can_contain_more(_container):
+                    obj.move_to(_container)
+                    success_put(obj, _container)
+                else:
+                    ch.msg("You can't fit anymore items in there.")
 
             return
 
@@ -158,9 +161,11 @@ class CmdPut(Command):
             if not can_see_obj(ch, obj) or is_cursed(obj):
                 ch.msg("You can't do that.")
                 continue
-
-            obj.move_to(_container)
-            success_put(obj, _container)
+            if can_contain_more(_container):
+                obj.move_to(_container)
+                success_put(obj, _container)
+            else:
+                ch.msg("You can't fit anymore items in there.")
         return
 
 
