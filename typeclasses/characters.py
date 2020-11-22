@@ -9,21 +9,19 @@ creation commands.
 """
 import copy
 from typeclasses.objs.object import apply_obj_effects, remove_obj_effects
-from typing import Any, List, Tuple
 from world.conditions import HolyLight
 from world.utils.act import Announce, act
-from world.utils.utils import delete_contents, is_equipment, is_equippable, is_obj, is_wiz, is_worn
+from world.utils.utils import delete_contents, is_equippable, is_obj, is_wiz, is_worn
 from world.gender import Gender
 from world.races import NoRace, get_race
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
-from evennia import DefaultCharacter
+from evennia import DefaultCharacter, TICKER_HANDLER
 from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, WIZ_LVL, WEAR_LOCATIONS
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
-from evennia.utils.utils import inherits_from, lazy_property, make_iter
+from evennia.utils.utils import inherits_from, lazy_property
 from world.storagehandler import StorageHandler
-from evennia.utils.evmenu import EvMenu
 
 
 class EquipmentHandler:
@@ -212,7 +210,7 @@ class AttrHandler(StorageHandler):
         self.max_speed()
         self.max_stamina()
 
-    def change_vital(self, attr_type, by=0):
+    def change_vital(self, attr_type, by=0, update=True):
         """
         helper function to change current vital value 
         based on max and current value. attr_type supplied must be
@@ -224,16 +222,21 @@ class AttrHandler(StorageHandler):
             raise NotImplementedError(
                 'change_vital function doesnt support changing attribute that are NOT VitalAttributes'
             )
+
+        if attr.cur == attr.max:
+            return
+
         cur = attr.cur
 
-        cur += by
+        cur += int((by * attr.rate))  # apply rate
         if cur < 0:
             cur = 0
         if cur > attr.max:
             cur = attr.max
         attr.cur = cur
         self.__setattr__(attr_type, attr)
-        self.update()
+        if update:
+            self.update()
 
     def modify_vital(self, attr_type, by=0):
         """
@@ -289,10 +292,6 @@ class AttrHandler(StorageHandler):
         self.__setattr__(attr_type, attr)
         self.update()
 
-    def change_race(self, race):
-        new_race = get_race(race)
-        cur_race = self.__dict__['race']
-
     def max_health(self):
         health = (self.caller.stats.end.base // 2 + 1)
         tot = health + self.health.mods
@@ -302,7 +301,7 @@ class AttrHandler(StorageHandler):
 
     def max_stamina(self):
         stamina = self.caller.stats.end.bonus
-        tot = stamina + self.stamina.mods
+        tot = stamina + self.stamina.mods + 20
 
         self.stamina.max = tot
         return tot
@@ -310,7 +309,7 @@ class AttrHandler(StorageHandler):
     def max_magicka(self):
         magicka = self.caller.stats.int.base
 
-        tot = magicka + self.magicka.mods
+        tot = magicka + self.magicka.mods + 20
 
         self.magicka.max = tot
         return tot
@@ -318,7 +317,7 @@ class AttrHandler(StorageHandler):
     def max_speed(self):
         sb = self.caller.stats.str.bonus
         ab = self.caller.stats.agi.bonus
-        speed = sb + (2 * ab)
+        speed = sb + (2 * ab) + 20
 
         tot = speed + self.speed.mods
         self.speed.max = tot
@@ -328,7 +327,7 @@ class AttrHandler(StorageHandler):
         # carry rating
         sb = self.caller.stats.str.bonus
         eb = self.caller.stats.end.bonus
-        carry = ((4 * sb) + (2 * eb))
+        carry = ((4 * sb) + (2 * eb)) + 50
 
         tot = carry + self.carry.mods
         self.carry.max = tot
@@ -359,6 +358,12 @@ class Character(DefaultCharacter):
         self.execute_cmd("look")
 
     def at_post_puppet(self, **kwargs):
+        # add character specific tickers and non-persitent
+        TICKER_HANDLER.add(interval=10,
+                           callback=self.tick_heal_player,
+                           idstring="tick_heal_char",
+                           persistent=False)
+
         self.msg(f"\nYou become |c{self.name.capitalize()}|n")
         self.execute_cmd('look')
 
@@ -430,12 +435,13 @@ class Character(DefaultCharacter):
         mg = self.attrs.magicka
         st = self.attrs.stamina
         sp = self.attrs.speed
+        ca = self.attrs.carry
         prompt = "\n"
 
         if is_wiz(self) and self.conditions.has(HolyLight):
             prompt += "(|wholy|ylight|n)"
 
-        prompt += f" HP:{hp.cur}/{hp.max} MG:{mg.cur}/{mg.max} ST:{st.cur}/{st.max} SP:{sp.cur}/{sp.max} > "
+        prompt += f" HP:{hp.cur}/{hp.max} MG:{mg.cur}/{mg.max} ST:{st.cur}/{st.max} SP:{sp.cur}/{sp.max} CR:{ca.cur}/{ca.max} > "
 
         return prompt
 
@@ -451,7 +457,16 @@ class Character(DefaultCharacter):
         # heals the player based on vitals restore rate
         # up until the player is fully healed.
         # then remove subscription until damaged again.
-        pass
+
+        # heal stats based on level
+        level = self.attrs.level.value
+        amnt = 0.17588 * level + 5
+
+        #health
+        self.attrs.change_vital('health', by=amnt, update=False)
+        self.attrs.change_vital('magicka', by=amnt, update=False)
+        self.attrs.change_vital('speed', by=amnt, update=False)
+        self.attrs.change_vital('stamina', by=amnt, update=True)
 
     def clear_inventory(self):
         """ recurively delete all objs within self.contents """
@@ -505,15 +520,22 @@ class Character(DefaultCharacter):
             'action_points':
             Attribute('action_points', 3),
             'health':
-            VitalAttribute('health'),  # cur/max/mod_max/recover
+            VitalAttribute('health'),  # how much hit points characters has
             'magicka':
-            VitalAttribute('magicka'),
+            VitalAttribute(
+                'magicka'
+            ),  # determines how powerful spells are and how much points are available for spells
             'stamina':
-            VitalAttribute('stamina'),
+            VitalAttribute(
+                'stamina'
+            ),  # determines how powerful melee damage are and how much points are avilable for melee skills
             'speed':
-            VitalAttribute('speed'),
+            VitalAttribute(
+                'speed'
+            ),  # determines how far character can go before tiring...
             'carry':
-            VitalAttribute('carry'),
+            VitalAttribute(
+                'carry'),  # determines how much a character can pick up.
         }
 
         # enter the chargen state
