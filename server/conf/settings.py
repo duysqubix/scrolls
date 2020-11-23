@@ -57,6 +57,7 @@ CMDSET_UNLOGGEDIN = "evennia.contrib.menu_login.UnloggedinCmdSet"
 BASE_BATCHPROCESS_PATHS += ["resources"]
 
 BASE_OBJECT_TYPECLASS = "typeclasses.objs.object.Object"
+BASE_ROOM_TYPECLASS = "typeclasses.rooms.rooms.Room"
 
 BOOK_JSON = "resources/books/book.json"
 

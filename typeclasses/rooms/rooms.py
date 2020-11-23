@@ -6,7 +6,7 @@ Rooms are simple containers that has no location of their own.
 """
 
 from evennia import DefaultRoom
-from evennia.utils import inherits_from
+from world.utils.utils import is_pc
 
 
 class Room(DefaultRoom):
@@ -22,7 +22,8 @@ class Room(DefaultRoom):
     def announce(self, msg, exclude=[]):
         """send msg to all pcs in current room"""
         for obj in self.contents:
-            if inherits_from(obj, 'typeclasses.characters.Character'):
-                if obj in exclude:
-                    continue
+            if is_pc(obj) and obj not in exclude:
                 obj.msg(msg)
+
+    def at_object_creation(self):
+        self.db.is_room = True
