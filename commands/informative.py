@@ -7,7 +7,7 @@ from evennia.utils import evmore, crop
 from evennia.utils.utils import inherits_from
 from commands.command import Command
 from world.utils.act import Announce, act
-from world.utils.utils import can_see_obj, is_book, is_container, is_equipment, is_equipped, is_invis, is_obj, can_pickup, is_pc, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation
+from world.utils.utils import can_see_obj, is_book, is_container, is_equipment, is_equipped, is_exit, is_invis, is_obj, can_pickup, is_pc, is_pc_npc, is_room, is_wielded, is_worn, match_name, parse_dot_notation
 from evennia.utils.ansi import raw as raw_ansi
 
 
@@ -189,42 +189,60 @@ class CmdLook(Command):
 
     def func(self):
         ch = self.caller
+        location = ch.location
         if not self.args:
-            target = ch.location
-            if not target:
+            if not self:
                 ch.msg("You have no location to look at!")
                 return
 
             room_msg = ""
 
             # get room title
-            room_msg += f"|c{target.name}|n\n"
+            room_msg += f"|c{location.db.name}|n\n"
 
             #get room_desc
-            room_msg += f"|G{target.db.desc}|n\n\n"
+            room_msg += f"|G{location.db.desc}|n\n\n"
 
             # get room exits
+            room_msg += "Exits: "
+            for direction, dvnum in location.db.exits.items():
+                if dvnum:
+                    continue  # not set
+                room_msg += f"{direction} "
+            room_msg += "\n\n"
 
             # get room contents
             # get objects
-            for obj in target.contents:
+            for obj in location.contents:
                 if inherits_from(obj, 'typeclasses.characters.Character'):
                     if obj.id == ch.id:
                         continue
                     room_msg += f"{obj.name.capitalize()}\n"
+
                 if is_obj(obj):
-                    if is_invis(obj) and not ch.conditions.has(DetectInvis):
+                    if is_invis(obj) and not can_see_obj(ch, obj):
+                        ch.msg("Couldn't see")
                         continue
                     else:
                         room_msg += f"{obj.obj_desc(ldesc=True)}\n"
             ch.msg(room_msg)
             return
 
-        # try looking for obj in room based on name or aliases
         args = self.args.strip().split()
+        # attempt to look at something specific in the room
+
+        # try looking for obj in room based on name or aliases
 
         if len(args) == 1:
             obj_name = args[0]
+
+            # attempt to look for edesc in room itself
+            edesc = location.db.edesc
+            if obj_name in edesc.keys():
+                msg = f"\n\n{edesc[obj_name]}"
+                evmore.EvMore(ch, msg)
+                return
+            # look for obj in room
             for obj in ch.location.contents:
                 if obj.db.name:
                     if obj_name in obj.db.name:

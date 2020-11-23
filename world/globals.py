@@ -9,13 +9,13 @@ BUILDER_LVL = 202
 HERO_LVL = 201
 
 DEFAULT_OBJ_STRUCT = {
-    'key': "an unfinshed object",
-    'sdesc': "an unfinshed object",
-    'ldesc': "an unfinished object is lying here",
+    "key": "an unfinshed object",
+    "sdesc": "an unfinshed object",
+    "ldesc": "an unfinished object is lying here",
     "edesc": "",  # extra descrition when looked at
     "adesc": None,  # action desciption, message string announced when used
     "type":
-    'default',  # type of object: book, weapon, equipment, scroll, etc...
+    "default",  # type of object: book, weapon, equipment, scroll, etc...
     "weight": 0,
     "cost": 0,
     "level": 0,  # minimum level that can use this object
@@ -24,15 +24,33 @@ DEFAULT_OBJ_STRUCT = {
     "extra": {}  # holds special fields relatd to a special object
 }
 
-DAM_TYPES = {
-    'physical': {
-        'hit', 'sting', 'whip', 'slash', 'bite', 'bludgeon', 'crush', 'pound',
-        'claw', 'maul', 'blast', 'punch', 'thrash', 'pierce', 'scratch',
-        'peck', 'stab', 'slap', 'smash', 'thwack', 'claw', 'cleave', 'grep', ''
+DEFAULT_ROOM_STRUCT = {
+    "name": "an unfinished room",
+    "zone": "null",
+    "desc": "You are in an unfinished room.",
+    'flags': [],
+    'type': "inside",  # equiv of sector
+    'exits': {
+        'north': -1,
+        'south': -1,
+        'east': -1,
+        'west': -1,
+        'up': -1,
+        'down': -1
     },
-    'magical': {
-        'acidic', 'chill', 'freezing', 'magic', 'wrath', 'flame',
-        'divine_power', 'smite', 'shock'
+    'edesc': {},  # key/contents
+    "extra": {}
+}
+
+DAM_TYPES = {
+    "physical": {
+        "hit", "sting", "whip", "slash", "bite", "bludgeon", "crush", "pound",
+        "claw", "maul", "blast", "punch", "thrash", "pierce", "scratch",
+        "peck", "stab", "slap", "smash", "thwack", "claw", "cleave", "grep", ""
+    },
+    "magical": {
+        "acidic", "chill", "freezing", "magic", "wrath", "flame",
+        "divine_power", "smite", "shock"
     }
 }
 
@@ -45,18 +63,18 @@ class _WearLocation:
 
 WEAR_LOCATIONS = {
     _WearLocation("light", display_msg=f"[|GUsed as {'Light':<10}|n]"),
-    _WearLocation('wield', display_msg=f"[|GWielded {'':<10}|n]"),
-    _WearLocation('off-hand', display_msg=f"[|GOff-Hand {'':<9}|n]"),
-    _WearLocation('head'),
-    _WearLocation('back'),
-    _WearLocation('shoulders'),
-    _WearLocation('chest'),
-    _WearLocation('arms'),
-    _WearLocation('hands'),
-    _WearLocation('l-finger'),
-    _WearLocation('r-finger'),
-    _WearLocation('legs'),
-    _WearLocation('feet')
+    _WearLocation("wield", display_msg=f"[|GWielded {'':<10}|n]"),
+    _WearLocation("off-hand", display_msg=f"[|GOff-Hand {'':<9}|n]"),
+    _WearLocation("head"),
+    _WearLocation("back"),
+    _WearLocation("shoulders"),
+    _WearLocation("chest"),
+    _WearLocation("arms"),
+    _WearLocation("hands"),
+    _WearLocation("l-finger"),
+    _WearLocation("r-finger"),
+    _WearLocation("legs"),
+    _WearLocation("feet")
 }
 
 
@@ -95,28 +113,28 @@ class Size:
 
     @classmethod
     def puny(cls):
-        return cls(0, 'puny')
+        return cls(0, "puny")
 
     @classmethod
     def tiny(cls):
-        return cls(1, 'tiny')
+        return cls(1, "tiny")
 
     @classmethod
     def small(cls):
-        return cls(2, 'small')
+        return cls(2, "small")
 
     @classmethod
     def standard(cls):
-        return cls(3, 'standard')
+        return cls(3, "standard")
 
     @classmethod
     def large(cls):
-        return cls(4, 'large')
+        return cls(4, "large")
 
     @classmethod
     def huge(cls):
-        return cls(5, 'huge')
+        return cls(5, "huge")
 
     @classmethod
     def enormous(cls):
-        return cls(6, 'enormous')
+        return cls(6, "enormous")

@@ -9,7 +9,7 @@ from evennia import GLOBAL_SCRIPTS
 from typeclasses.objs.object import Object
 
 
-class Default(Object):
+class ObjectDefault(Object):
     __obj_type__ = "default"
 
 
@@ -20,7 +20,7 @@ class Book(Object):
     """
 
     __obj_type__ = "book"
-    __obj_specific_fields__ = {
+    __specific_fields__ = {
         "category": "",
         "date": "",
         "author": "",
@@ -34,7 +34,7 @@ class Container(Object):
     Object that can hold things
     """
     __obj_type__ = 'container'
-    __obj_specific_fields__ = {'limit': -1}
+    __specific_fields__ = {'limit': -1}
     __help_msg__ = ["limit: [int] - number of objects, -1 for infinity"]
 
 
@@ -44,7 +44,7 @@ class Weapon(Object):
     """
 
     __obj_type__ = "weapon"
-    __obj_specific_fields__ = {"dam_type": "", 'dam_roll': ""}
+    __specific_fields__ = {"dam_type": "", 'dam_roll': ""}
     __help_msg__ = [
         f"dam_type:{wrap(' '.join(DAM_TYPES['physical']))}",
         "dam_roll: ex: 1d10+4"
@@ -62,7 +62,7 @@ class Staff(Weapon):
     damage, have limited charges, and are recharged by soul gems
     """
     __obj_type__ = "staff"
-    __obj_specific_fields__ = {"dam_type": "", 'dam_roll': "", "charges": -1}
+    __specific_fields__ = {"dam_type": "", 'dam_roll': "", "charges": -1}
     __help_msg__ = [
         f"dam_type: {wrap(', '.join(DAM_TYPES['magical']))}",
         "dam_roll: ex: 1d10+4",
@@ -75,7 +75,7 @@ class Equipment(Object):
     Equipable objects
     """
     __obj_type__ = 'equipment'
-    __obj_specific_fields__ = {'wear_loc': ""}
+    __specific_fields__ = {'wear_loc': ""}
     __help_msg__ = [f"wear_loc: {', '.join([x.name for x in WEAR_LOCATIONS])}"]
 
     def at_object_creation(self):
@@ -87,8 +87,8 @@ class Equipment(Object):
 CUSTOM_OBJS = {
     Book.__obj_type__: Book,
     Container.__obj_type__: Container,
-    Default.__obj_type__: Default,
     Equipment.__obj_type__: Equipment,
+    ObjectDefault.__obj_type__: ObjectDefault,
     Staff.__obj_type__: Staff,
     Weapon.__obj_type__: Weapon,
 }

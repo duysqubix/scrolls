@@ -66,8 +66,10 @@ class BuilderCmdSet(CmdSet):
         self.add(wiz.CmdCharacterGen())
         self.add(wiz.CmdLoad())
         self.add(wiz.CmdOEdit())
+        self.add(wiz.CmdREdit())
         self.add(wiz.CmdRestore())
         self.add(wiz.CmdOList())
+        self.add(wiz.CmdRList())
         self.add(wiz.CmdHolyLight())
         self.add(wiz.CmdBookLoad())
 

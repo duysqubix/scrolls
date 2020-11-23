@@ -157,7 +157,7 @@ class Object(DefaultObject):
     """
 
     __obj_type__ = ""
-    __obj_specific_fields__ = {}
+    __specific_fields__ = {}
     __help_msg__ = ""
 
     # make it default quiet
@@ -231,13 +231,13 @@ class Object(DefaultObject):
         self.db.tags = obj['tags']
         self.db.extra = obj['extra']
 
-        for field, value in self.__obj_specific_fields__.items():
+        for field, value in self.__specific_fields__.items():
             self.attributes.add(field, value)
 
         # set special fields as local attributes to class
         # incase efield isn't found, it will replace with default
-        # value as specified in __obj_specific_fields__
-        for efield, evalue in self.__obj_specific_fields__.items():
+        # value as specified in __specific_fields__
+        for efield, evalue in self.__specific_fields__.items():
             if efield in self.db.extra.keys():
                 self.attributes.add(efield, self.db.extra[efield])
             else:
@@ -297,8 +297,9 @@ def remove_obj_effects(ch, obj):
                 ch.conditions.remove(con)
 
 
-VALID_OBJ_TAGS = ('invis', 'cursed', 'quest_item', 'no_sell', 'daedric',
-                  'no_pickup')
+VALID_OBJ_TAGS = {
+    'invis', 'cursed', 'quest_item', 'no_sell', 'daedric', 'no_pickup'
+}
 
 VALID_OBJ_APPLIES = {
     'attrs': ('health', 'magicka', 'carry', 'speed', 'stamina'),

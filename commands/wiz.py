@@ -1,11 +1,12 @@
 import json
 import pathlib
 from collections import OrderedDict
+from world.edit.redit import REditMode
 from typeclasses.objs.custom import CUSTOM_OBJS
-from evennia.utils.utils import dedent, inherits_from
+from evennia.utils.utils import dedent, inherits_from, make_iter
 import tabulate
-from world.oedit import OEditMode
-from world.utils.utils import delete_contents, is_invis
+from world.edit.oedit import OEditMode
+from world.utils.utils import delete_contents, is_invis, match_string
 from world.conditions import DetectInvis, HolyLight, get_condition
 from world.utils.act import Announce, act
 import evennia
@@ -143,6 +144,125 @@ class CmdOList(Command):
         return
 
 
+class CmdREdit(Command):
+    """
+    Generic room building command
+
+    Usage:
+        redit <new|vnum>
+    
+    Opens the room building menu. This allows to change the rooms 
+    details. To create a new room with the next available vnum supply
+    the `new` argument.
+    """
+
+    key = 'redit'
+    locks = f"attr_ge(level.value, {BUILDER_LVL})"
+
+    def func(self):
+        if not self.args.strip():
+            self.msg("You must provide either a vnum or `new`")
+            return
+
+        roomdb = GLOBAL_SCRIPTS.roomdb
+        ch = self.caller
+
+        if 'new' in self.args.lower():
+            if not roomdb.vnum.keys():
+                vnum = 1
+            else:
+                vnum = max(roomdb.vnum.keys()) + 1
+        else:
+            vnum = self.args
+            try:
+                vnum = int(vnum)
+            except ValueError:
+                ch.msg("You must supply a valid vnum")
+                return
+
+        ch.ndb._redit = REditMode(self, vnum)
+        ch.cmdset.add("world.edit.redit.REditCmdSet")
+        ch.cmdset.all()[-1].add(CmdRList())
+        ch.execute_cmd("look")
+
+
+class CmdRList(Command):
+    """
+    Lists all available rooms set in objdb
+
+    Usage:
+        rlist
+        rlist <zone||name> <criteria>
+    """
+    key = "rlist"
+    locks = f"attr_ge(level.value, {BUILDER_LVL})"
+
+    def func(self):
+        ch = self.caller
+        ch.msg(self.args)
+        args = self.args.strip()
+        roomdb = dict(GLOBAL_SCRIPTS.roomdb.vnum)
+        vnum_roomdb = roomdb.keys()
+        min_ = min(vnum_roomdb)
+        max_ = max(vnum_roomdb)
+
+        legend = ["VNum", "Name", "Exits", "Zone"]
+        try:
+            _ = roomdb[1]
+        except KeyError:
+            ch.msg("No rooms are saved to database, try creating one first")
+            return
+
+        if not args:
+            table = self.styled_table(*legend, border='incols')
+
+            for vnum in range(min_, max_ + 1):
+                data = roomdb[vnum]
+                exits = {k: v for k, v in data['exits'].items() if v > 0}
+                vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                sdesc = crop(raw_ansi(data['name']), width=50) or ''
+                table.add_row(vnum, sdesc, f"{exits}", data['zone'])
+
+            msg = str(table)
+            ch.msg(msg)
+            return
+
+        args = args.split(' ')
+        if len(args) < 2:
+            ch.msg("Supply either type or name to search for")
+            return
+        table = self.styled_table(*legend, border='incols')
+        type_ = args[0]
+        if type_ not in ('zone', 'name'):
+            ch.msg("Please supply either (type or name) to searchby")
+            return
+
+        criteria = args[1]
+        for vnum in range(min_, max_ + 1):
+            # for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
+            data = roomdb[vnum]
+            if type_ == 'zone':
+                if match_string(criteria, make_iter(data['zone'])):
+                    exits = {k: v for k, v in data['exits'].items() if v > 0}
+
+                    vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                    sdesc = crop(raw_ansi(data['name']), width=50) or ''
+                    table.add_row(vnum, sdesc, f"{exits}", data['zone'])
+                    continue
+
+            if type_ == 'name':
+                if match_string(criteria, data['name'].split()):
+                    exits = {k: v for k, v in data['exits'].items() if v > 0}
+
+                    vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                    sdesc = crop(raw_ansi(data['name']), width=50) or ''
+                    table.add_row(vnum, sdesc, f"{exits}", data['zone'])
+                    continue
+        msg = str(table)
+        ch.msg(msg)
+        return
+
+
 class CmdOEdit(Command):
     """
     Generic building command.
@@ -184,7 +304,7 @@ class CmdOEdit(Command):
                 return
 
         ch.ndb._oedit = OEditMode(self, vnum)
-        ch.cmdset.add('world.oedit.OEditCmdSet')
+        ch.cmdset.add('world.edit.oedit.OEditCmdSet')
         ch.execute_cmd("look")
 
 

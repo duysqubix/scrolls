@@ -16,6 +16,11 @@ def highlight_words(block, key_targets, color_codes):
     return block
 
 
+def match_string(criteria, string):
+    string = make_iter(string)
+    return True if string_partial_matching(string, criteria) else False
+
+
 def match_name(name, obj):
     if not is_obj(obj):
         raise ValueError("obj must be object type")
@@ -128,7 +133,6 @@ def can_see_obj(target, vict):
 
     if target.conditions.has(HolyLight):
         return True
-
     if is_pc_npc(vict):
         # check here for pc 2 pc if they can see each other
 
@@ -168,6 +172,17 @@ def is_sleeping(obj):
     if obj.conditions.has(Sleeping):
         return True
     return False
+
+
+def is_room(obj):
+    """checks if obj inherits room object"""
+    return inherits_from(obj,
+                         'typeclasses.rooms.rooms.Room') and obj.db.is_room
+
+
+def is_exit(obj):
+    """ checks if obj is exit type"""
+    return inherits_from(obj, 'typeclasses.exits.Exit') and obj.db.is_exit
 
 
 def is_obj(obj):

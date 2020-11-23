@@ -1,9 +1,9 @@
 """
-Main EvMenu that handles editing objects
+on-line editing of objects
 """
 import copy
+from .model import _EditMode
 from typeclasses.objs.object import VALID_OBJ_APPLIES, VALID_OBJ_TAGS
-
 from evennia.utils.utils import inherits_from
 from typeclasses.objs.custom import CUSTOM_OBJS
 from evennia import GLOBAL_SCRIPTS
@@ -11,43 +11,50 @@ from evennia import CmdSet, EvEditor, EvMenu
 from commands.command import Command
 from evennia.commands.default.help import CmdHelp
 from world.globals import DEFAULT_OBJ_STRUCT
-
 _OEDIT_PROMPT = "(|goedit|n) > "
 
 
-class OEditMode:
+class OEditMode(_EditMode):
+    __cname__ = "obj"
+    __db__ = GLOBAL_SCRIPTS.objdb
+    __prompt__ = _OEDIT_PROMPT
+    __default_struct__ = DEFAULT_OBJ_STRUCT
     _max_edit_len = 50
 
-    def __init__(self, caller, vnum) -> None:
-        self.caller = caller
-        self.vnum = vnum
-        self.db = GLOBAL_SCRIPTS.objdb
-        self.obj = None
-        self.prompt = _OEDIT_PROMPT
-        self.orig_obj = None
-        # attempt to find vnum in objdb
-        if self.vnum in self.db.vnum.keys():
-            self.obj = self.db.vnum[self.vnum]
+    @property
+    def custom_objs(self):
+        return CUSTOM_OBJS
 
-            # account for new fields added to default object builder
-            for field, value in DEFAULT_OBJ_STRUCT.items():
-                if field not in self.obj.keys():
-                    self.obj[field] = value
+    # def __init__(self, caller, vnum) -> None:
+    #     self.caller = caller
+    #     self.vnum = vnum
+    #     self.db = GLOBAL_SCRIPTS.objdb
+    #     self.obj = None
+    #     self.prompt = _OEDIT_PROMPT
+    #     self.orig_obj = None
+    #     # attempt to find vnum in objdb
+    #     if self.vnum in self.db.vnum.keys():
+    #         self.obj = self.db.vnum[self.vnum]
 
-            # if obj is a special type based on type, add those
-            # extra fields here
-            obj_type = self.obj['type']
-            extra_fields = CUSTOM_OBJS[obj_type].__obj_specific_fields__
+    #         # account for new fields added to default object builder
+    #         for field, value in DEFAULT_OBJ_STRUCT.items():
+    #             if field not in self.obj.keys():
+    #                 self.obj[field] = value
 
-            for efield, evalue in extra_fields.items():
-                if efield not in self.obj['extra'].keys():
-                    self.obj['extra'][efield] = evalue
+    #         # if obj is a special type based on type, add those
+    #         # extra fields here
+    #         obj_type = self.obj['type']
+    #         extra_fields = CUSTOM_OBJS[obj_type].__specific_fields__
 
-        else:
-            self.caller.msg(f"creating new obj vnum: [{self.vnum}]")
-            self.obj = copy.deepcopy(DEFAULT_OBJ_STRUCT)
+    #         for efield, evalue in extra_fields.items():
+    #             if efield not in self.obj['extra'].keys():
+    #                 self.obj['extra'][efield] = evalue
 
-        self.orig_obj = copy.deepcopy(self.obj)
+    #     else:
+    #         self.caller.msg(f"creating new obj vnum: [{self.vnum}]")
+    #         self.obj = copy.deepcopy(DEFAULT_OBJ_STRUCT)
+
+    #     self.orig_obj = copy.deepcopy(self.obj)
 
     def _cut_long_text(self, txt):
         txt = str(txt)
@@ -98,7 +105,7 @@ class OEditMode:
 
         applies = applies_to_pretty(self.obj['applies'])
         msg = f"""
-********Summary*******
+********Obj Summary*******
 
 VNUM: [{self.vnum}]
 
@@ -204,7 +211,7 @@ class Set(OEditCommand):
 
                 # remove old fields
                 cur_obj_type = CUSTOM_OBJS[obj['type']]
-                field_to_rm = cur_obj_type.__obj_specific_fields__
+                field_to_rm = cur_obj_type.__specific_fields__
                 for field in field_to_rm:
                     del obj['extra'][field]
 
@@ -416,7 +423,7 @@ class Exit(OEditCommand):
 
     def func(self):
         ch = self.caller
-        ch.cmdset.remove('world.oedit.OEditCmdSet')
+        ch.cmdset.remove('world.edit.oedit.OEditCmdSet')
 
         ch.ndb._oedit.save()
         del ch.ndb._oedit
