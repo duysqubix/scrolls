@@ -3,7 +3,8 @@ Books that scatter across the world of mundus is filled with rich text and histo
 defines what books do and what they contain within.
 """
 
-from world.globals import WEAR_LOCATIONS
+from evennia.utils.utils import wrap
+from world.globals import DAM_TYPES, WEAR_LOCATIONS
 from evennia import GLOBAL_SCRIPTS
 from typeclasses.objs.object import Object
 
@@ -34,22 +35,39 @@ class Container(Object):
     """
     __obj_type__ = 'container'
     __obj_specific_fields__ = {'limit': -1}
-    __help_msg__ = "limit: [int] - number of objects, -1 for infinity"
+    __help_msg__ = ["limit: [int] - number of objects, -1 for infinity"]
 
 
 class Weapon(Object):
     """
-    Weapon objects, they deal damagne and can be wielded
+    Weapon objects, they deal damage and can be wielded
     """
 
     __obj_type__ = "weapon"
-    __obj_specific_fields__ = {'dam_roll': "", "dual_wield": "False"}
-    __help_msg__ = "dam_roll: 1d10+4\ndual_wield: true||false"
+    __obj_specific_fields__ = {"dam_type": "", 'dam_roll': ""}
+    __help_msg__ = [
+        f"dam_type:{wrap(' '.join(DAM_TYPES['physical']))}",
+        "dam_roll: ex: 1d10+4"
+    ]
 
     def at_object_creation(self):
         super().at_object_creation()
         self.db.wieldable = True  # identifies that obj is equipment type
         self.db.is_wielded = False  # identifies that obj is currently worn
+
+
+class Staff(Weapon):
+    """
+    Staff objects, like weapons that deal only magical
+    damage, have limited charges, and are recharged by soul gems
+    """
+    __obj_type__ = "staff"
+    __obj_specific_fields__ = {"dam_type": "", 'dam_roll': "", "charges": -1}
+    __help_msg__ = [
+        f"dam_type: {wrap(', '.join(DAM_TYPES['magical']))}",
+        "dam_roll: ex: 1d10+4",
+        "charges: [int] - number of charges, -1 for infinity"
+    ]
 
 
 class Equipment(Object):
@@ -58,7 +76,7 @@ class Equipment(Object):
     """
     __obj_type__ = 'equipment'
     __obj_specific_fields__ = {'wear_loc': ""}
-    __help_msg__ = f"wear_loc: {', '.join([x.name for x in WEAR_LOCATIONS])}"
+    __help_msg__ = [f"wear_loc: {', '.join([x.name for x in WEAR_LOCATIONS])}"]
 
     def at_object_creation(self):
         super().at_object_creation()
@@ -67,9 +85,10 @@ class Equipment(Object):
 
 
 CUSTOM_OBJS = {
-    Default.__obj_type__: Default,
     Book.__obj_type__: Book,
-    Weapon.__obj_type__: Weapon,
+    Container.__obj_type__: Container,
+    Default.__obj_type__: Default,
     Equipment.__obj_type__: Equipment,
-    Container.__obj_type__: Container
+    Staff.__obj_type__: Staff,
+    Weapon.__obj_type__: Weapon,
 }

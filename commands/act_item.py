@@ -195,6 +195,9 @@ class CmdGet(Command):
         ch = self.caller
 
         def success_get(obj, con=None):
+            # add obj weight to characters carry rating
+            ch.attrs.change_vital('carry', by=obj.db.weight)
+
             if not con:
                 act(f"$n picks up a $p.", True, True, ch, obj, None,
                     Announce.ToRoom)
@@ -379,6 +382,8 @@ class CmdDrop(Command):
             return
 
         def success_drop(obj):
+            # remove obj weight to characters carry rating
+            ch.attrs.change_vital('carry', by=-obj.db.weight)
             act("$n drops $p", True, True, ch, obj, None, Announce.ToRoom)
             act("You drop $p", True, True, ch, obj, None, Announce.ToChar)
 
@@ -464,7 +469,7 @@ class CmdWield(Command):
 
         args = self.args.strip()
         for obj in ch.contents:
-            if is_weapon(obj) and not is_wielded(obj):
+            if is_wieldable(obj) and not is_wielded(obj):
                 # potential candidate
                 if match_name(args, obj):
                     # match

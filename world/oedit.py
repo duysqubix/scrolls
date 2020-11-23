@@ -10,7 +10,7 @@ from evennia import GLOBAL_SCRIPTS
 from evennia import CmdSet, EvEditor, EvMenu
 from commands.command import Command
 from evennia.commands.default.help import CmdHelp
-from world.globals import _DEFAULT_OBJ_STRUCT
+from world.globals import DEFAULT_OBJ_STRUCT
 
 _OEDIT_PROMPT = "(|goedit|n) > "
 
@@ -30,7 +30,7 @@ class OEditMode:
             self.obj = self.db.vnum[self.vnum]
 
             # account for new fields added to default object builder
-            for field, value in _DEFAULT_OBJ_STRUCT.items():
+            for field, value in DEFAULT_OBJ_STRUCT.items():
                 if field not in self.obj.keys():
                     self.obj[field] = value
 
@@ -45,7 +45,7 @@ class OEditMode:
 
         else:
             self.caller.msg(f"creating new obj vnum: [{self.vnum}]")
-            self.obj = copy.deepcopy(_DEFAULT_OBJ_STRUCT)
+            self.obj = copy.deepcopy(DEFAULT_OBJ_STRUCT)
 
         self.orig_obj = copy.deepcopy(self.obj)
 
@@ -161,7 +161,7 @@ class Set(OEditCommand):
     """
     key = 'set'
 
-    valid_obj_attributes = list(_DEFAULT_OBJ_STRUCT.keys())
+    valid_obj_attributes = list(DEFAULT_OBJ_STRUCT.keys())
 
     def func(self):
         ch = self.caller
@@ -354,6 +354,8 @@ class Set(OEditCommand):
                 msg = f"Available Tags:\n{tags}"
                 ch.msg(msg)
                 return
+        #TODO: set safeguards if extra fields are set that aren't
+        # part of the individual objects specific field rules
         elif keyword == 'extra':
             # set extra fields this will be ambiguous depending
             # on custom object type
@@ -382,10 +384,8 @@ class Set(OEditCommand):
 
             else:
                 # list available extras that can be set
-                msg = "Available Extra Fields:\n"
-                for efield in obj['extra'].keys():
-                    help_msg = CUSTOM_OBJS[obj['type']].__help_msg__
-                    msg += f"{efield}\n  {help_msg}\n"
+                msg = "Available Extra Fields:\n    "
+                msg += "\n    ".join(CUSTOM_OBJS[obj['type']].__help_msg__)
 
                 ch.msg(msg)
 

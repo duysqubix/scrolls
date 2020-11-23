@@ -186,6 +186,11 @@ def is_weapon(obj):
     return is_obj(obj) and obj.__obj_type__ == 'weapon'
 
 
+def is_staff(obj):
+    """ checks if obj is of type staff"""
+    return is_obj(obj) and obj.__obj_type__ == 'staff'
+
+
 def is_book(obj):
     """ checks if obj is book type"""
     return is_obj(obj) and obj.__obj_type__ == 'book'
@@ -218,6 +223,11 @@ def can_pickup(ch, obj):
     if (obj.db.level > ch.attrs.level.value) or ("no_pickup" in obj.db.tags):
         return False
 
+    # check to see if adding obj will overflow carry rating
+    carry = ch.attrs.carry
+    if carry.cur + obj.db.weight > carry.max:
+        return False
+
     return True
 
 
@@ -238,11 +248,11 @@ def is_equippable(obj):
 
 def is_wieldable(obj):
     """ tests if obj is a weapon and wieldable"""
-    return is_weapon(obj) and obj.db.wieldable
+    return (is_weapon(obj) or is_staff(obj)) and obj.db.wieldable
 
 
 def is_wielded(obj):
-    if not is_weapon(obj):
+    if not (is_weapon(obj) or is_staff(obj)):
         return False
     return obj.db.is_wielded
 

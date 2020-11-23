@@ -16,7 +16,7 @@ from world.gender import Gender
 from world.races import NoRace, get_race
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
-from evennia import DefaultCharacter, TICKER_HANDLER
+from evennia import DefaultCharacter, EvMenu, TICKER_HANDLER
 from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, WIZ_LVL, WEAR_LOCATIONS
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
@@ -358,12 +358,24 @@ class Character(DefaultCharacter):
         self.execute_cmd("look")
 
     def at_post_puppet(self, **kwargs):
-        # add character specific tickers and non-persitent
+
+        # here we can check to see if this is the first time logging in.
+        if self.attributes.has('new_character'):
+
+            #enter the chargen state
+            EvMenu(self,
+                   "world.chargen.gen",
+                   startnode="pick_race",
+                   cmdset_mergetype='Replace',
+                   cmdset_priority=1,
+                   auto_quit=False)
+            self.attributes.remove('new_character')
+
+            # add character specific tickers and non-persitent
         TICKER_HANDLER.add(interval=10,
                            callback=self.tick_heal_player,
                            idstring="tick_heal_char",
                            persistent=False)
-
         self.msg(f"\nYou become |c{self.name.capitalize()}|n")
         self.execute_cmd('look')
 
@@ -484,6 +496,7 @@ class Character(DefaultCharacter):
         self.msg(str(x))
 
     def at_object_creation(self):
+        self.db.new_character = True  # used for character generation
         self.db.attrs = {}
         self.db.stats = {}
         self.db.skills = {}
@@ -537,11 +550,3 @@ class Character(DefaultCharacter):
             VitalAttribute(
                 'carry'),  # determines how much a character can pick up.
         }
-
-        # enter the chargen state
-        # EvMenu(self,
-        #        "world.char_gen",
-        #        startnode="pick_race",
-        #        cmdset_mergetype='Replace',
-        #        cmdset_priority=1,
-        #        auto_quit=False)

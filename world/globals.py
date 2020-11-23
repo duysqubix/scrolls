@@ -8,7 +8,7 @@ IMM_LVL = 203
 BUILDER_LVL = 202
 HERO_LVL = 201
 
-_DEFAULT_OBJ_STRUCT = {
+DEFAULT_OBJ_STRUCT = {
     'key': "an unfinshed object",
     'sdesc': "an unfinshed object",
     'ldesc': "an unfinished object is lying here",
@@ -24,28 +24,40 @@ _DEFAULT_OBJ_STRUCT = {
     "extra": {}  # holds special fields relatd to a special object
 }
 
+DAM_TYPES = {
+    'physical': {
+        'hit', 'sting', 'whip', 'slash', 'bite', 'bludgeon', 'crush', 'pound',
+        'claw', 'maul', 'blast', 'punch', 'thrash', 'pierce', 'scratch',
+        'peck', 'stab', 'slap', 'smash', 'thwack', 'claw', 'cleave', 'grep', ''
+    },
+    'magical': {
+        'acidic', 'chill', 'freezing', 'magic', 'wrath', 'flame',
+        'divine_power', 'smite', 'shock'
+    }
+}
 
-class WearLocation:
+
+class _WearLocation:
     def __init__(self, name, display_msg=None):
         self.name = name
         self.display_msg = display_msg if display_msg else f"[|GWorn on {name.capitalize():<10}|n]"
 
 
-WEAR_LOCATIONS = [
-    WearLocation("light", display_msg=f"[|GUsed as {'Light':<10}|n]"),
-    WearLocation('wield', display_msg=f"[|GWielded {'':<10}|n]"),
-    WearLocation('off-hand', display_msg=f"[|GOff-Hand {'':<9}|n]"),
-    WearLocation('head'),
-    WearLocation('back'),
-    WearLocation('shoulders'),
-    WearLocation('chest'),
-    WearLocation('arms'),
-    WearLocation('hands'),
-    WearLocation('l-finger'),
-    WearLocation('r-finger'),
-    WearLocation('legs'),
-    WearLocation('feet')
-]
+WEAR_LOCATIONS = {
+    _WearLocation("light", display_msg=f"[|GUsed as {'Light':<10}|n]"),
+    _WearLocation('wield', display_msg=f"[|GWielded {'':<10}|n]"),
+    _WearLocation('off-hand', display_msg=f"[|GOff-Hand {'':<9}|n]"),
+    _WearLocation('head'),
+    _WearLocation('back'),
+    _WearLocation('shoulders'),
+    _WearLocation('chest'),
+    _WearLocation('arms'),
+    _WearLocation('hands'),
+    _WearLocation('l-finger'),
+    _WearLocation('r-finger'),
+    _WearLocation('legs'),
+    _WearLocation('feet')
+}
 
 
 class Size:

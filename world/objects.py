@@ -3,7 +3,7 @@ Defines the prototype for objects in game.
 
 Things like book, scrolls, weapons, armor, etc...
 """
-_DEFAULT_OBJ_STRUCT = {
+DEFAULT_OBJ_STRUCT = {
     'key': "an unfinshed object",
     'sdesc': "an unfinshed object",
     'ldesc': "an unfinished object is lying here",

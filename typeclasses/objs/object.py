@@ -2,7 +2,7 @@
 Default Scrolls object
 All objects must inherit this class to work properly
 """
-from world.globals import _DEFAULT_OBJ_STRUCT
+from world.globals import DEFAULT_OBJ_STRUCT
 from world.characteristics import CHARACTERISTICS
 import evennia
 from world.utils.utils import is_obj, is_pc_npc
@@ -210,7 +210,7 @@ class Object(DefaultObject):
         # set fields that didn't exist before, mostly used
         # if future fields are added and old already created objs
         # don't know about them.
-        for field, default_value in _DEFAULT_OBJ_STRUCT.items():
+        for field, default_value in DEFAULT_OBJ_STRUCT.items():
             try:
                 _ = obj[field]
             except KeyError:
