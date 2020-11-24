@@ -51,6 +51,11 @@ GLOBAL_SCRIPTS = {
         'persistent': True,
         'desc': 'storage for room data'
     },
+    'zonedb': {
+        'typeclass': 'typeclasses.scripts.EntityDB',
+        'persistent': True,
+        'desc': 'storage for zones'
+    }
 }
 
 CMDSET_UNLOGGEDIN = "evennia.contrib.menu_login.UnloggedinCmdSet"

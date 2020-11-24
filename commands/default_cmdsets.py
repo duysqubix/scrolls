@@ -70,6 +70,7 @@ class BuilderCmdSet(CmdSet):
         self.add(wiz.CmdRestore())
         self.add(wiz.CmdOList())
         self.add(wiz.CmdRList())
+        self.add(wiz.CmdZList())
         self.add(wiz.CmdHolyLight())
         self.add(wiz.CmdBookLoad())
 
@@ -83,6 +84,18 @@ class ImmCmdSet(CmdSet):
     def at_cmdset_creation(self):
         super().at_cmdset_creation()
         self.add(wiz.CmdPurge())
+
+
+class WizCmdSet(CmdSet):
+    """
+    commands for wizards
+    """
+    key = "DefaultWizard"
+
+    def at_cmdset_creation(self):
+        super().at_cmdset_creation()
+        self.add(wiz.CmdZone())
+        self.add(wiz.CmdZEdit())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

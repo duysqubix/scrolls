@@ -83,6 +83,11 @@ def is_wiz(obj):
     return False
 
 
+def is_online(pc):
+    """ checks to see if pc is online and connected to account"""
+    return pc.has_account
+
+
 def is_pc(obj):
     """ checks to see if obj is pc """
     if not obj.db.is_pc:

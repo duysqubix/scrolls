@@ -413,7 +413,10 @@ class Character(DefaultCharacter):
                     self.cmdset.add(imm_cmdset)
                     self.msg("immortal_cmds added")
             if level >= WIZ_LVL:
-                pass
+                wiz_cmdset = 'commands.default_cmdsets.WizCmdSet'
+                if not self.cmdset.has(wiz_cmdset):
+                    self.cmdset.add(wiz_cmdset)
+                    self.msg("wizard_cmds added")
             if level >= GOD_LVL:
                 pass
 

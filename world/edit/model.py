@@ -27,14 +27,19 @@ class _EditMode:
 
             # if obj is a special type based on type, add those
             # extra fields here
-            self.caller.msg(self.obj)
-            obj_type = self.obj['type']
-            if obj_type in self.custom_objs.keys():
-                extra_fields = self.custom_objs[obj_type].__specific_fields__
+            try:
+                obj_type = self.obj['type']
+                if obj_type in self.custom_objs.keys():
+                    extra_fields = self.custom_objs[
+                        obj_type].__specific_fields__
 
-                for efield, evalue in extra_fields.items():
-                    if efield not in self.obj['extra'].keys():
-                        self.obj['extra'][efield] = evalue
+                    for efield, evalue in extra_fields.items():
+                        if efield not in self.obj['extra'].keys():
+                            self.obj['extra'][efield] = evalue
+            except:
+                caller.msg(
+                    f"<WARNING> entering {self.__prompt__} mode and custom_objs is not set. If this is for zedit, safely ignore"
+                )
 
         else:
             self.caller.msg(

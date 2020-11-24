@@ -1,21 +1,18 @@
 import json
 import pathlib
-from collections import OrderedDict
+from world.edit.zedit import ZEditMode
 from world.edit.redit import REditMode
 from typeclasses.objs.custom import CUSTOM_OBJS
 from evennia.utils.utils import dedent, inherits_from, make_iter
-import tabulate
 from world.edit.oedit import OEditMode
 from world.utils.utils import delete_contents, is_invis, match_string
-from world.conditions import DetectInvis, HolyLight, get_condition
+from world.conditions import HolyLight, get_condition
 from world.utils.act import Announce, act
-import evennia
-from evennia import EvMenu, create_object
+from evennia import EvMenu, create_object, search_object
 from commands.command import Command
 from world.globals import BUILDER_LVL, GOD_LVL, WIZ_LVL, IMM_LVL
 from evennia import GLOBAL_SCRIPTS
-from evennia.utils.ansi import ANSIParser
-from evennia.utils import crop
+from evennia.utils import crop, list_to_string
 from evennia.utils.ansi import raw as raw_ansi
 from server.conf.settings import BOOK_JSON
 
@@ -23,6 +20,72 @@ __all__ = [
     "CmdSpawn", "CmdCharacterGen", "CmdWizInvis", "CmdOEdit", "CmdOList",
     "CmdLoad"
 ]
+
+
+class CmdZone(Command):
+    """
+    Sets a particular zone on a player, must be a BUILDER level or up
+    Cannot start editing without a zone set.
+    
+    Usage:
+        zone set   <player> <zonename>
+        zone clear <player>
+        zone list
+    """
+
+    key = 'zone'
+    locks = f"attr_ge(level.value, {WIZ_LVL})"
+
+    def func(self):
+        ch = self.caller
+        args = self.args.strip().split()
+        if len(args) == 1 and args[0] == 'list':
+            # list zones here
+
+            return
+
+        if len(args) == 2:
+            action, player = args
+
+            player = search_object(
+                player, typeclass='typeclasses.characters.Character')[0]
+            if not player or not player.has_account:
+                ch.msg("There is no one like that online")
+                return
+
+            if action in ('clear'):
+                # clear the zone name on character
+                player.attributes.remove('assigned_zone')
+                ch.msg(
+                    f"You cleared zone assignment to {player.name.capitalize()}"
+                )
+                player.msg(f"{ch.name.capitalize()} cleared zones from you.")
+            else:
+                ch.msg("That isn't a valid command")
+            return
+
+        elif len(args) == 3:
+            action, player, zonename = args
+            player = search_object(
+                player, typeclass='typeclasses.characters.Character')[0]
+            if not player or not player.has_account:
+                ch.msg("There is no one like that online")
+                return
+
+            if action in ('set'):
+                # set a valid zone to player
+                zones = [
+                    x['name'] for x in GLOBAL_SCRIPTS.zonedb.vnum.values()
+                ]
+                if zonename not in zones:
+                    ch.msg("That is not a valid zone")
+                    return
+                player.attributes.add('assigned_zone', zonename)
+                ch.msg(
+                    f"You set zone {zonename} to {player.name.capitalize()}")
+                player.msg(
+                    f"{ch.name.capitalize()} assigned zone {zonename} to you.")
+                return
 
 
 class CmdLoad(Command):
@@ -144,6 +207,113 @@ class CmdOList(Command):
         return
 
 
+class CmdZList(Command):
+    """
+    Lists all available zones set in zoneb
+
+    Usage:
+        zlist
+        zlist <name> <criteria>
+    """
+    key = "zlist"
+    locks = f"attr_ge(level.value, {BUILDER_LVL})"
+
+    def func(self):
+        ch = self.caller
+        ch.msg(self.args)
+        args = self.args.strip()
+        zonedb = dict(GLOBAL_SCRIPTS.zonedb.vnum)
+        vnum_zonedb = zonedb.keys()
+        min_ = min(vnum_zonedb)
+        max_ = max(vnum_zonedb)
+
+        legend = ["VNum", "Name", "Builders"]
+        try:
+            _ = zonedb[1]
+        except KeyError:
+            ch.msg("No zones are saved to database, try creating one first")
+            return
+
+        if not args:
+            table = self.styled_table(*legend, border='incols')
+
+            for vnum in range(min_, max_ + 1):
+                data = zonedb[vnum]
+                vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                table.add_row(vnum, data['name'],
+                              list_to_string(data['builders']))
+
+            msg = str(table)
+            ch.msg(msg)
+            return
+
+        args = args.split(' ')
+        if len(args) < 2:
+            ch.msg("Supply name to search for")
+            return
+        table = self.styled_table(*legend, border='incols')
+        type_ = args[0]
+        if type_ not in ('name'):
+            ch.msg("Please supply name to search by")
+            return
+
+        criteria = args[1]
+        for vnum in range(min_, max_ + 1):
+            # for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
+            data = zonedb[vnum]
+            if type_ == 'name':
+                if match_string(criteria, data['name'].split()):
+                    vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                    table.add_row(vnum, data['name'],
+                                  list_to_string(data['builders']))
+                    continue
+        msg = str(table)
+        ch.msg(msg)
+        return
+
+
+class CmdZEdit(Command):
+    """
+    Generic zone building command
+
+    Usage:
+        zedit <new|vnum>
+    
+    Opens the zone building menu. This allows to change the zone 
+    details. To create a new zone with the next available vnum supply
+    the `new` argument.
+    """
+
+    key = 'zedit'
+    locks = f"attr_ge(level.value, {IMM_LVL})"
+
+    def func(self):
+        if not self.args.strip():
+            self.msg("You must provide either a vnum or `new`")
+            return
+
+        zonedb = GLOBAL_SCRIPTS.zonedb
+        ch = self.caller
+
+        if 'new' in self.args.lower():
+            if not zonedb.vnum.keys():
+                vnum = 1
+            else:
+                vnum = max(zonedb.vnum.keys()) + 1
+        else:
+            vnum = self.args
+            try:
+                vnum = int(vnum)
+            except ValueError:
+                ch.msg("You must supply a valid vnum")
+                return
+
+        ch.ndb._zedit = ZEditMode(self, vnum)
+        ch.cmdset.add("world.edit.zedit.ZEditCmdSet")
+        ch.cmdset.all()[-1].add(CmdZList())
+        ch.execute_cmd("look")
+
+
 class CmdREdit(Command):
     """
     Generic room building command
@@ -162,6 +332,10 @@ class CmdREdit(Command):
     def func(self):
         if not self.args.strip():
             self.msg("You must provide either a vnum or `new`")
+            return
+
+        if not self.attributes.has('assigned_zone'):
+            self.msg("You must be assigned a zone before you can edit rooms.")
             return
 
         roomdb = GLOBAL_SCRIPTS.roomdb

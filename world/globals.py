@@ -42,6 +42,14 @@ DEFAULT_ROOM_STRUCT = {
     "extra": {}
 }
 
+DEFAULT_ZONE_STRUCT = {
+    'name': "a new zone",
+    'builders': [],
+    'lifespan': -1,
+    'level_range': [-1, -1],
+    'reset_msg': "zone has reset"
+}
+
 DAM_TYPES = {
     "physical": {
         "hit", "sting", "whip", "slash", "bite", "bludgeon", "crush", "pound",
