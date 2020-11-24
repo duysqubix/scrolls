@@ -371,11 +371,17 @@ class Character(DefaultCharacter):
                    auto_quit=False)
             self.attributes.remove('new_character')
 
-            # add character specific tickers and non-persitent
+        ############### Non-Persistent Tickers ####################
         TICKER_HANDLER.add(interval=10,
                            callback=self.tick_heal_player,
                            idstring="tick_heal_char",
                            persistent=False)
+
+        TICKER_HANDLER.add(interval=60,
+                           callback=self.save_character,
+                           idstring='tick_save_char',
+                           persistent=False)
+        ###########################################################
         self.msg(f"\nYou become |c{self.name.capitalize()}|n")
         self.execute_cmd('look')
 
@@ -385,6 +391,7 @@ class Character(DefaultCharacter):
         self.db.conditions = dict(self.db.conditions)
         self.db.traits = dict(self.db.traits)
         self.db.attrs = dict(self.db.attrs)
+        self.msg('saved.')
 
     def at_pre_unpuppet(self):
         self.save_character()
@@ -451,7 +458,7 @@ class Character(DefaultCharacter):
         st = self.attrs.stamina
         sp = self.attrs.speed
         ca = self.attrs.carry
-        prompt = "\n"
+        prompt = "\n\n"
 
         if is_wiz(self) and self.conditions.has(HolyLight):
             prompt += "(|wholy|ylight|n)"

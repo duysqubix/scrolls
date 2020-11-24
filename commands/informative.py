@@ -1,13 +1,11 @@
 """
 holds informative type of commands
 """
-from world.conditions import DetectInvis
 from evennia import EvForm
-from evennia.utils import evmore, crop
+from evennia.utils import evmore
 from evennia.utils.utils import inherits_from
 from commands.command import Command
-from world.utils.act import Announce, act
-from world.utils.utils import can_see_obj, is_book, is_container, is_equipment, is_equipped, is_exit, is_invis, is_obj, can_pickup, is_pc, is_pc_npc, is_room, is_wielded, is_worn, match_name, parse_dot_notation
+from world.utils.utils import can_see_obj, is_book, is_container, is_equipped, is_invis, is_obj, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation
 from evennia.utils.ansi import raw as raw_ansi
 
 
@@ -204,12 +202,13 @@ class CmdLook(Command):
             room_msg += f"|G{location.db.desc}|n\n\n"
 
             # get room exits
-            room_msg += "Exits: "
+            room_msg += "|C[ Exits: "
             for direction, dvnum in location.db.exits.items():
-                if dvnum:
+                if dvnum < 0:
                     continue  # not set
-                room_msg += f"{direction} "
-            room_msg += "\n\n"
+
+                room_msg += f"|lc{direction}|lt{direction}|le "
+            room_msg += "]|n\n\n"
 
             # get room contents
             # get objects

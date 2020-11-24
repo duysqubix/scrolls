@@ -4,8 +4,8 @@ online editting of room
 
 import re
 from evennia.utils.utils import wrap
-from typeclasses.rooms.rooms import VALID_ROOM_FLAGS, VALID_ROOM_SECTORS
-from world.utils.utils import match_name, match_string
+from typeclasses.rooms.rooms import VALID_ROOM_FLAGS, VALID_ROOM_SECTORS, get_room
+from world.utils.utils import has_zone, match_name, match_string, room_exists
 from evennia import CmdSet, Command, EvEditor, logger
 from evennia.utils import crop, list_to_string
 from typeclasses.rooms.custom import CUSTOM_ROOMS
@@ -26,10 +26,26 @@ class REditMode(_EditMode):
     def custom_objs(self):
         return CUSTOM_ROOMS
 
+    def init(self):
+        assigned_zone = self.caller.attributes.get('assigned_zone')
+        if not assigned_zone:
+            raise Exception(
+                "user should not be allowed in the first place with redit without a valid zone assigned"
+            )
+
+        if self.obj['zone'] == 'null':
+            self.obj['zone'] = assigned_zone
+
     def save(self, override=False):
         if (self.orig_obj != self.obj) or override:
             # custom object checks here
             self.db.vnum[self.vnum] = self.obj
+
+            #if room actually exists, update that too by calling its
+            # appropriate method
+            room = get_room(self.vnum)
+            if room:
+                room.at_object_creation()
             self.caller.msg("room saved.")
 
     def summarize(self):
@@ -46,9 +62,12 @@ class REditMode(_EditMode):
 
         sector = self.obj['type']
         sector_symbol = VALID_ROOM_SECTORS[self.obj['type']].symbol
+
+        status = "(|rCAN NOT EDIT|n)" if self.obj['zone'] != has_zone(
+            self.caller) else ""
         msg = f"""
 ********Room Summary*******
-
+        {status}
 VNUM: [{self.vnum}]      ZONE:[|m{self.obj['zone']}|n]
 
 name    : |y{self.obj['name']}|n
@@ -101,6 +120,10 @@ class Set(REditCommand):
         ch = self.caller
         args = self.args.strip().split()
         obj = ch.ndb._redit.obj
+
+        if has_zone(ch) != obj['zone']:
+            ch.msg("You do not have permission to edit this zones room")
+            return
         if not args:
             attrs = self.valid_room_attributes.copy()
             attrs[attrs.index('type')] = 'sector'
@@ -185,13 +208,8 @@ class Set(REditCommand):
                              loadfunc=(lambda _: edesc),
                              savefunc=save_func)
         elif keyword == 'zone':
-            if len(args) == 1:
-                # list available zones here
-                ch.msg("TODO: List all zones here")
-                return
-            else:
-                ch.msg("TODO: search if valid zone ")
-                return
+            ch.msg("You can't set zone this way")
+            return
         elif keyword == 'flags':
             if len(args) > 1:
                 flag = args[1].strip()
@@ -214,6 +232,24 @@ class Set(REditCommand):
                 flags = wrap(", ".join(VALID_ROOM_FLAGS))
                 msg = f"Room Flags:\n{flags}"
                 ch.msg(msg)
+                return
+        elif match_string(keyword, 'exits'):
+            if len(args) > 1:
+                try:
+                    exit_name = args[1]
+                    exit_vnum = int(args[2])
+                except:
+                    ch.msg("That isn't a valid vnum or exit direction")
+                    return
+                # check to see if exit_vnum is a valid vnum
+                if not room_exists(exit_vnum):
+                    ch.msg("That room vnum does not exist")
+                    return
+                obj['exits'][exit_name] = exit_vnum
+                ch.msg(set_str)
+
+            else:
+                ch.msg("Must provide a vnum to the exit")
                 return
         else:
             ch.msg("That isn't a valid keyword")
@@ -240,12 +276,17 @@ class Exit(REditCommand):
     Exit redit
 
     Usage:
-        exit
+        exit <True|False> <= weather to force a save or not
     """
     key = 'exit'
 
     def func(self):
         ch = self.caller
         ch.cmdset.remove('world.edit.redit.REditCmdSet')
-        ch.ndb._redit.save()
-        del ch.ndb._redit
+        try:
+            b = bool(eval(self.args.strip().capitalize()))
+            ch.ndb._redit.save(override=b)
+            del ch.ndb._redit
+        except:
+            ch.ndb._redit.save(override=False)
+            del ch.ndb._redit

@@ -46,11 +46,15 @@ class _EditMode:
                 f"creating new {self.__cname__} vnum: [{self.vnum}]")
             self.obj = copy.deepcopy(self.__default_struct__)
 
+        self.init()
         self.orig_obj = copy.deepcopy(self.obj)
 
     @property
     def custom_objs(self):
         raise NotImplementedError("must return a valid list of custom_objs")
+
+    def init(self):
+        pass
 
     def save(self, override=False):
         raise NotImplementedError()

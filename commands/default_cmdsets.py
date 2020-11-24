@@ -18,6 +18,7 @@ from world.utils.act import act
 from evennia import default_cmds, CmdSet
 import commands.informative as info
 import commands.act_item as act_item
+import commands.act_movement as act_mov
 import commands.wiz as wiz
 from world.globals import BUILDER_LVL
 
@@ -73,6 +74,15 @@ class BuilderCmdSet(CmdSet):
         self.add(wiz.CmdZList())
         self.add(wiz.CmdHolyLight())
         self.add(wiz.CmdBookLoad())
+        self.add(wiz.CmdGoto())
+
+        # movement commands
+        self.add(act_mov.CmdNorth())
+        self.add(act_mov.CmdSouth())
+        self.add(act_mov.CmdEast())
+        self.add(act_mov.CmdWest())
+        self.add(act_mov.CmdUp())
+        self.add(act_mov.CmdDown())
 
 
 class ImmCmdSet(CmdSet):
@@ -94,7 +104,7 @@ class WizCmdSet(CmdSet):
 
     def at_cmdset_creation(self):
         super().at_cmdset_creation()
-        self.add(wiz.CmdZone())
+        self.add(wiz.CmdZoneSet())
         self.add(wiz.CmdZEdit())
 
 

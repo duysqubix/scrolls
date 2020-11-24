@@ -1,3 +1,4 @@
+from evennia import GLOBAL_SCRIPTS
 from world.globals import BUILDER_LVL
 from evennia.utils.utils import inherits_from, string_partial_matching
 from world.conditions import DetectHidden, DetectInvis, Hidden, HolyLight, Invisible, Sleeping
@@ -72,13 +73,32 @@ def parse_dot_notation(string):
     return pos, string
 
 
+def room_exists(vnum):
+    roomdb = GLOBAL_SCRIPTS.roomdb
+    return vnum in roomdb.vnum.keys()
+
+
+def has_zone(obj):
+    """ returns the objs assigned zone, if any """
+    return obj.db.assigned_zone
+
+
 def is_wiz(obj):
     """ checks to see if player is immortal """
 
-    if not is_pc_npc(obj):
+    if not is_pc(obj):
         return False
 
     if obj.attrs.level.value > BUILDER_LVL:
+        return True
+    return False
+
+
+def is_builder(obj):
+    """ checks to see if player is a builder """
+    if not is_pc(obj):
+        return False
+    if obj.attrs.level.value >= BUILDER_LVL:
         return True
     return False
 

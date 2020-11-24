@@ -6,7 +6,7 @@ Rooms are simple containers that has no location of their own.
 """
 
 from world.globals import DEFAULT_ROOM_STRUCT
-from evennia import DefaultRoom, GLOBAL_SCRIPTS
+from evennia import DefaultRoom, GLOBAL_SCRIPTS, search_object
 from world.utils.utils import is_pc
 
 
@@ -88,3 +88,10 @@ VALID_ROOM_SECTORS = {
     'underwater': RoomSector('underwater', '|BU|n'),
     'void': RoomSector('void', '|x-|n')
 }
+
+
+def get_room(vnum):
+    room = search_object(str(vnum), typeclass=Room)
+    if not room:
+        return None
+    return room[0]

@@ -3,8 +3,8 @@ online editting of zones
 restricted to wiz levels and up
 """
 import evennia
-from world.globals import DEFAULT_ZONE_STRUCT
-from world.utils.utils import is_online, is_pc, match_string
+from world.globals import BUILDER_LVL, DEFAULT_ZONE_STRUCT
+from world.utils.utils import is_builder, is_online, is_pc, match_string
 from evennia import CmdSet, Command, GLOBAL_SCRIPTS
 from evennia.utils import wrap
 from evennia.commands.default.help import CmdHelp
@@ -21,7 +21,8 @@ class ZEditMode(_EditMode):
 
     def save(self, override=False):
         if (self.orig_obj != self.obj) or override:
-            # here assign attributes to builders
+            # here assign zone_attributes to builders
+
             self.db.vnum[self.vnum] = self.obj
             self.caller.msg("zone saved.")
 
@@ -81,7 +82,6 @@ class Set(ZEditCommand):
         obj = ch.ndb._zedit.obj
         if not args:
             attrs = self.valid_zone_attributes.copy()
-            attrs[attrs.index('type')] = 'sector'
             keywords = "|n\n*|c".join(attrs)
             ch.msg(
                 f'You must provide one of the valid keywords.\n*|c{keywords}')
@@ -93,7 +93,9 @@ class Set(ZEditCommand):
             if len(args) == 1:
                 ch.msg("Must supply name for zone")
                 return
-            obj[keyword] = " ".join(args[1:]).strip()
+
+            joiner = " " if keyword != 'name' else "_"
+            obj[keyword] = f"{joiner}".join(args[1:]).strip()
             ch.msg(set_str)
             return
         elif match_string(keyword, 'builders'):
@@ -115,6 +117,12 @@ class Set(ZEditCommand):
                     continue
 
                 builder = builder[0]
+                if not is_builder(builder):
+                    ch.msg(
+                        f"{builder.name.capitalize()} is not at least lvl {BUILDER_LVL}"
+                    )
+                    return
+
                 if builder.name not in obj['builders']:
                     obj['builders'].append(builder.name)
 

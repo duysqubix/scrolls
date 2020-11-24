@@ -5,7 +5,7 @@ from world.edit.redit import REditMode
 from typeclasses.objs.custom import CUSTOM_OBJS
 from evennia.utils.utils import dedent, inherits_from, make_iter
 from world.edit.oedit import OEditMode
-from world.utils.utils import delete_contents, is_invis, match_string
+from world.utils.utils import delete_contents, has_zone, is_invis, is_wiz, match_string
 from world.conditions import HolyLight, get_condition
 from world.utils.act import Announce, act
 from evennia import EvMenu, create_object, search_object
@@ -22,70 +22,116 @@ __all__ = [
 ]
 
 
-class CmdZone(Command):
+class CmdGoto(Command):
+    """
+    Goto a particular room in based on the vnum.
+    If the room blueprints exist, but not yet in the main database. 
+    It will create the room based on the blueprints and move you there.
+
+    Usage:
+        goto <vnum>
+
+    """
+
+    key = 'goto'
+    locks = f"attr_ge(level.value, {BUILDER_LVL})"
+
+    def func(self):
+        ch = self.caller
+
+        if not self.args:
+            ch.msg("supply a rvnum to goto")
+            return
+
+        vnum = self.args.strip()
+        try:
+            vnum = int(vnum)
+        except:
+            ch.msg("That is not a valid vnum")
+            return
+
+        # handle special case of void here
+        if vnum == 1:
+            void = search_object('#2')[0]
+            ch.move_to(void)
+            ch.execute_cmd('look')
+            return
+
+        # try to find vnum in database
+        room = search_object(str(vnum),
+                             typeclass='typeclasses.rooms.rooms.Room')
+        roomdb = GLOBAL_SCRIPTS.roomdb
+
+        if not room:
+            # make sure a blueprint of room exists
+            try:
+                _ = roomdb.vnum[vnum]
+            except KeyError:
+                ch.msg("That room does not exist")
+                return
+            room = create_object('typeclasses.rooms.rooms.Room', key=vnum)
+            ch.move_to(room)
+        else:
+            ch.move_to(room[0])
+
+
+class CmdZoneSet(Command):
     """
     Sets a particular zone on a player, must be a BUILDER level or up
     Cannot start editing without a zone set.
     
     Usage:
-        zone set   <player> <zonename>
-        zone clear <player>
-        zone list
+        zone: shows current assigned zone if any
+        zone set <player> <zonename>
+
     """
 
     key = 'zone'
-    locks = f"attr_ge(level.value, {WIZ_LVL})"
+    locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         ch = self.caller
         args = self.args.strip().split()
-        if len(args) == 1 and args[0] == 'list':
-            # list zones here
-
+        if not args:
+            zone = ch.db.assigned_zone
+            zone = "none" if zone is None else zone
+            zonemsg = f"You are assigned zone: |m{zone.replace('_', ' ')}|n"
+            ch.msg(zonemsg)
             return
 
-        if len(args) == 2:
-            action, player = args
+        action, player, zonename = args
+        player = search_object(player,
+                               typeclass='typeclasses.characters.Character')[0]
+        if not player or not player.has_account:
+            ch.msg("There is no one like that online")
+            return
 
-            player = search_object(
-                player, typeclass='typeclasses.characters.Character')[0]
-            if not player or not player.has_account:
-                ch.msg("There is no one like that online")
+        if action in ('set'):
+            if not is_wiz(ch):
+                ch.msg("You are not permitted to do that.")
                 return
-
-            if action in ('clear'):
-                # clear the zone name on character
+            # set a valid zone to player
+            zones = [x['name'] for x in GLOBAL_SCRIPTS.zonedb.vnum.values()]
+            if zonename not in zones:
+                ch.msg("That is not a valid zone")
+                return
+            if player.attributes.has(
+                    'assigned_zone') and player.attributes.get(
+                        'assigned_zone') == zonename:
                 player.attributes.remove('assigned_zone')
                 ch.msg(
-                    f"You cleared zone assignment to {player.name.capitalize()}"
+                    f"You unassigned zone {zonename} to {player.name.capitalize()}"
                 )
-                player.msg(f"{ch.name.capitalize()} cleared zones from you.")
+                player.msg(
+                    f"{ch.name.capitalize()} unassigned zone {zonename} from you."
+                )
             else:
-                ch.msg("That isn't a valid command")
-            return
-
-        elif len(args) == 3:
-            action, player, zonename = args
-            player = search_object(
-                player, typeclass='typeclasses.characters.Character')[0]
-            if not player or not player.has_account:
-                ch.msg("There is no one like that online")
-                return
-
-            if action in ('set'):
-                # set a valid zone to player
-                zones = [
-                    x['name'] for x in GLOBAL_SCRIPTS.zonedb.vnum.values()
-                ]
-                if zonename not in zones:
-                    ch.msg("That is not a valid zone")
-                    return
                 player.attributes.add('assigned_zone', zonename)
                 ch.msg(
                     f"You set zone {zonename} to {player.name.capitalize()}")
                 player.msg(
                     f"{ch.name.capitalize()} assigned zone {zonename} to you.")
-                return
+            return
 
 
 class CmdLoad(Command):
@@ -330,33 +376,42 @@ class CmdREdit(Command):
     locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
-        if not self.args.strip():
-            self.msg("You must provide either a vnum or `new`")
-            return
+        ch = self.caller
 
-        if not self.attributes.has('assigned_zone'):
+        if not ch.attributes.has('assigned_zone'):
             self.msg("You must be assigned a zone before you can edit rooms.")
             return
 
-        roomdb = GLOBAL_SCRIPTS.roomdb
-        ch = self.caller
-
-        if 'new' in self.args.lower():
-            if not roomdb.vnum.keys():
-                vnum = 1
+        if not self.args.strip():
+            # see if you ca edit the current room you are in.
+            cur_room = ch.location
+            room_zone = cur_room.db.zone
+            if has_zone(ch) == room_zone:
+                vnum = int(cur_room.key)
             else:
-                vnum = max(roomdb.vnum.keys()) + 1
-        else:
-            vnum = self.args
-            try:
-                vnum = int(vnum)
-            except ValueError:
-                ch.msg("You must supply a valid vnum")
+                self.msg("You don't have permission to edit this zones room.")
                 return
+        else:
 
-        ch.ndb._redit = REditMode(self, vnum)
+            roomdb = GLOBAL_SCRIPTS.roomdb
+
+            if 'new' in self.args.lower():
+                if not roomdb.vnum.keys():
+                    vnum = 1
+                else:
+                    vnum = max(roomdb.vnum.keys()) + 1
+            else:
+                vnum = self.args
+                try:
+                    vnum = int(vnum)
+                except ValueError:
+                    ch.msg("You must supply a valid vnum")
+                    return
+
+        ch.ndb._redit = REditMode(ch, vnum)
         ch.cmdset.add("world.edit.redit.REditCmdSet")
-        ch.cmdset.all()[-1].add(CmdRList())
+        ch.cmdset.all()[-1].add([CmdRList(), CmdZoneSet()])
+
         ch.execute_cmd("look")
 
 
@@ -666,7 +721,7 @@ class CmdCharacterGen(Command):
             self.args = self.args.strip().split(' ')
 
             char_name = self.args[0]
-            char = evennia.search_object(char_name)
+            char = search_object(char_name)
             if not char:
                 ch.msg(f"There is no such character as {char_name}")
                 return
