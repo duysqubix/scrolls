@@ -2,14 +2,15 @@
 online editting of room
 """
 
-import re
+import re, copy
+from typing import final
 from evennia.utils.utils import wrap
 from typeclasses.rooms.rooms import VALID_ROOM_FLAGS, VALID_ROOM_SECTORS, get_room
-from world.utils.utils import has_zone, match_name, match_string, room_exists
-from evennia import CmdSet, Command, EvEditor, logger
+from world.utils.utils import clear_terminal, has_zone, match_name, match_string, mxp_string, next_available_rvnum, room_exists
+from evennia import CmdSet, Command, EvEditor, search_object, create_object
 from evennia.utils import crop, list_to_string
 from typeclasses.rooms.custom import CUSTOM_ROOMS
-from world.globals import DEFAULT_ROOM_STRUCT
+from world.globals import DEFAULT_ROOM_STRUCT, OPPOSITE_DIRECTION, VALID_DIRECTIONS
 from .model import _EditMode
 from evennia import GLOBAL_SCRIPTS
 from evennia.commands.default.help import CmdHelp
@@ -52,7 +53,8 @@ class REditMode(_EditMode):
         exit_summary = ""
 
         for ename, rvnum in self.obj['exits'].items():
-            exit_summary += f"    |y{ename.capitalize()}|n: {rvnum}\n"
+            room = "" if get_room(rvnum) is None else get_room(rvnum).db.name
+            exit_summary += f"    |y{ename.capitalize():<5}|n: {rvnum:<7} {room:<15}\n"
 
         edesc_msg = ""
         for key, edesc in self.obj['edesc'].items():
@@ -98,6 +100,7 @@ class REditCmdSet(CmdSet):
         self.add(Look())
         self.add(CmdHelp())
         self.add(Set())
+        self.add(Dig())
 
 
 class REditCommand(Command):
@@ -235,18 +238,25 @@ class Set(REditCommand):
                 return
         elif match_string(keyword, 'exits'):
             if len(args) > 1:
-                try:
-                    exit_name = args[1]
-                    exit_vnum = int(args[2])
-                except:
-                    ch.msg("That isn't a valid vnum or exit direction")
-                    return
-                # check to see if exit_vnum is a valid vnum
-                if not room_exists(exit_vnum):
-                    ch.msg("That room vnum does not exist")
-                    return
-                obj['exits'][exit_name] = exit_vnum
-                ch.msg(set_str)
+                exit_name = args[1]
+                if args[2] == 'clear':
+                    exit_vnum = 'clear'
+                else:
+                    try:
+                        exit_vnum = int(args[2])
+                    except:
+                        ch.msg("That is not a valid vnum")
+                        return
+
+                if exit_vnum == 'clear':
+                    obj['exits'][exit_name] = -1
+                else:
+                    # check to see if exit_vnum is a valid vnum
+                    if not room_exists(exit_vnum):
+                        ch.msg("That room vnum does not exist")
+                        return
+                    obj['exits'][exit_name] = exit_vnum
+                    ch.msg(set_str)
 
             else:
                 ch.msg("Must provide a vnum to the exit")
@@ -268,6 +278,7 @@ class Look(REditCommand):
     aliases = ['l', 'ls']
 
     def func(self):
+        clear_terminal(self.caller)
         self.caller.ndb._redit.summarize()
 
 
@@ -290,3 +301,101 @@ class Exit(REditCommand):
         except:
             ch.ndb._redit.save(override=False)
             del ch.ndb._redit
+
+
+class Dig(Command):
+    """
+    Dig a tunnel between two rooms, optional to create a exit from 
+    original source
+
+    Usage:
+        dig <bi/uni> <direction> [<vnum>]
+
+    exs:
+        dig bi north   # digs a bidirectional tunnel
+        dig uni north # dig a a unidirectional room north.
+        dig bi north 12 # digs  bidirectional tunnel to rvnum 12 if it exists
+
+    """
+
+    key = 'dig'
+
+    def func(self):
+        ch = self.caller
+        if not ch.attributes.has('assigned_zone'):
+            self.msg("You must be assigned a zone before you can edit rooms.")
+            return
+
+        if not self.args:
+            ch.msg(
+                f"refer to {mxp_string('help dig', 'dig')} for more information"
+            )
+            return
+        args = self.args.strip().split()
+        if len(args) >= 2:
+            vnum = None
+            try:
+                type_, direction, vnum = args
+            except ValueError:
+                type_, direction = args
+            except:
+                ch.msg(
+                    f"incorrect format for dig.\nrefer to {mxp_string('help dig','dig')} for more information"
+                )
+                return
+
+            if type_ not in ('bi', 'uni'):
+                ch.msg("dig type must be either `bi` or `uni`")
+                return
+
+            if not match_string(direction, VALID_DIRECTIONS):
+                ch.msg("must use a valid direction")
+                return
+
+            if not vnum:
+                # dig in direction to new room and create exits from both ends
+                cur_room = ch.ndb._redit.obj
+
+                # get next available vnum, we are also guarenteed that room will
+                # not exist
+                nextvnum = next_available_rvnum()
+                new_room_info = copy.deepcopy(DEFAULT_ROOM_STRUCT)
+
+                # set exit of new room to the vnum of current room, using opposite
+                # direction from what was supplied (north->south, etc...)
+                if type_ == 'bi':
+                    new_room_info['exits'][
+                        OPPOSITE_DIRECTION[direction]] = ch.ndb._redit.vnum
+
+                # also set the zone for new room to cur_zone
+                new_room_info['zone'] = has_zone(ch)
+
+                #set exit of current room to the new room just created
+                cur_room['exits'][direction] = nextvnum
+
+                # actually create the object of new_room
+                # but just to be safe, let's make sure
+                room_exists = search_object(
+                    str(nextvnum), typeclass='typeclasses.rooms.rooms.Room')
+
+                if room_exists:
+                    raise Exception(
+                        "trying to create a new room with a vnum that shouldn't exist, but the room does..."
+                    )
+                # create and store blueprint of new room
+                ch.ndb._redit.db.vnum[nextvnum] = new_room_info
+
+                # create object
+                room = create_object('typeclasses.rooms.rooms.Room',
+                                     key=nextvnum)
+
+                # change what redit sees, now we are editting new room
+                ch.ndb._redit.__init__(ch, nextvnum)
+                ch.ndb._redit.save(override=True)
+                # move to room
+                ch.move_to(room)
+
+                return
+
+            else:
+                ch.msg("invalid")

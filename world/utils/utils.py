@@ -17,6 +17,21 @@ def highlight_words(block, key_targets, color_codes):
     return block
 
 
+def mxp_string(key, contents):
+    return f"|lc{key}|lt{contents}|le"
+
+
+def clear_terminal(obj):
+    """ clears the clients screen, but ony if client supports it"""
+    if not is_pc(obj) or not is_online(obj):
+        return
+    obj.msg("\u001B[2J")
+
+
+def next_available_rvnum():
+    return max(GLOBAL_SCRIPTS.roomdb.vnum.keys()) + 1
+
+
 def match_string(criteria, string):
     string = make_iter(string)
     return True if string_partial_matching(string, criteria) else False

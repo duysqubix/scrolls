@@ -39,6 +39,10 @@ class _CmdMove(Command):
             ch.msg(_ERR_MOVEMENT)
             return
         room = room[0]
+
+        # special condition if ch is in redit
+        if ch.ndb._redit:
+            ch.ndb._redit.__init__(ch, exit)
         # valid, lets move
         ch.move_to(room)
 

@@ -357,6 +357,10 @@ class Character(DefaultCharacter):
     def at_after_move(self, src_location):
         self.execute_cmd("look")
 
+    # def at_before_move(self, destination):
+    #     super().at_before_move(destination)
+    #     # special condition if player happens to be in redit mode
+
     def at_post_puppet(self, **kwargs):
 
         # here we can check to see if this is the first time logging in.

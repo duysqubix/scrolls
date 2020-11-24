@@ -14,8 +14,8 @@ own cmdsets by inheriting from them or directly from `evennia.CmdSet`.
 
 """
 
-from world.utils.act import act
 from evennia import default_cmds, CmdSet
+from evennia.commands.default.building import CmdDig as OrigCmdDig
 import commands.informative as info
 import commands.act_item as act_item
 import commands.act_movement as act_mov
@@ -40,7 +40,6 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         #
         # any commands you add below will overload the default ones.
         #
-
         self.add(info.CmdAffect())
         self.add(info.CmdLook())
         self.add(info.CmdScore())
@@ -55,6 +54,14 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(act_item.CmdDrop())
         self.add(act_item.CmdWield())
 
+        # movement commands
+        self.add(act_mov.CmdNorth())
+        self.add(act_mov.CmdSouth())
+        self.add(act_mov.CmdEast())
+        self.add(act_mov.CmdWest())
+        self.add(act_mov.CmdUp())
+        self.add(act_mov.CmdDown())
+
 
 class BuilderCmdSet(CmdSet):
     """
@@ -63,7 +70,6 @@ class BuilderCmdSet(CmdSet):
     key = "DefaultBuilder"
 
     def at_cmdset_creation(self):
-        super().at_cmdset_creation()
         self.add(wiz.CmdCharacterGen())
         self.add(wiz.CmdLoad())
         self.add(wiz.CmdOEdit())
@@ -76,14 +82,6 @@ class BuilderCmdSet(CmdSet):
         self.add(wiz.CmdBookLoad())
         self.add(wiz.CmdGoto())
 
-        # movement commands
-        self.add(act_mov.CmdNorth())
-        self.add(act_mov.CmdSouth())
-        self.add(act_mov.CmdEast())
-        self.add(act_mov.CmdWest())
-        self.add(act_mov.CmdUp())
-        self.add(act_mov.CmdDown())
-
 
 class ImmCmdSet(CmdSet):
     """
@@ -92,7 +90,6 @@ class ImmCmdSet(CmdSet):
     key = "DefaultImmortal"
 
     def at_cmdset_creation(self):
-        super().at_cmdset_creation()
         self.add(wiz.CmdPurge())
 
 
@@ -103,7 +100,6 @@ class WizCmdSet(CmdSet):
     key = "DefaultWizard"
 
     def at_cmdset_creation(self):
-        super().at_cmdset_creation()
         self.add(wiz.CmdZoneSet())
         self.add(wiz.CmdZEdit())
 

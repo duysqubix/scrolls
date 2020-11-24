@@ -62,6 +62,16 @@ DAM_TYPES = {
     }
 }
 
+VALID_DIRECTIONS = ('north', 'south', 'east', 'west', 'up', 'down')
+OPPOSITE_DIRECTION = {
+    'north': 'south',
+    'south': 'north',
+    'east': 'west',
+    'west': 'east',
+    'up': 'down',
+    'down': 'up'
+}
+
 
 class _WearLocation:
     def __init__(self, name, display_msg=None):

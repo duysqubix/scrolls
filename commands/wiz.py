@@ -1,3 +1,5 @@
+from commands.act_item import CmdWear
+from commands.act_movement import CmdDown, CmdEast, CmdNorth, CmdSouth, CmdUp, CmdWest
 import json
 import pathlib
 from world.edit.zedit import ZEditMode
@@ -5,12 +7,12 @@ from world.edit.redit import REditMode
 from typeclasses.objs.custom import CUSTOM_OBJS
 from evennia.utils.utils import dedent, inherits_from, make_iter
 from world.edit.oedit import OEditMode
-from world.utils.utils import delete_contents, has_zone, is_invis, is_wiz, match_string
+from world.utils.utils import delete_contents, has_zone, is_invis, is_wiz, match_string, mxp_string
 from world.conditions import HolyLight, get_condition
 from world.utils.act import Announce, act
 from evennia import EvMenu, create_object, search_object
 from commands.command import Command
-from world.globals import BUILDER_LVL, GOD_LVL, WIZ_LVL, IMM_LVL
+from world.globals import BUILDER_LVL, GOD_LVL, VALID_DIRECTIONS, WIZ_LVL, IMM_LVL
 from evennia import GLOBAL_SCRIPTS
 from evennia.utils import crop, list_to_string
 from evennia.utils.ansi import raw as raw_ansi
@@ -385,6 +387,7 @@ class CmdREdit(Command):
         if not self.args.strip():
             # see if you ca edit the current room you are in.
             cur_room = ch.location
+
             room_zone = cur_room.db.zone
             if has_zone(ch) == room_zone:
                 vnum = int(cur_room.key)
@@ -410,7 +413,16 @@ class CmdREdit(Command):
 
         ch.ndb._redit = REditMode(ch, vnum)
         ch.cmdset.add("world.edit.redit.REditCmdSet")
-        ch.cmdset.all()[-1].add([CmdRList(), CmdZoneSet()])
+        ch.cmdset.all()[-1].add([
+            CmdRList(),
+            CmdZoneSet(),
+            CmdNorth(),
+            CmdSouth(),
+            CmdEast(),
+            CmdWest(),
+            CmdUp(),
+            CmdDown()
+        ])
 
         ch.execute_cmd("look")
 
