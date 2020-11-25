@@ -798,7 +798,7 @@ class CmdBookLoad(Command):
             'edesc': "",
             'adesc': "",
             'type': 'book',
-            'weight': 0,
+            'weight': 1,
             'cost': 0,
             'level': 1,
             'applies': [],

@@ -1,12 +1,98 @@
 """
 holds informative type of commands
 """
+from time import time
+from world.calendar import DAYS, DAYS_IN_WEEK, HOLIDAYS, MONTHS, START_ERA, START_YEAR
 from evennia import EvForm
+from evennia.contrib import custom_gametime
 from evennia.utils import evmore
 from evennia.utils.utils import inherits_from
 from commands.command import Command
 from world.utils.utils import can_see_obj, is_book, is_container, is_equipped, is_invis, is_obj, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation
 from evennia.utils.ansi import raw as raw_ansi
+
+
+class CmdTime(Command):
+    """
+    Displays the current date on Mundus
+
+    Usage:
+        time
+    """
+
+    key = 'time'
+    locks = "cmd:all()"
+
+    def func(self):
+        ch = self.caller
+        year, month, day, hour, min, sec = custom_gametime.custom_gametime(
+            absolute=True)
+
+        era = START_ERA
+        epoch_year = START_YEAR
+
+        while day > DAYS_IN_WEEK:
+            day -= DAYS_IN_WEEK
+
+        weekday = DAYS[day - 1]
+
+        cur_month = MONTHS[month]
+
+        if day == 1:
+            suffix = 'st'
+        elif day == 2:
+            suffix = 'nd'
+        elif day == 3:
+            suffix = 'rd'
+        else:
+            suffix = 'th'
+
+        time_of_day = "|cAM|Y" if hour < 12 else "|RPM|Y"
+        if hour > 12:
+            hour -= 12
+
+        holiday = ""
+        if day in HOLIDAYS[month].keys():
+            holiday = HOLIDAYS[month][day]
+            holiday = "|b*|g" + holiday + "|b*|Y"
+
+        string = r"""
+           |Y.-.---------------------------------.-.
+          |y((|ro|y))      |w{day:>2}{suffix} |nof |c{cur_month:<15}|y      )|n
+           |x\U/|Y_______          _____         ____/
+            |Y |                                  |
+             |         |W{weekday:>7}, {era}E{year:<3}|Y           |
+             |                                  |
+             |          |W{hour:02}:{min:02}:{sec:02} {tod:<2}|Y             |
+             |                                  |
+             |____    _______    __  ____     ___|   
+            |x/A\|Y                                  \
+           |y((|ro|y))|Y     {holiday:<25}    
+            '-'----------------------------------'|n
+        """.format(era=era,
+                   year=year + epoch_year,
+                   weekday=weekday,
+                   day=day,
+                   suffix=suffix,
+                   cur_month=cur_month,
+                   hour=hour,
+                   min=min,
+                   sec=sec,
+                   tod=time_of_day,
+                   holiday=holiday)
+        #example
+        # Thursday, Dec 10th 2020
+        # Mundas, 10 of Frostfall, 4E10
+        # string = "We are in year {year}, day {day}, month {month}."
+        # string += "\nIt's {hour:02}:{min:02}:{sec:02}."
+        # self.msg(
+        #     string.format(year=year,
+        #                   month=month,
+        #                   day=day,
+        #                   hour=hour,
+        #                   min=min,
+        #                   sec=sec))
+        ch.msg(string)
 
 
 class CmdAffect(Command):
@@ -19,6 +105,7 @@ class CmdAffect(Command):
 
     key = 'affect'
     aliases = ['af']
+    locks = "cmd:all()"
 
     def func(self):
         ch = self.caller
@@ -53,6 +140,7 @@ class CmdRead(Command):
     """
 
     key = 'read'
+    locks = "cmd:all()"
 
     def func(self):
         def show_book(book):

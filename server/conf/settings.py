@@ -68,6 +68,14 @@ BOOK_JSON = "resources/books/book.json"
 
 TIME_FACTOR = 10
 TIME_GAME_EPOCH = 0
+TIME_UNITS = {
+    "sec": 1,
+    "min": 60,
+    "hour": 60 * 60,
+    "day": 60 * 60 * 24,
+    "month": 60 * 60 * 24 * 31,
+    "year": 60 * 60 * 24 * 31 * 12,
+}
 
 ######################################################################
 # Settings given in secret_settings.py override those in this file.
