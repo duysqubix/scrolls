@@ -1,3 +1,4 @@
+from json import dump
 from commands.act_item import CmdWear
 from commands.act_movement import CmdDown, CmdEast, CmdNorth, CmdSouth, CmdUp, CmdWest
 import json
@@ -22,6 +23,53 @@ __all__ = [
     "CmdSpawn", "CmdCharacterGen", "CmdWizInvis", "CmdOEdit", "CmdOList",
     "CmdLoad"
 ]
+
+
+class CmdDBDump(Command):
+    """
+    Dumps zones/objects/room/mobs into json flat files.
+
+    Useful for backups and clean wipes
+
+    Usage:
+        dbdump
+    """
+
+    key = 'dbdump'
+    locks = f"attr_ge(level.value, {GOD_LVL})"
+
+    def func(self):
+        ch = self.caller
+        dump_ground = pathlib.Path(
+            __file__).parent.parent / "resources" / "json"
+        from evennia.utils.dbserialize import deserialize
+        #zones
+        zonedb = deserialize(GLOBAL_SCRIPTS.zonedb.vnum)
+        objdb = deserialize(GLOBAL_SCRIPTS.objdb.vnum)
+        roomdb = deserialize(GLOBAL_SCRIPTS.roomdb.vnum)
+        books = []
+
+        objs = {'zones': zonedb, 'rooms': roomdb, 'objs': objdb}
+        for fname, obj in sorted(objs.items()):
+            if fname == 'objs':
+                # remove books from dict
+                for vnum, obj_value in tuple(obj.items()):
+                    if obj_value['type'] == 'book':
+                        book_details = dict()
+                        for x in ('key', 'sdesc', 'ldesc', 'extra'):
+                            book_details[x] = obj_value[x]
+                        books.append(book_details.copy())
+                        del obj[vnum]
+            with open(dump_ground / f"{fname}.json", "w") as f:
+                js = json.dumps(obj, indent=2)
+                f.write(js)
+                ch.msg(f"Wrote {fname} to file.")
+
+        # store books now
+        with open(dump_ground / "books.json", 'w') as f:
+            js = json.dumps(books, indent=2)
+            f.write(js)
+            ch.msg("Wrote books to file")
 
 
 class CmdGoto(Command):
@@ -200,9 +248,14 @@ class CmdOList(Command):
         ch = self.caller
         ch.msg(self.args)
         args = self.args.strip()
-        objdb = dict(GLOBAL_SCRIPTS.objdb.db.vnum)
-        min_ = min(GLOBAL_SCRIPTS.objdb.db.vnum.keys())
-        max_ = max(GLOBAL_SCRIPTS.objdb.db.vnum.keys())
+        objdb = dict(GLOBAL_SCRIPTS.objdb.vnum)
+
+        if not objdb:
+            ch.msg("There are no objects within the game")
+            return
+
+        min_ = min(objdb.keys())
+        max_ = max(objdb.keys())
 
         if not args:
             table = self.styled_table("VNum",
@@ -271,6 +324,10 @@ class CmdZList(Command):
         ch.msg(self.args)
         args = self.args.strip()
         zonedb = dict(GLOBAL_SCRIPTS.zonedb.vnum)
+        if not zonedb:
+            ch.msg("There are no zones within the game")
+            return
+
         vnum_zonedb = zonedb.keys()
         min_ = min(vnum_zonedb)
         max_ = max(vnum_zonedb)
@@ -443,6 +500,10 @@ class CmdRList(Command):
         ch.msg(self.args)
         args = self.args.strip()
         roomdb = dict(GLOBAL_SCRIPTS.roomdb.vnum)
+        if not roomdb:
+            ch.msg("There are no rooms within the game")
+            return
+
         vnum_roomdb = roomdb.keys()
         min_ = min(vnum_roomdb)
         max_ = max(vnum_roomdb)
@@ -652,6 +713,61 @@ class CmdRestore(Command):
             return
 
 
+class CmdDBLoad(Command):
+    """
+    Restore internal database from backup json files
+
+    Usage:
+        dbload <obj||room||zone||mob||all>
+
+    """
+
+    key = 'dbload'
+    locks = f"attr_ge(level.value, {GOD_LVL}"
+
+    def func(self):
+        ch = self.caller
+
+        dumping_ground = pathlib.Path(
+            __file__).parent.parent / "resources" / "json"
+
+        def load_objs():
+            with open(dumping_ground / "objs.json", "r") as f:
+                zones = json.load(f)
+                for zvnum, data in zones.items():
+                    GLOBAL_SCRIPTS.zonedb.vnum[int(zvnum)] = data
+            ch.msg("loaded objs")
+
+        def load_zones():
+            with open(dumping_ground / "zones.json", "r") as f:
+                zones = json.load(f)
+                for zvnum, data in zones.items():
+                    GLOBAL_SCRIPTS.zonedb.vnum[int(zvnum)] = data
+            ch.msg("loaded zones")
+
+        def load_mobs():
+            pass
+
+        def load_rooms():
+            with open(dumping_ground / "rooms.json", "r") as f:
+                rooms = json.load(f)
+                for rvnum, data in rooms.items():
+                    GLOBAL_SCRIPTS.roomdb.vnum[int(rvnum)] = data
+
+            ch.msg("loaded rooms")
+
+        if not self.args:
+            ch.msg("Must supply: <obj||room||zone||mob||all>")
+            return
+        args = self.args.strip()
+
+        if args == 'all':
+            load_zones()
+            load_rooms()
+            load_mobs()
+            load_objs()
+
+
 class CmdBookLoad(Command):
     """
     Creates/adds/overwrites internal database
@@ -667,22 +783,17 @@ class CmdBookLoad(Command):
         #TODO: find a better way to get book.json file
         from evennia import GLOBAL_SCRIPTS
 
-        file = (pathlib.Path(__file__).parent.parent / "resources" / "books" /
-                "books.json").absolute()
+        file = pathlib.Path(
+            __file__).parent.parent / "resources" / "json" / "books.json"
         with open(file) as b:
             books = json.load(b)
-
         # delete all books in db
-        for k, v in dict(GLOBAL_SCRIPTS.objdb.db.vnum).items():
+        for k, v in dict(GLOBAL_SCRIPTS.objdb.vnum).items():
             if v['type'] == 'book':
-                del GLOBAL_SCRIPTS.objdb.db.vnum[k]
+                del GLOBAL_SCRIPTS.objdb.vnum[k]
 
-        current_vnums = list(GLOBAL_SCRIPTS.objdb.db.vnum.keys())
-        # find missing vnums
-        a = list(range(1, current_vnums[-1] + 1))
-
-        missing_vnums = list(set(current_vnums) ^ set(a))
-
+        current_vnums = list(GLOBAL_SCRIPTS.objdb.vnum.keys())
+        book_idx = 0
         obj_info = {
             'edesc': "",
             'adesc': "",
@@ -693,21 +804,28 @@ class CmdBookLoad(Command):
             'applies': [],
             'tags': []
         }
-        book_idx = 0
-        # fill in missing vnums first
-        for vnum in missing_vnums:
 
-            books[book_idx].update(obj_info)
-            GLOBAL_SCRIPTS.objdb.db.vnum[vnum] = books[book_idx]
-            book_idx += 1
+        next_vnum = 1
+        if current_vnums:
+            # find missing vnums
+            a = list(range(1, current_vnums[-1] + 1))
 
-        next_vnum = max(GLOBAL_SCRIPTS.objdb.db.vnum.keys()) + 1
+            missing_vnums = list(set(current_vnums) ^ set(a))
+
+            # fill in missing vnums first
+            for vnum in missing_vnums:
+
+                books[book_idx].update(obj_info)
+                GLOBAL_SCRIPTS.objdb.vnum[vnum] = books[book_idx]
+                book_idx += 1
+
+            next_vnum = max(GLOBAL_SCRIPTS.objdb.vnum.keys()) + 1
         # create new ones
         ch.msg(str((len(books), book_idx, next_vnum)))
         for book in books[book_idx:]:
             ch.msg("adding book")
             book.update(obj_info)
-            GLOBAL_SCRIPTS.objdb.db.vnum[next_vnum] = book
+            GLOBAL_SCRIPTS.objdb.vnum[next_vnum] = book
             next_vnum += 1
 
         ch.msg("loaded books")

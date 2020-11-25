@@ -35,8 +35,28 @@ class Room(DefaultRoom):
         # this is built-in Limbo id, #1 is superuser
         self.db.is_room = True
 
-        key = self.key if self.id != 2 else 1  #
-
+        if self.key == "Limbo":
+            key = 1
+            self.key = 1
+            room = {
+                "name": "The Void of Magnus",
+                "zone": "void",
+                "desc": "You float aimlessly in Magnus's void",
+                "flags": ["safe", "no_trans", "indoors"],
+                "type": "void",
+                "exits": {
+                    "north": -1,
+                    "south": -1,
+                    "east": -1,
+                    "west": -1,
+                    "up": -1,
+                    "down": -1
+                },
+                "edesc": {},
+                "extra": {}
+            }
+            GLOBAL_SCRIPTS.roomdb.vnum[1] = room
+        key = self.key
         room = dict(GLOBAL_SCRIPTS.roomdb.vnum[int(key)])
 
         # set fields that didn't exist before, mostly used

@@ -357,10 +357,6 @@ class Character(DefaultCharacter):
     def at_after_move(self, src_location):
         self.execute_cmd("look")
 
-    # def at_before_move(self, destination):
-    #     super().at_before_move(destination)
-    #     # special condition if player happens to be in redit mode
-
     def at_post_puppet(self, **kwargs):
 
         # here we can check to see if this is the first time logging in.
@@ -429,7 +425,10 @@ class Character(DefaultCharacter):
                     self.cmdset.add(wiz_cmdset)
                     self.msg("wizard_cmds added")
             if level >= GOD_LVL:
-                pass
+                god_cmdset = 'commands.default_cmdsets.GodCmdSet'
+                if not self.cmdset.has(god_cmdset):
+                    self.cmdset.add(god_cmdset)
+                    self.msg("god_cmds added")
 
     @lazy_property
     def attrs(self):

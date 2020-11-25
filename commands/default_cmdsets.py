@@ -20,6 +20,7 @@ import commands.informative as info
 import commands.act_item as act_item
 import commands.act_movement as act_mov
 import commands.wiz as wiz
+from commands.wiz import CmdBookLoad, CmdDBLoad
 from world.globals import BUILDER_LVL
 
 
@@ -79,7 +80,6 @@ class BuilderCmdSet(CmdSet):
         self.add(wiz.CmdRList())
         self.add(wiz.CmdZList())
         self.add(wiz.CmdHolyLight())
-        self.add(wiz.CmdBookLoad())
         self.add(wiz.CmdGoto())
 
 
@@ -102,6 +102,18 @@ class WizCmdSet(CmdSet):
     def at_cmdset_creation(self):
         self.add(wiz.CmdZoneSet())
         self.add(wiz.CmdZEdit())
+
+
+class GodCmdSet(CmdSet):
+    """
+    commands for super user only
+    """
+    key = "DefaultGod"
+
+    def at_cmdset_creation(self):
+        self.add(wiz.CmdDBDump())
+        self.add(wiz.CmdBookLoad())
+        self.add(CmdDBLoad())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

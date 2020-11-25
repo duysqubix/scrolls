@@ -25,37 +25,6 @@ class OEditMode(_EditMode):
     def custom_objs(self):
         return CUSTOM_OBJS
 
-    # def __init__(self, caller, vnum) -> None:
-    #     self.caller = caller
-    #     self.vnum = vnum
-    #     self.db = GLOBAL_SCRIPTS.objdb
-    #     self.obj = None
-    #     self.prompt = _OEDIT_PROMPT
-    #     self.orig_obj = None
-    #     # attempt to find vnum in objdb
-    #     if self.vnum in self.db.vnum.keys():
-    #         self.obj = self.db.vnum[self.vnum]
-
-    #         # account for new fields added to default object builder
-    #         for field, value in DEFAULT_OBJ_STRUCT.items():
-    #             if field not in self.obj.keys():
-    #                 self.obj[field] = value
-
-    #         # if obj is a special type based on type, add those
-    #         # extra fields here
-    #         obj_type = self.obj['type']
-    #         extra_fields = CUSTOM_OBJS[obj_type].__specific_fields__
-
-    #         for efield, evalue in extra_fields.items():
-    #             if efield not in self.obj['extra'].keys():
-    #                 self.obj['extra'][efield] = evalue
-
-    #     else:
-    #         self.caller.msg(f"creating new obj vnum: [{self.vnum}]")
-    #         self.obj = copy.deepcopy(DEFAULT_OBJ_STRUCT)
-
-    #     self.orig_obj = copy.deepcopy(self.obj)
-
     def _cut_long_text(self, txt):
         txt = str(txt)
         max_len = self._max_edit_len

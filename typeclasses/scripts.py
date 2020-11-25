@@ -95,8 +95,6 @@ class Script(DefaultScript):
 class EntityDB(Script):
     @property
     def vnum(self):
-        if self.db.vnum is None:
-            self.db.vnum = {}
+        if not self.attributes.has('vnum'):
+            self.attributes.add('vnum', dict())
         return self.db.vnum
-
-
