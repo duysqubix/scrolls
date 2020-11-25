@@ -66,6 +66,9 @@ BASE_ROOM_TYPECLASS = "typeclasses.rooms.rooms.Room"
 
 BOOK_JSON = "resources/books/book.json"
 
+TIME_FACTOR = 10
+TIME_GAME_EPOCH = 0
+
 ######################################################################
 # Settings given in secret_settings.py override those in this file.
 ######################################################################
