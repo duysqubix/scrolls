@@ -69,5 +69,5 @@ HOLIDAYS = {
         16: "Mid Year Celebration",
         23: "Dancing Day",
         24: "Tibedetha"
-    }
+    }  # TODO: finish inputting tamerillic holidays
 }
