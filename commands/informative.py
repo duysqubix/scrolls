@@ -3,7 +3,8 @@ holds informative type of commands
 """
 from time import time
 from world.calendar import DAYS, DAYS_IN_WEEK, HOLIDAYS, MONTHS, START_ERA, START_YEAR
-from evennia import EvForm
+from world.paginator import BookEvMore
+from evennia import EvForm, EvMore
 from evennia.contrib import custom_gametime
 from evennia.utils import evmore
 from evennia.utils.utils import inherits_from
@@ -143,6 +144,8 @@ class CmdRead(Command):
     locks = "cmd:all()"
 
     def func(self):
+        ch = self.caller
+
         def show_book(book):
             title = book.db.title
             author = book.db.author
@@ -150,9 +153,11 @@ class CmdRead(Command):
             date = book.db.date
 
             book_contents = f"\n|gTitle|w: {title}\n|gAuthor|w: {author}\n|gDate|w: {date}\n\n|n{contents}"
-            evmore.msg(ch, book_contents)
+            # evmore.msg(ch, book_contents)
+            form = EvForm("resources.forms.book")
+            form.map(cells={1: book.db.title, 2: book.db.author})
+            BookEvMore(ch, book_contents)
 
-        ch = self.caller
         if not self.args:
             ch.msg("what do you want to read?")
             return
