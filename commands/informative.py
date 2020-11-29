@@ -63,7 +63,6 @@ class CmdTime(Command):
            |x\U/|Y_______          _____         ____/
             |Y |                                  |
              |         |W{weekday:>7}, {era}E{year:<3}|Y           |
-             |                                  |
              |          |W{hour:02}:{min:02}:{sec:02} {tod:<2}|Y             |
              |                                  |
              |____    _______    __  ____     ___|   
@@ -81,18 +80,6 @@ class CmdTime(Command):
                    sec=sec,
                    tod=time_of_day,
                    holiday=holiday)
-        #example
-        # Thursday, Dec 10th 2020
-        # Mundas, 10 of Frostfall, 4E10
-        # string = "We are in year {year}, day {day}, month {month}."
-        # string += "\nIt's {hour:02}:{min:02}:{sec:02}."
-        # self.msg(
-        #     string.format(year=year,
-        #                   month=month,
-        #                   day=day,
-        #                   hour=hour,
-        #                   min=min,
-        #                   sec=sec))
         ch.msg(string)
 
 

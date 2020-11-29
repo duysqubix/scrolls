@@ -160,6 +160,11 @@ class CmdZoneSet(Command):
             if not is_wiz(ch):
                 ch.msg("You are not permitted to do that.")
                 return
+
+            if zonename == 'clear':
+                player.attributes.remove('assigned_zone')
+                ch.msg(f"Zone cleared for {player.name.capitalize()}")
+                return
             # set a valid zone to player
             zones = [x['name'] for x in GLOBAL_SCRIPTS.zonedb.vnum.values()]
             if zonename not in zones:
@@ -486,7 +491,8 @@ class CmdREdit(Command):
 
 class CmdRList(Command):
     """
-    Lists all available rooms set in objdb
+    Lists all available rooms set in objdb. If you are assigned a zone,
+    rlist will by default only show rooms in your zone.
 
     Usage:
         rlist
@@ -517,13 +523,26 @@ class CmdRList(Command):
 
         if not args:
             table = self.styled_table(*legend, border='incols')
+            ch_zone = has_zone(ch)
 
-            for vnum in range(min_, max_ + 1):
-                data = roomdb[vnum]
-                exits = {k: v for k, v in data['exits'].items() if v > 0}
-                vnum = raw_ansi(f"[|G{vnum:<4}|n]")
-                sdesc = crop(raw_ansi(data['name']), width=50) or ''
-                table.add_row(vnum, sdesc, f"{exits}", data['zone'])
+            if ch_zone:
+                for vnum in range(min_, max_ + 1):
+                    data = roomdb[vnum]
+                    if match_string(ch_zone, make_iter(data['zone'])):
+                        exits = {
+                            k: v
+                            for k, v in data['exits'].items() if v > 0
+                        }
+                        vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                        sdesc = crop(raw_ansi(data['name']), width=50) or ''
+                        table.add_row(vnum, sdesc, f"{exits}", data['zone'])
+            else:
+                for vnum in range(min_, max_ + 1):
+                    data = roomdb[vnum]
+                    exits = {k: v for k, v in data['exits'].items() if v > 0}
+                    vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                    sdesc = crop(raw_ansi(data['name']), width=50) or ''
+                    table.add_row(vnum, sdesc, f"{exits}", data['zone'])
 
             msg = str(table)
             ch.msg(msg)

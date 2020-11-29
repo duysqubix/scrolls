@@ -101,6 +101,7 @@ class REditCmdSet(CmdSet):
         self.add(CmdHelp())
         self.add(Set())
         self.add(Dig())
+        self.add(Delete())
 
 
 class REditCommand(Command):
@@ -303,18 +304,67 @@ class Exit(REditCommand):
             del ch.ndb._redit
 
 
+class Delete(Command):
+    """
+    Safely and cleanly deletes a room by vnum. Throws an error
+    if the room does't exist in database. Only allows deletion of room
+    if that room is in a zone that you are assigned too.
+
+    Usage:
+        delete <vnum>
+    """
+
+    key = 'delete'
+
+    def func(self):
+        ch = self.caller
+
+        try:
+            vnum = int(self.args.strip())
+        except:
+            ch.msg("Invalid vnum format")
+            return
+
+        room = get_room(vnum)
+        if not room:
+            # maybe it only exists in blueprints?
+            try:
+                del GLOBAL_SCRIPTS.roomdb.vnum[vnum]
+            except KeyError:
+                ch.msg("There is no such room")
+            return
+
+        if room.db.zone != has_zone(ch):
+            ch.msg(
+                "You are not permitted to delete a room not in a zone assigned to you."
+            )
+            return
+
+        # first safely remove blueprint of room
+        del GLOBAL_SCRIPTS.roomdb.vnum[vnum]
+
+        # move all contents in room to their 'home' location
+        for obj in room.contents:
+            obj.move_to(obj.home, quiet=True)
+
+        room.delete()
+
+
 class Dig(Command):
     """
     Dig a tunnel between two rooms, optional to create a exit from 
     original source
 
     Usage:
+        dig <bi/uni> <direction> -1 
         dig <bi/uni> <direction> [<vnum>]
 
     exs:
         dig bi north   # digs a bidirectional tunnel
         dig uni north # dig a a unidirectional room north.
         dig bi north 12 # digs  bidirectional tunnel to rvnum 12 if it exists
+        dig bi north remove # removes both exits that linked the current room and target room
+        dig uni north remove # removes current exit in the direction specific
 
     """
 
@@ -388,6 +438,9 @@ class Dig(Command):
                 # create object
                 room = create_object('typeclasses.rooms.rooms.Room',
                                      key=nextvnum)
+
+                # save current room in redit to update exits
+                ch.ndb._redit.save(override=True)
 
                 # change what redit sees, now we are editting new room
                 ch.ndb._redit.__init__(ch, nextvnum)
