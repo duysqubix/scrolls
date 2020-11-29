@@ -348,6 +348,7 @@ class Delete(Command):
             obj.move_to(obj.home, quiet=True)
 
         room.delete()
+        ch.msg(f"Successfully deleted room {vnum}")
 
 
 class Dig(Command):
