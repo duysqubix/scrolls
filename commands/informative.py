@@ -419,7 +419,7 @@ class CmdScore(Command):
             19: str(ch.attrs.birthsign.value),
             20: ch.attrs.race.value.name.capitalize(),
             21: ch.attrs.gender.value.value.capitalize(),
-            22: green_or_red(ch.attrs.ar.value),
-            23: green_or_red(ch.attrs.mar.value)
+            22: green_or_red(ch.attrs.AR.value),
+            23: green_or_red(ch.attrs.MAR.value)
         })
         ch.msg(form)
