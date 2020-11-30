@@ -272,8 +272,8 @@ def apply_obj_effects(ch, obj):
 
     # handle ar,mar set on equipment objects
     if obj.db.type == 'equipment':
-        ch.attrs.ar.value += obj.db.extra['AR']
-        ch.attrs.mar.value += obj.db.extra['MAR']
+        ch.attrs.AR.value += obj.db.extra['AR']
+        ch.attrs.MAR.value += obj.db.extra['MAR']
 
 
 def remove_obj_effects(ch, obj):
@@ -301,8 +301,8 @@ def remove_obj_effects(ch, obj):
                     ch.conditions.remove(con)
     # handle ar,mar set on equipment objects
     if obj.db.type == 'equipment':
-        ch.attrs.ar.value -= obj.db.extra['AR']
-        ch.attrs.mar.value -= obj.db.extra['MAR']
+        ch.attrs.AR.value -= obj.db.extra['AR']
+        ch.attrs.MAR.value -= obj.db.extra['MAR']
 
 
 VALID_OBJ_TAGS = {

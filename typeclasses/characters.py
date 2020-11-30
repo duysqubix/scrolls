@@ -11,7 +11,7 @@ import copy
 from typeclasses.objs.object import apply_obj_effects, remove_obj_effects
 from world.conditions import HolyLight
 from world.utils.act import Announce, act
-from world.utils.utils import delete_contents, is_equippable, is_obj, is_wiz, is_worn
+from world.utils.utils import delete_contents, is_equippable, is_invis, is_obj, is_wiz, is_worn
 from world.gender import Gender
 from world.races import NoRace, get_race
 from world.attributes import Attribute, VitalAttribute
@@ -508,6 +508,15 @@ class Character(DefaultCharacter):
         x = tuple(args)
         self.msg(str(x))
 
+    def add_attr(self, name, value, is_vital=False):
+        if not self.attributes.has('attrs'):
+            self.attributes.add('attrs', dict())
+
+        if is_vital:
+            self.db.attrs[name] = VitalAttribute(name=name, value=value)
+        else:
+            self.db.attrs[name] = Attribute(name=name, value=value)
+
     def at_object_creation(self):
         self.db.new_character = True  # used for character generation
         self.db.attrs = {}
@@ -521,49 +530,25 @@ class Character(DefaultCharacter):
 
         # level
         level = None
-        if self.is_superuser and self.id == 1:
+        if self.is_superuser:
             level = GOD_LVL
         else:
             level = 1
         # attributes
-        self.db.attrs = {
-            'gender':
-            Attribute('gender', Gender.NoGender),
-            'exp':
-            Attribute('exp', 0),
-            'level':
-            Attribute('level', level),
-            'race':
-            Attribute('race', NoRace()),
-            'immunity':
-            Attribute('immunity', {
-                'poison': [],
-                'disease': [],
-                'conditions': []
-            }),
-            'ar':
-            Attribute('AR', 0),
-            'mar':
-            Attribute('MAR', 0),
-            'birthsign':
-            Attribute('birthsign', NoSign()),
-            'action_points':
-            Attribute('action_points', 3),
-            'health':
-            VitalAttribute('health'),  # how much hit points characters has
-            'magicka':
-            VitalAttribute(
-                'magicka'
-            ),  # determines how powerful spells are and how much points are available for spells
-            'stamina':
-            VitalAttribute(
-                'stamina'
-            ),  # determines how powerful melee damage are and how much points are avilable for melee skills
-            'speed':
-            VitalAttribute(
-                'speed'
-            ),  # determines how far character can go before tiring...
-            'carry':
-            VitalAttribute(
-                'carry'),  # determines how much a character can pick up.
-        }
+        self.add_attr('gender', Gender.NoGender)
+        self.add_attr('exp', 0)
+        self.add_attr('level', level)
+        self.add_attr('race', NoRace())
+        self.add_attr('immunity', {
+            'poison': [],
+            'disease': [],
+            'conditions': []
+        })
+        self.add_attr('AR', 0),
+        self.add_attr('MAR', 0)
+        self.add_attr('birthsign', NoSign())
+        self.add_attr('health', None, is_vital=True)
+        self.add_attr('magicka', None, is_vital=True)
+        self.add_attr('stamina', None, is_vital=True)
+        self.add_attr('speed', None, is_vital=True)
+        self.add_attr('carry', None, is_vital=True)
