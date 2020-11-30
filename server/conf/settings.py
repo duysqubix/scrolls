@@ -31,7 +31,7 @@ from evennia.settings_default import *
 ######################################################################
 
 # This is the name of your game. Make it catchy!
-SERVERNAME = "scrolls"
+SERVERNAME = "The Elder Scrolls Mud"
 
 TELNET_PORTS = [4040]
 
