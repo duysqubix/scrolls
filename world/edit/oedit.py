@@ -33,21 +33,31 @@ class OEditMode(_EditMode):
         else:
             return txt[:max_len] + "[...]"
 
-    def save(self, override=False):
+    def save(self, override=False, bypass_checks=False):
         if (self.orig_obj != self.obj) or override:
-            # custom object checks here
-            if inherits_from(self.obj, 'typeclasses.objs.custom.Equipment'):
-                wear_loc = self.obj['extra']['wear_loc']
-                wear_loc = wear_loc.split(' ')
-                self.obj['extra']['wear_loc'] = wear_loc[0]
 
-            if inherits_from(self.obj, 'typeclasses.objs.custom.Weapon'):
-                dual_wield = self.obj['extra']['dual_wield']
-                self.obj['extra']['dual_wield'] = bool(dual_wield)
+            if not bypass_checks:
+                # custom object checks here
+                if self.obj['type'] == 'equipment':
+                    wear_loc = self.obj['extra']['wear_loc']
+                    wear_loc = wear_loc.split(' ')
+                    self.obj['extra']['wear_loc'] = wear_loc[0]
+                    try:
+                        self.obj['extra']['AR'] = int(self.obj['extra']['AR'])
+                        self.obj['extra']['MAR'] = int(
+                            self.obj['extra']['MAR'])
+                    except ValueError:
+                        self.caller.msg(
+                            "AR/MAR of equipment is not valid integers")
+                        return
 
-            if inherits_from(self.obj, 'typeclasses.objs.custom.Container'):
-                limit = self.obj['extra']['limit']
-                self.obj['extra']['limit'] = int(limit)
+                if self.obj['type'] == 'weapon':
+                    dual_wield = self.obj['extra']['dual_wield']
+                    self.obj['extra']['dual_wield'] = bool(dual_wield)
+
+                if self.obj['type'] == 'container':
+                    limit = self.obj['extra']['limit']
+                    self.obj['extra']['limit'] = int(limit)
 
             self.db.vnum[self.vnum] = self.obj
             self.caller.msg("object saved.")
@@ -186,7 +196,7 @@ class Set(OEditCommand):
 
                 obj[keyword] = selected_type
                 ch.ndb._oedit.save(
-                    override=True
+                    override=True, bypass_checks=True
                 )  # force save, so it can update apporpriately
                 # also reinit oeditmode to add new fields
                 ch.ndb._oedit.__init__(ch, ch.ndb._oedit.vnum)
@@ -393,6 +403,10 @@ class Exit(OEditCommand):
     def func(self):
         ch = self.caller
         ch.cmdset.remove('world.edit.oedit.OEditCmdSet')
-
-        ch.ndb._oedit.save()
-        del ch.ndb._oedit
+        try:
+            b = bool(eval(self.args.strip().capitalize()))
+            ch.ndb._oedit.save(override=b)
+            del ch.ndb._oedit
+        except:
+            ch.ndb._oedit.save(override=False)
+            del ch.ndb._oedit
