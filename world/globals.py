@@ -62,6 +62,8 @@ DAM_TYPES = {
     }
 }
 
+BOOK_CATEGORIES = ['fiction', 'religious', 'research', 'notes']
+
 VALID_DIRECTIONS = ('north', 'south', 'east', 'west', 'up', 'down')
 OPPOSITE_DIRECTION = {
     'north': 'south',
