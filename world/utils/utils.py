@@ -1,5 +1,6 @@
-from evennia import GLOBAL_SCRIPTS
-from world.globals import BUILDER_LVL
+import random
+from evennia import GLOBAL_SCRIPTS, create_object
+from world.globals import BUILDER_LVL, BOOK_CATEGORIES
 from evennia.utils.utils import inherits_from, string_partial_matching
 from world.conditions import DetectHidden, DetectInvis, Hidden, HolyLight, Invisible, Sleeping
 from evennia.utils import make_iter
@@ -15,6 +16,28 @@ def highlight_words(block, key_targets, color_codes):
     for idx, key in enumerate(key_targets):
         block.replace(key, f"{color_codes[idx]}{key}|n")
     return block
+
+
+def random_book(caller, category=None):
+    """
+    returns a random book from the object database
+    if category is supplied it will return a random book from that category. The
+    book will be loaded and put into callers contents
+    """
+    objs = GLOBAL_SCRIPTS.objdb.vnum
+    books = {k: v for k, v in objs.items() if v['type'] == 'book'}
+
+    if category not in BOOK_CATEGORIES:
+        rvnum = random.choice(list(books.keys()))
+    else:
+        books = {
+            k: v
+            for k, v in books.items() if v['extra']['category'] == category
+        }
+        rvnum = random.choice(list(books.keys()))
+
+    book = create_object('typeclasses.objs.custom.Book', key=rvnum)
+    book.move_to(caller)
 
 
 def mxp_string(key, contents):
