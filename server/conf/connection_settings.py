@@ -3,17 +3,17 @@
 
 GAME_INDEX_ENABLED = True
 GAME_INDEX_LISTING = \
-{   'game_name': 'The Scrolls',
+{   'game_name': 'The Unofficial Elder Scrolls Mud',
     'game_status': 'pre-alpha',
-    'game_website': '',
+    'game_website': 'http://mud.scrolsmud.com:4001',
     'listing_contact': 'duan_uys@icloud.com',
     'long_description': 'An elder scrolls based mud. It is a mud that allows '
-                        'you to travel all over Tamerial and battle mythical '
+                        'you to travel all over Tameriel and battle mythical '
                         'creatures. Currently still in pre-alpha stage and '
-                        'attempting to mash the power of Python with the '
+                        'attempting to combine the power of Python with the '
                         'familiarity of ROM type muds of past. Stay tuned '
                         '*traveler* and may the eight divines shine over you.',
     'short_description': 'An elder scrolls mud',
     'telnet_hostname': 'mud.scrollsmud.com',
     'telnet_port': '4040',
-    'web_client_url': ''}
+    'web_client_url': 'http://mud.scrolsmud.com:4001/webclient/'}
