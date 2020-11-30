@@ -3,10 +3,7 @@ Default Scrolls object
 All objects must inherit this class to work properly
 """
 from world.globals import DEFAULT_OBJ_STRUCT
-from world.characteristics import CHARACTERISTICS
-import evennia
-from world.utils.utils import is_obj, is_pc_npc
-from world.conditions import ALL_CONDITIONS, Invisible, get_condition
+from world.conditions import ALL_CONDITIONS, get_condition
 from evennia import DefaultObject, GLOBAL_SCRIPTS
 
 
@@ -242,67 +239,6 @@ class Object(DefaultObject):
                 self.attributes.add(efield, self.db.extra[efield])
             else:
                 self.attributes.add(efield, evalue)
-
-
-def apply_obj_effects(ch, obj):
-    """
-    apply the loaded effects from obj onto ch
-    """
-    if not is_pc_npc(ch) or not is_obj(obj):
-        return
-
-    # handle applies (conditions set on items)
-    applies = list(obj.db.applies)
-    if applies:
-        for effect in applies:
-            if len(effect) == 2:
-                apply_type, mod = effect
-
-                if apply_type in VALID_OBJ_APPLIES['attrs']:
-                    ch.attrs.modify_vital(apply_type, by=mod)
-
-                elif apply_type in VALID_OBJ_APPLIES['stats']:
-                    ch.stats.modify_stat(apply_type, by=mod)
-
-            if len(effect) == 3:
-                condition, x, y = effect
-                if condition in VALID_OBJ_APPLIES['conditions']:
-                    con = get_condition(condition)
-                    ch.conditions.add(con)
-
-    # handle ar,mar set on equipment objects
-    if obj.db.type == 'equipment':
-        ch.attrs.AR.value += obj.db.extra['AR']
-        ch.attrs.MAR.value += obj.db.extra['MAR']
-
-
-def remove_obj_effects(ch, obj):
-    """
-    remove the loaded effects from obj onto ch
-    """
-    if not is_pc_npc(ch) or not is_obj(obj):
-        return
-
-    applies = list(obj.db.applies)
-    if applies:
-
-        for effect in applies:
-            if len(effect) == 2:
-                apply_type, mod = effect
-                if apply_type in VALID_OBJ_APPLIES['attrs']:
-                    ch.attrs.modify_vital(apply_type, by=-mod)
-
-                elif apply_type in VALID_OBJ_APPLIES['stats']:
-                    ch.stats.modify_stat(apply_type, by=-mod)
-            if len(effect) == 3:
-                condition, x, y = effect
-                if condition in VALID_OBJ_APPLIES['conditions']:
-                    con = get_condition(condition)
-                    ch.conditions.remove(con)
-    # handle ar,mar set on equipment objects
-    if obj.db.type == 'equipment':
-        ch.attrs.AR.value -= obj.db.extra['AR']
-        ch.attrs.MAR.value -= obj.db.extra['MAR']
 
 
 VALID_OBJ_TAGS = {
