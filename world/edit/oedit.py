@@ -51,9 +51,9 @@ class OEditMode(_EditMode):
                             "AR/MAR of equipment is not valid integers")
                         return
 
-                if self.obj['type'] == 'weapon':
-                    dual_wield = self.obj['extra']['dual_wield']
-                    self.obj['extra']['dual_wield'] = bool(dual_wield)
+                # if self.obj['type'] == 'weapon':
+                #     dual_wield = self.obj['extra']['dual_wield']
+                #     self.obj['extra']['dual_wield'] = bool(dual_wield)
 
                 if self.obj['type'] == 'container':
                     limit = self.obj['extra']['limit']

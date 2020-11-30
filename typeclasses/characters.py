@@ -8,12 +8,11 @@ creation commands.
 
 """
 import copy
-from typeclasses.objs.object import apply_obj_effects, remove_obj_effects
 from world.conditions import HolyLight
 from world.utils.act import Announce, act
-from world.utils.utils import delete_contents, is_equippable, is_invis, is_obj, is_wiz, is_worn
+from world.utils.utils import delete_contents, is_equippable, is_obj, is_wiz, is_worn, apply_obj_effects, remove_obj_effects
 from world.gender import Gender
-from world.races import NoRace, get_race
+from world.races import NoRace
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
 from evennia import DefaultCharacter, EvMenu, TICKER_HANDLER

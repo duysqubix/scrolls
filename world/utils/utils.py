@@ -1,8 +1,10 @@
 import random
+from typeclasses.objs.object import VALID_OBJ_APPLIES
 from evennia import GLOBAL_SCRIPTS, create_object
 from world.globals import BUILDER_LVL, BOOK_CATEGORIES
+from world.utils.db import search_objdb
 from evennia.utils.utils import inherits_from, string_partial_matching
-from world.conditions import DetectHidden, DetectInvis, Hidden, HolyLight, Invisible, Sleeping
+from world.conditions import DetectHidden, DetectInvis, Hidden, HolyLight, Invisible, Sleeping, get_condition
 from evennia.utils import make_iter
 
 
@@ -18,23 +20,79 @@ def highlight_words(block, key_targets, color_codes):
     return block
 
 
+def apply_obj_effects(ch, obj):
+    """
+    apply the loaded effects from obj onto ch
+    """
+    if not is_pc_npc(ch) or not is_obj(obj):
+        return
+
+    # handle applies (conditions set on items)
+    applies = list(obj.db.applies)
+    if applies:
+        for effect in applies:
+            if len(effect) == 2:
+                apply_type, mod = effect
+
+                if apply_type in VALID_OBJ_APPLIES['attrs']:
+                    ch.attrs.modify_vital(apply_type, by=mod)
+
+                elif apply_type in VALID_OBJ_APPLIES['stats']:
+                    ch.stats.modify_stat(apply_type, by=mod)
+
+            if len(effect) == 3:
+                condition, x, y = effect
+                if condition in VALID_OBJ_APPLIES['conditions']:
+                    con = get_condition(condition)
+                    ch.conditions.add(con)
+
+    # handle ar,mar set on equipment objects
+    if obj.db.type == 'equipment':
+        ch.attrs.AR.value += obj.db.extra['AR']
+        ch.attrs.MAR.value += obj.db.extra['MAR']
+
+
+def remove_obj_effects(ch, obj):
+    """
+    remove the loaded effects from obj onto ch
+    """
+    if not is_pc_npc(ch) or not is_obj(obj):
+        return
+
+    applies = list(obj.db.applies)
+    if applies:
+
+        for effect in applies:
+            if len(effect) == 2:
+                apply_type, mod = effect
+                if apply_type in VALID_OBJ_APPLIES['attrs']:
+                    ch.attrs.modify_vital(apply_type, by=-mod)
+
+                elif apply_type in VALID_OBJ_APPLIES['stats']:
+                    ch.stats.modify_stat(apply_type, by=-mod)
+            if len(effect) == 3:
+                condition, x, y = effect
+                if condition in VALID_OBJ_APPLIES['conditions']:
+                    con = get_condition(condition)
+                    ch.conditions.remove(con)
+    # handle ar,mar set on equipment objects
+    if obj.db.type == 'equipment':
+        ch.attrs.AR.value -= obj.db.extra['AR']
+        ch.attrs.MAR.value -= obj.db.extra['MAR']
+
+
 def random_book(caller, category=None):
     """
     returns a random book from the object database
     if category is supplied it will return a random book from that category. The
     book will be loaded and put into callers contents
     """
-    objs = GLOBAL_SCRIPTS.objdb.vnum
-    books = {k: v for k, v in objs.items() if v['type'] == 'book'}
-
     if category not in BOOK_CATEGORIES:
-        rvnum = random.choice(list(books.keys()))
+        rvnum = random.choice(list(search_objdb('book').keys()))
     else:
-        books = {
-            k: v
-            for k, v in books.items() if v['extra']['category'] == category
-        }
-        rvnum = random.choice(list(books.keys()))
+
+        rvnum = random.choice(
+            list(search_objdb('book', category=category).keys()))
 
     book = create_object('typeclasses.objs.custom.Book', key=rvnum)
     book.move_to(caller)
