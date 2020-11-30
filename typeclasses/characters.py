@@ -541,6 +541,10 @@ class Character(DefaultCharacter):
                 'disease': [],
                 'conditions': []
             }),
+            'ar':
+            Attribute('AR', 0),
+            'mar':
+            Attribute('MAR', 0),
             'birthsign':
             Attribute('birthsign', NoSign()),
             'action_points':

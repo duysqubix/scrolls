@@ -75,8 +75,12 @@ class Equipment(Object):
     Equipable objects
     """
     __obj_type__ = 'equipment'
-    __specific_fields__ = {'wear_loc': ""}
-    __help_msg__ = [f"wear_loc: {', '.join([x.name for x in WEAR_LOCATIONS])}"]
+    __specific_fields__ = {'wear_loc': "", 'AR': 0, 'MAR': 0}
+    __help_msg__ = [
+        f"wear_loc: {', '.join([x.name for x in WEAR_LOCATIONS])}",
+        "AR: Armor Rating (damaged reduced by physical attacks base on AR)",
+        "MAR: Magic Armor Rating (damaged reduced by magical attacks based on Magic AR"
+    ]
 
     def at_object_creation(self):
         super().at_object_creation()
