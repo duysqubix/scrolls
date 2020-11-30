@@ -28,7 +28,6 @@ class CmdTime(Command):
         ch = self.caller
         year, month, day, hour, min, sec = custom_gametime.custom_gametime(
             absolute=True)
-
         era = START_ERA
         epoch_year = START_YEAR
 

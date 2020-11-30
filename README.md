@@ -1,40 +1,30 @@
-# Welcome to Evennia!
+# The Unofficial Elder Scrolls Mud
 
-This is your game directory, set up to let you start with
-your new game right away. An overview of this directory is found here:
-https://github.com/evennia/evennia/wiki/Directory-Overview#the-game-directory
+Welcome, traveler, to the Unofficial Elder Scrolls Mud. A project that I am shocked hasn't been
+undertaken in the world of muds. This is an attempt to bring the world of Tamriel to the comfort of
+your terminal and/or client. Based roughly on the rules on [UESRPG][uesrpg] 3rd edition.
 
-You can delete this readme file when you've read it and you can
-re-arrange things in this game-directory to suit your own sense of
-organisation (the only exception is the directory structure of the
-`server/` directory, which Evennia expects). If you change the structure
-you must however also edit/add to your settings file to tell Evennia
-where to look for things.
+The game is open source for now to attract the curious folks and to help contribute to the code. I would like
+to think that there are folks out there, as excited as myself, to see a elder scrolls mud. 
 
-Your game's main configuration file is found in
-`server/conf/settings.py` (but you don't need to change it to get
-started). If you just created this directory (which means you'll already
-have a `virtualenv` running if you followed the default instructions),
-`cd` to this directory then initialize a new database using
+The game is powered by [Evennia][evennia], but rewritten to resemble the look and feel of Diku/ROM style 
+of muds. Visit the [roadmap][roadmap] to see future planned features and currently completed features. 
+Please visit our [contribution][contribute] guidelines if you would like to help out.
 
-    evennia migrate
+UESM is built on the idea of a structured hierarchy of *wizards*, each level having a higher level of power than the next.
+I would welcome the opportunity to have folks volunteer to become builders (folks who are assigned zones and build to their hearts) content.
+Though *at this stage I wouldn't build anything that you would cry over if lost* simply due to the current state of the project.
 
-To start the server, stand in this directory and run
+The game is currently in *pre-alpha* stage.
 
-    evennia start
+The quickest way is to drop by and say hi on our [webclient][webclient_uri]
+or point your telnet client to __mud.scrollsmud.com 4040__
 
-This will start the server, logging output to the console. Make
-sure to create a superuser when asked. By default you can now connect
-to your new game using a MUD client on `localhost`, port `4000`.  You can
-also log into the web client by pointing a browser to
-`http://localhost:4001`.
 
-# Getting started
 
-From here on you might want to look at one of the beginner tutorials:
-http://github.com/evennia/evennia/wiki/Tutorials.
 
-Evennia's documentation is here:
-https://github.com/evennia/evennia/wiki.
-
-Enjoy!
+[uesrpg]: https://1d4chan.org/wiki/Unofficial_Elder_Scrolls_RPG#Third_Edition
+[evennia]: https://github.com/evennia/evennia
+[roadmap]: https://github.com/duysqubix/scrolls/blob/master/ROADMAP.md
+[contribute]: https://github.com/duysqubix/scrolls/blob/master/CONTRIBUTE.md
+[webclient_uri]: http://mud.scrollsmud.com:4001/webclient/
