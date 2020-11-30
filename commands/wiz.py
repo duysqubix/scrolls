@@ -1,4 +1,5 @@
 from json import dump
+from world.utils.db import search_objdb
 from commands.act_item import CmdWear
 from commands.act_movement import CmdDown, CmdEast, CmdNorth, CmdSouth, CmdUp, CmdWest
 import json
@@ -245,6 +246,14 @@ class CmdOList(Command):
     Usage:
         olist
         olist <type|name> <criteria>
+        olist type criteria <extra_field> <extra_criteria>
+
+        ex:
+        olist                            # lists all objects in database
+        olist type book                  # lists all objects of type book
+        olist type equipment             # list all objects of type equipment
+        olist name fire                  # list all objects that have `fire` in sdesc
+        olist type book category fiction # list all books of fiction category
     """
     key = "olist"
     locks = f"attr_ge(level.value, {BUILDER_LVL})"
@@ -259,16 +268,14 @@ class CmdOList(Command):
             ch.msg("There are no objects within the game")
             return
 
-        min_ = min(objdb.keys())
-        max_ = max(objdb.keys())
-
         if not args:
             table = self.styled_table("VNum",
                                       "Description",
                                       "Type",
                                       border='incols')
+            objs = search_objdb('all')
 
-            for vnum in range(min_, max_ + 1):
+            for vnum, obj in objs.items():
                 data = objdb[vnum]
                 vnum = raw_ansi(f"[|G{vnum:<4}|n]")
                 sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
@@ -293,21 +300,18 @@ class CmdOList(Command):
 
         criteria = args[1]
 
-        for vnum in range(min_, max_ + 1):
-            # for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
-            data = objdb[vnum]
-            if type_ == 'type':
-                if criteria == data['type']:
-                    vnum = raw_ansi(f"[|G{vnum:<4}|n]")
-                    sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
-                    table.add_row(vnum, sdesc, f"{data['type']}")
-                    continue
-            if type_ == 'name':
-                if criteria in data['key']:
-                    vnum = raw_ansi(f"[|G{vnum:<4}|n]")
-                    sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
-                    table.add_row(vnum, sdesc, f"{data['type']}")
-                    continue
+        try:
+            extra_field, extra_criteria = args[2], args[3]
+        except IndexError:
+            extra_field = extra_criteria = None
+        if extra_field and extra_criteria:
+            objs = search_objdb(criteria, **{extra_field: extra_criteria})
+        else:
+            objs = search_objdb(criteria)
+        for vnum, obj in objs.items():
+            vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+            sdesc = crop(raw_ansi(obj['sdesc']), width=50) or ''
+            table.add_row(vnum, sdesc, f"{obj['type']}")
         msg = str(table)
         ch.msg(msg)
         return
