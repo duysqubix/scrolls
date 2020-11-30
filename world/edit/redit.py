@@ -330,25 +330,53 @@ class Delete(Command):
             # maybe it only exists in blueprints?
             try:
                 del GLOBAL_SCRIPTS.roomdb.vnum[vnum]
+                ch.msg(f"Successfully deleted room {vnum}")
+
             except KeyError:
                 ch.msg("There is no such room")
             return
+        else:
 
-        if room.db.zone != has_zone(ch):
-            ch.msg(
-                "You are not permitted to delete a room not in a zone assigned to you."
-            )
-            return
+            if room.db.zone != has_zone(ch):
+                ch.msg(
+                    "You are not permitted to delete a room not in a zone assigned to you."
+                )
+                return
 
-        # first safely remove blueprint of room
-        del GLOBAL_SCRIPTS.roomdb.vnum[vnum]
+            # find all rooms that have exits that come to this room
+            # delete those exits, since code only allows connecting rooms
+            # within the same zone, this should be relatively low computationally
+            # heavy.
 
-        # move all contents in room to their 'home' location
-        for obj in room.contents:
-            obj.move_to(obj.home, quiet=True)
+            # search for all rooms within zone that has exit defined to this vnum
+            for v, data in GLOBAL_SCRIPTS.roomdb.vnum.items():
+                if data['zone'] != room.db.zone:
+                    continue
 
-        room.delete()
-        ch.msg(f"Successfully deleted room {vnum}")
+                # room is in same zone
+                #TODO: update redit mode when deleting current room if you are
+                # afgfected by it
+                for direction, dest_vnum in data['exits'].items():
+                    if dest_vnum == vnum:
+                        GLOBAL_SCRIPTS.roomdb.vnum[v]['exits'][direction] = -1
+                        ch.msg(f"Removed exit from room: {v}")
+
+                        if v == ch.location.db.vnum:
+                            # update current rooms redit mode
+                            # reinit current location, in case room was affected by change
+                            ch.ndb._redit.__init__(ch, ch.location.db.vnum)
+                            # and save
+                            ch.ndb._redit.save(override=True)
+
+            # first safely remove blueprint of room
+            del GLOBAL_SCRIPTS.roomdb.vnum[vnum]
+
+            # move all contents in room to their 'home' location
+            for obj in room.contents:
+                obj.move_to(obj.home, quiet=True)
+            room.delete()
+
+            ch.msg(f"Successfully deleted room {vnum}")
 
 
 class Dig(Command):
@@ -357,7 +385,7 @@ class Dig(Command):
     original source
 
     Usage:
-        dig <bi/uni> <direction> -1 
+        dig <bi/uni> <direction> remove 
         dig <bi/uni> <direction> [<vnum>]
 
     exs:
@@ -452,4 +480,42 @@ class Dig(Command):
                 return
 
             else:
-                ch.msg("invalid")
+                vnum = int(vnum)
+                # first check to see if vnum of room exists
+                target_room = search_object(
+                    str(vnum), typeclass='typeclasses.rooms.rooms.Room')
+
+                if not target_room:
+                    # check to see if is in database
+                    try:
+                        target_room = GLOBAL_SCRIPTS.roomdb.vnum[vnum]
+                    except KeyError:
+
+                        ch.msg(
+                            "room doesn't exist create it first and then rerun this command"
+                        )
+                        return
+                    _ = create_object('typeclasses.rooms.rooms.Room', key=vnum)
+
+                cur_room = ch.ndb._redit.obj
+
+                if target_room['zone'] != cur_room['zone']:
+                    ch.msg(
+                        "You can't create an exit to a room that doesn't belong to this zone"
+                    )
+                    return
+
+                if type_ == 'bi':
+                    target_room['exits'][
+                        OPPOSITE_DIRECTION[direction]] = ch.ndb._redit.vnum
+                    ch.msg(
+                        f"You created an exit in room {vnum} to your current location"
+                    )
+
+                cur_room['exits'][direction] = vnum
+                ch.ndb._redit.save(override=True)
+
+                # change what redit sees, now we are editting new room
+                ch.ndb._redit.__init__(ch, vnum)
+                ch.ndb._redit.save(override=True)
+                ch.msg("Created exit to room {vnum}")
