@@ -50,6 +50,12 @@ DEFAULT_ZONE_STRUCT = {
     'reset_msg': "zone has reset"
 }
 
+DEFAULT_TRIG_STRUCT = {
+    'name': 'unfinished trigger',
+    'attachedto': '',
+    'prog': ''
+}
+
 DAM_TYPES = {
     "physical": {
         "hit", "sting", "whip", "slash", "bite", "bludgeon", "crush", "pound",
