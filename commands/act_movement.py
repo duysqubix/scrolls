@@ -31,7 +31,6 @@ class _CmdMove(Command):
 
         # double check to make sure destination room actually exists
         room = search_object(str(exit), typeclass=Room)
-        ch.msg("{}{}".format(exit, room))
         if not room:
             logger.log_errmsg(
                 "Attempting to move to a valid exit vnum, but room doesn't exist"

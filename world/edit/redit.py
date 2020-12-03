@@ -37,6 +37,12 @@ class REditMode(_EditMode):
         if self.obj['zone'] == 'null':
             self.obj['zone'] = assigned_zone
 
+        self.save(override=True)
+        # create room object
+        room = get_room(self.vnum)
+        if not room:
+            _ = create_object('typeclasses.rooms.rooms.Room', key=self.vnum)
+
     def save(self, override=False):
         if (self.orig_obj != self.obj) or override:
             # custom object checks here
@@ -102,11 +108,36 @@ class REditCmdSet(CmdSet):
         self.add(Set())
         self.add(Dig())
         self.add(Delete())
+        self.add(New())
 
 
 class REditCommand(Command):
     def at_post_cmd(self):
         self.caller.msg(prompt=_REDIT_PROMPT)
+
+
+class New(REditCommand):
+    """
+    Creates a new room while in redit mode using next available vnum
+
+    Usage:
+        new
+    """
+
+    key = 'new'
+
+    def func(self):
+        ch = self.caller
+        nextvnum = next_available_rvnum()
+        new_room_info = copy.deepcopy(DEFAULT_ROOM_STRUCT)
+        new_room_info['zone'] = has_zone(ch)
+
+        ch.ndb._redit.__init__(ch, nextvnum)
+        ch.ndb._redit.save(override=True)
+
+        room = get_room(nextvnum)
+        ch.move_to(room)
+        ch.msg(f"Created new room vnum={nextvnum}")
 
 
 class Set(REditCommand):
@@ -354,19 +385,15 @@ class Delete(Command):
                     continue
 
                 # room is in same zone
-                #TODO: update redit mode when deleting current room if you are
                 # afgfected by it
                 for direction, dest_vnum in data['exits'].items():
                     if dest_vnum == vnum:
-                        GLOBAL_SCRIPTS.roomdb.vnum[v]['exits'][direction] = -1
-                        ch.msg(f"Removed exit from room: {v}")
 
-                        if v == ch.location.db.vnum:
-                            # update current rooms redit mode
-                            # reinit current location, in case room was affected by change
-                            ch.ndb._redit.__init__(ch, ch.location.db.vnum)
-                            # and save
-                            ch.ndb._redit.save(override=True)
+                        # delete from roomdb
+                        GLOBAL_SCRIPTS.roomdb.vnum[v]['exits'][direction] = -1
+                        # delete exist from instance as well
+
+                        ch.msg(f"Removed exit from room: {v}")
 
             # first safely remove blueprint of room
             del GLOBAL_SCRIPTS.roomdb.vnum[vnum]
@@ -385,7 +412,7 @@ class Dig(Command):
     original source
 
     Usage:
-        dig <bi/uni> <direction> remove 
+        dig <direction> remove 
         dig <bi/uni> <direction> [<vnum>]
 
     exs:
@@ -423,59 +450,68 @@ class Dig(Command):
                 )
                 return
 
-            if type_ not in ('bi', 'uni'):
-                ch.msg("dig type must be either `bi` or `uni`")
-                return
+            if direction != 'remove':
+                if type_ not in ('bi', 'uni'):
+                    ch.msg("dig type must be either `bi` or `uni`")
+                    return
 
-            if not match_string(direction, VALID_DIRECTIONS):
-                ch.msg("must use a valid direction")
-                return
+                if not match_string(direction, VALID_DIRECTIONS):
+                    ch.msg("must use a valid direction")
+                    return
 
             if not vnum:
-                # dig in direction to new room and create exits from both ends
                 cur_room = ch.ndb._redit.obj
 
-                # get next available vnum, we are also guarenteed that room will
-                # not exist
-                nextvnum = next_available_rvnum()
-                new_room_info = copy.deepcopy(DEFAULT_ROOM_STRUCT)
+                # first check if user is not wanting to remove an exit
+                if direction == 'remove':
+                    direction = type_
+                    cur_room['exits'][direction] = -1
+                    ch.ndb._redit.save(override=True)
+                    ch.msg("Exit removed")
+                else:
+                    # dig in direction to new room and create exits from both ends
 
-                # set exit of new room to the vnum of current room, using opposite
-                # direction from what was supplied (north->south, etc...)
-                if type_ == 'bi':
-                    new_room_info['exits'][
-                        OPPOSITE_DIRECTION[direction]] = ch.ndb._redit.vnum
+                    # get next available vnum, we are also guarenteed that room will
+                    # not exist
+                    nextvnum = next_available_rvnum()
+                    new_room_info = copy.deepcopy(DEFAULT_ROOM_STRUCT)
 
-                # also set the zone for new room to cur_zone
-                new_room_info['zone'] = has_zone(ch)
+                    # set exit of new room to the vnum of current room, using opposite
+                    # direction from what was supplied (north->south, etc...)
+                    if type_ == 'bi':
+                        new_room_info['exits'][
+                            OPPOSITE_DIRECTION[direction]] = ch.ndb._redit.vnum
 
-                #set exit of current room to the new room just created
-                cur_room['exits'][direction] = nextvnum
+                    # also set the zone for new room to cur_zone
+                    new_room_info['zone'] = has_zone(ch)
 
-                # actually create the object of new_room
-                # but just to be safe, let's make sure
-                room_exists = search_object(
-                    str(nextvnum), typeclass='typeclasses.rooms.rooms.Room')
+                    #set exit of current room to the new room just created
+                    cur_room['exits'][direction] = nextvnum
 
-                if room_exists:
-                    raise Exception(
-                        "trying to create a new room with a vnum that shouldn't exist, but the room does..."
-                    )
-                # create and store blueprint of new room
-                ch.ndb._redit.db.vnum[nextvnum] = new_room_info
+                    # actually create the object of new_room
+                    # but just to be safe, let's make sure
+                    room_exists = search_object(
+                        str(nextvnum),
+                        typeclass='typeclasses.rooms.rooms.Room')
 
-                # create object
-                room = create_object('typeclasses.rooms.rooms.Room',
-                                     key=nextvnum)
+                    # create and store blueprint of new room
+                    ch.ndb._redit.db.vnum[nextvnum] = new_room_info
 
-                # save current room in redit to update exits
-                ch.ndb._redit.save(override=True)
+                    # create object
+                    if not room_exists:  # if not exists
+                        room = create_object('typeclasses.rooms.rooms.Room',
+                                             key=nextvnum)
+                    else:
+                        room = room_exists[0]
 
-                # change what redit sees, now we are editting new room
-                ch.ndb._redit.__init__(ch, nextvnum)
-                ch.ndb._redit.save(override=True)
-                # move to room
-                ch.move_to(room)
+                    # save current room in redit to update exits
+                    ch.ndb._redit.save(override=True)
+
+                    # change what redit sees, now we are editting new room
+                    ch.ndb._redit.__init__(ch, nextvnum)
+                    ch.ndb._redit.save(override=True)
+                    # move to room
+                    ch.move_to(room)
 
                 return
 
@@ -498,8 +534,8 @@ class Dig(Command):
                     _ = create_object('typeclasses.rooms.rooms.Room', key=vnum)
 
                 cur_room = ch.ndb._redit.obj
-
-                if target_room['zone'] != cur_room['zone']:
+                target_room = target_room[0]
+                if target_room.db.zone != cur_room['zone']:
                     ch.msg(
                         "You can't create an exit to a room that doesn't belong to this zone"
                     )
@@ -515,7 +551,4 @@ class Dig(Command):
                 cur_room['exits'][direction] = vnum
                 ch.ndb._redit.save(override=True)
 
-                # change what redit sees, now we are editting new room
-                ch.ndb._redit.__init__(ch, vnum)
-                ch.ndb._redit.save(override=True)
-                ch.msg("Created exit to room {vnum}")
+                ch.msg(f"Created exit to room {vnum}")

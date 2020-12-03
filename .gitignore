@@ -2,7 +2,8 @@
 *.pid
 *.db3
 *.log
-server/logs/server.log.2020_11_24
 server/logs/lockwarnings.log.1
-server/logs/server.log.2020_11_25
 
+server/logs/portal.log.2020_11_30
+server/logs/server.log.2020_11_24
+server/logs/server.log.2020_11_25
