@@ -16,13 +16,21 @@ at_server_cold_stop()
 
 """
 
+from evennia.contrib import rplanguage
+from world.languages import VALID_LANGUAGES
+
 
 def at_server_start():
     """
     This is called every time the server starts up, regardless of
     how it was shut down.
     """
-    pass
+    if not rplanguage.available_languages():
+        rplanguage.add_language(key='tamrielic')
+
+    # for cls in VALID_LANGUAGES.values():
+    #     lang = cls()
+    #     lang.add()  # add langauge and overwrite
 
 
 def at_server_stop():

@@ -4,7 +4,7 @@ holds informative type of commands
 from time import time
 from world.calendar import DAYS, DAYS_IN_WEEK, HOLIDAYS, MONTHS, START_ERA, START_YEAR
 from world.paginator import BookEvMore
-from evennia import EvForm, EvMore
+from evennia import EvForm, EvTable
 from evennia.contrib import custom_gametime
 from evennia.utils import evmore
 from evennia.utils.utils import inherits_from
@@ -395,7 +395,6 @@ class CmdScore(Command):
             else:
                 return f"{num}"
 
-        #TODO change path to EvForm to  use
         form = EvForm("resources.score_form")
         form.map({
             1: ch.name.capitalize(),
@@ -422,4 +421,17 @@ class CmdScore(Command):
             22: green_or_red(ch.attrs.AR.value),
             23: green_or_red(ch.attrs.MAR.value)
         })
+
+        languages = [
+            x.capitalize() for x in ch.languages.all()
+            if (x != 'name') and (ch.languages.get(x).level > 0.0)
+        ]
+        lan_skill = [
+            x.sdesc for x in ch.languages.all(return_obj=True) if x.level > 0.0
+        ]
+        table = EvTable("Language",
+                        "Rank",
+                        table=[languages, lan_skill],
+                        border='incols')
+        form.map(tables={"A": table})
         ch.msg(form)

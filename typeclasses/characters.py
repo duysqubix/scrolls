@@ -21,6 +21,22 @@ from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
 from evennia.utils.utils import inherits_from, lazy_property
 from world.storagehandler import StorageHandler
+from world.languages import LanguageSkill, VALID_LANGUAGES
+
+
+class LanguageHandler(StorageHandler):
+    """
+    Stores language skills 
+    """
+    __attr_name__ = 'languages'
+
+    def init(self) -> None:
+        for lang in VALID_LANGUAGES.keys():
+            if not getattr(self, lang, None):
+                setattr(self, lang, LanguageSkill.untrained)
+
+    def get(self, name):
+        return getattr(self, name, None)
 
 
 class EquipmentHandler:
@@ -453,6 +469,10 @@ class Character(DefaultCharacter):
     def equipment(self):
         return EquipmentHandler(self)
 
+    @lazy_property
+    def languages(self):
+        return LanguageHandler(self)
+
     def get_prompt(self):
         self.attrs.update()
         hp = self.attrs.health
@@ -521,6 +541,7 @@ class Character(DefaultCharacter):
         self.db.attrs = {}
         self.db.stats = {}
         self.db.skills = {}
+        self.db.languages = {}
         self.db.conditions = {'conditions': []}
         self.db.traits = {'traits': []}
         self.db.stats = copy.deepcopy(CHARACTERISTICS)
