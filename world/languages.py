@@ -83,10 +83,10 @@ class Aldmeris(Language):
     def define_language(self):
         self.phonemes = "oi oh ee ae aa eh ah ao aw ay er ey ow ia ih iy" \
                         "oy ua uh uw y pb t d f v t dh s z sh zh ch jh k" \
-                        "ng g m n l r w",
+                        "ng g m n l r w"
         self.vowels = "eaoiuy"
         self.grammar = "v vv vvc vcc vvcc cvvc vccv vvccv vcvccv vvccvvcc "\
-                        "ng g m n l r w",
+                        "ng g m n l r w"
         self.word_length_variance = 1
         self.noun_postfix = "'la"
         self.manual_translations = {
