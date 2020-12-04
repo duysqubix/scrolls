@@ -98,63 +98,70 @@ WEAR_LOCATIONS = {
 }
 
 
-class Size:
-    """
-    Defines sizes of objects. Overrides multiple magic methods
-    in order to 
-    """
-    def __init__(self, size, name):
-        self.name = name
-        self.size = size
+class _Proficiency:
+    name = ""
+    sdesc = ""
+    pos = 0
 
-    def __gt__(self, other):
-        return self.size > other.size
+    def __init__(self, **kwargs) -> None:
+        for k, v in kwargs.items():
+            setattr(self, k, v)
 
-    def __lt__(self, other):
-        return self.size < other.size
+    def __repr__(self) -> str:
+        return f"<{self.name}>"
 
-    def __eq__(self, other):
-        return self.size == other.size
+    def all(self):
+        return list(self.__dict__.keys())
 
-    def __ne__(self, other):
-        return self.size != other.size
 
-    def __ge__(self, other):
-        return self.size >= other.size
+class Untrained(_Proficiency):
+    name = "untrained"
+    sdesc = "No knowledge"
+    pos = 0
 
-    def __le__(self, other):
-        return self.size <= other.size
 
-    def __str__(self):
-        return self.name
+class Novice(_Proficiency):
+    name = 'novice'
+    sdesc = "Rudimentary Knowledge"
+    pos = 1
 
-    def __repr__(self):
-        return f"{self.name}({self.size})"
 
-    @classmethod
-    def puny(cls):
-        return cls(0, "puny")
+class Apprentice(_Proficiency):
+    name = 'apprentice'
+    sdesc = "Basic proficiency"
+    pos = 2
 
-    @classmethod
-    def tiny(cls):
-        return cls(1, "tiny")
 
-    @classmethod
-    def small(cls):
-        return cls(2, "small")
+class Journeyman(_Proficiency):
+    name = 'journeyman'
+    sdesc = "Hands on experience"
+    pos = 3
 
-    @classmethod
-    def standard(cls):
-        return cls(3, "standard")
 
-    @classmethod
-    def large(cls):
-        return cls(4, "large")
+class Adept(_Proficiency):
+    name = "adept"
+    sdesc = "Extensive experience or training"
+    pos = 4
 
-    @classmethod
-    def huge(cls):
-        return cls(5, "huge")
 
-    @classmethod
-    def enormous(cls):
-        return cls(6, "enormous")
+class Expert(_Proficiency):
+    name = 'expert'
+    sdesc = 'professinal level ability'
+    pos = 5
+
+
+class Master(_Proficiency):
+    name = 'master'
+    sdesc = "Complete mastery"
+    pos = 6
+
+
+_PROFICIENY_GRADIENT = {
+    0: Untrained,
+    1: Novice,
+    2: Apprentice,
+    3: Journeyman,
+    4: Adept,
+    5: Expert,
+    6: Master
+}

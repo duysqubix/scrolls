@@ -1,15 +1,15 @@
 """
 holds informative type of commands
 """
-from time import time
+from evennia.contrib.rplanguage import obfuscate_language
 from world.calendar import DAYS, DAYS_IN_WEEK, HOLIDAYS, MONTHS, START_ERA, START_YEAR
 from world.paginator import BookEvMore
-from evennia import EvForm, EvMore
+from evennia import EvForm, EvTable
 from evennia.contrib import custom_gametime
 from evennia.utils import evmore
 from evennia.utils.utils import inherits_from
 from commands.command import Command
-from world.utils.utils import can_see_obj, is_book, is_container, is_equipped, is_invis, is_obj, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation
+from world.utils.utils import can_see_obj, is_book, is_container, is_equipped, is_invis, is_obj, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation, rplanguage_parse_string
 from evennia.utils.ansi import raw as raw_ansi
 
 
@@ -138,11 +138,23 @@ class CmdRead(Command):
             contents = book.db.contents
             date = book.db.date
 
-            book_contents = f"\n|gTitle|w: {title}\n|gAuthor|w: {author}\n|gDate|w: {date}\n\n|n{contents}"
+            book_contents = f"\n|gTitle|w: {title}\n|gAuthor|w: {author}\n|gDate|w: {date}\n\n|n"
             # evmore.msg(ch, book_contents)
             form = EvForm("resources.forms.book")
             form.map(cells={1: book.db.title, 2: book.db.author})
-            BookEvMore(ch, book_contents)
+
+            # translate book into language as specified in book extra settings
+            book_lang = book.db.language
+            lang_skill = ch.languages.get(book_lang, None)
+            if not lang_skill:  # language doesn't exist
+                BookEvMore(ch, book_contents + contents)
+            else:
+                ch.debug_msg(book_lang, lang_skill)
+                contents_translated = obfuscate_language(contents,
+                                                         level=1.0 -
+                                                         lang_skill.level,
+                                                         language=book_lang)
+                BookEvMore(ch, book_contents + contents_translated)
 
         if not self.args:
             ch.msg("what do you want to read?")
@@ -317,14 +329,15 @@ class CmdLook(Command):
             # attempt to look for edesc in room itself
             edesc = location.db.edesc
             if obj_name in edesc.keys():
-                msg = f"\n\n{edesc[obj_name]}"
+                msg = f"\n\n{rplanguage_parse_string(ch, edesc[obj_name])}"
                 evmore.EvMore(ch, msg)
                 return
             # look for obj in room
             for obj in ch.location.contents:
                 if obj.db.name:
                     if obj_name in obj.db.name:
-                        ch.msg(obj.db.edesc)
+                        edesc = rplanguage_parse_string(ch, obj.db.edesc)
+                        ch.msg(edesc)
                         return
             # try looking for an obj in your inventory, if found send back edesc
             for obj in ch.contents:
@@ -335,6 +348,7 @@ class CmdLook(Command):
                     if not edesc:
                         ch.msg("You see nothing interesting.")
                     else:
+                        edesc = rplanguage_parse_string(ch, edesc)
                         ch.msg(edesc)
                     return
             ch.msg("You don't see anything like that.")
@@ -395,7 +409,6 @@ class CmdScore(Command):
             else:
                 return f"{num}"
 
-        #TODO change path to EvForm to  use
         form = EvForm("resources.score_form")
         form.map({
             1: ch.name.capitalize(),
@@ -422,4 +435,18 @@ class CmdScore(Command):
             22: green_or_red(ch.attrs.AR.value),
             23: green_or_red(ch.attrs.MAR.value)
         })
+
+        languages = [
+            x.capitalize() for x in ch.languages.all()
+            if (x != 'name') and (ch.languages.get(x).level > 0.0)
+        ]
+        lan_skill = [
+            x.name.capitalize() for x in ch.languages.all(return_obj=True)
+            if x.level > 0.0
+        ]
+        table = EvTable("Language",
+                        "Rank",
+                        table=[languages, lan_skill],
+                        border='incols')
+        form.map(tables={"A": table})
         ch.msg(form)
