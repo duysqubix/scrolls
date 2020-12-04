@@ -36,6 +36,8 @@ class LanguageHandler(StorageHandler):
                 setattr(self, lang, LanguageSkill.untrained)
 
     def get(self, name):
+        if name == 'common':
+            name = 'tamrielic'
         return getattr(self, name, None)
 
 

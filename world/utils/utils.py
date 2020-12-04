@@ -3,7 +3,6 @@ import re
 from evennia import GLOBAL_SCRIPTS, create_object
 from evennia.contrib.rplanguage import obfuscate_language
 from evennia.utils import make_iter
-from evennia.contrib import rplanguage
 
 from typeclasses.objs.object import VALID_OBJ_APPLIES
 from world.globals import BUILDER_LVL, BOOK_CATEGORIES
@@ -24,7 +23,7 @@ def highlight_words(block, key_targets, color_codes):
     return block
 
 
-def rplanguage_string(ch, string):
+def rplanguage_parse_string(ch, string):
     """
     Obfuscates string based on keys that set the type of language
     and the skill of the player corresponding to that language.
@@ -51,25 +50,27 @@ def rplanguage_string(ch, string):
     if len(chunks) % 2 != 0:
         raise ValueError("error in regex on rplanguage tag system.")
 
+    tmp = 0
     languages = dict()
     for i in range(0, len(chunks), 2):
-        languages[chunks[i]] = chunks[i + 1].lstrip()
+        languages[f"{chunks[i]}_{tmp}"] = chunks[i + 1].lstrip()
+        tmp += 1
 
     new_string = []
     for lang, text in languages.items():
+        lang = lang.split('_')[0]
         lang_skill = ch.languages.get(lang)
         if not lang_skill:
             # language doesn't exist (tag is wrong or language isn't implemented)
             new_string.append(text)
             continue
         lang_skill = lang_skill.level
-        obfuscated_string = rplanguage.obfuscate_language(text,
-                                                          level=1.0 -
-                                                          lang_skill,
-                                                          language=lang)
+        obfuscated_string = obfuscate_language(text,
+                                               level=1.0 - lang_skill,
+                                               language=lang)
         new_string.append(obfuscated_string)
 
-    return " ".join(new_string)
+    return "".join(new_string)
 
 
 def apply_obj_effects(ch, obj):

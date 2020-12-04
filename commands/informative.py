@@ -8,7 +8,7 @@ from evennia.contrib import custom_gametime
 from evennia.utils import evmore
 from evennia.utils.utils import inherits_from
 from commands.command import Command
-from world.utils.utils import can_see_obj, is_book, is_container, is_equipped, is_invis, is_obj, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation, rplanguage_string
+from world.utils.utils import can_see_obj, is_book, is_container, is_equipped, is_invis, is_obj, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation, rplanguage_parse_string
 from evennia.utils.ansi import raw as raw_ansi
 
 
@@ -316,14 +316,14 @@ class CmdLook(Command):
             # attempt to look for edesc in room itself
             edesc = location.db.edesc
             if obj_name in edesc.keys():
-                msg = f"\n\n{rplanguage_string(ch, edesc[obj_name])}"
+                msg = f"\n\n{rplanguage_parse_string(ch, edesc[obj_name])}"
                 evmore.EvMore(ch, msg)
                 return
             # look for obj in room
             for obj in ch.location.contents:
                 if obj.db.name:
                     if obj_name in obj.db.name:
-                        edesc = rplanguage_string(ch, obj.db.edesc)
+                        edesc = rplanguage_parse_string(ch, obj.db.edesc)
                         ch.msg(edesc)
                         return
             # try looking for an obj in your inventory, if found send back edesc
@@ -335,7 +335,7 @@ class CmdLook(Command):
                     if not edesc:
                         ch.msg("You see nothing interesting.")
                     else:
-                        edesc = rplanguage_string(ch, edesc)
+                        edesc = rplanguage_parse_string(ch, edesc)
                         ch.msg(edesc)
                     return
             ch.msg("You don't see anything like that.")
