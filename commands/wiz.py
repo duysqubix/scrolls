@@ -300,7 +300,7 @@ class CmdOList(Command):
                                       border='incols')
             objs = search_objdb('all')
 
-            for vnum, obj in objs.items():
+            for vnum, obj in sorted(objs.items()):
                 data = objdb[vnum]
                 vnum = raw_ansi(f"[|G{vnum:<4}|n]")
                 sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
@@ -333,7 +333,7 @@ class CmdOList(Command):
             objs = search_objdb(criteria, **{extra_field: extra_criteria})
         else:
             objs = search_objdb(criteria)
-        for vnum, obj in objs.items():
+        for vnum, obj in sorted(objs.items()):
             vnum = raw_ansi(f"[|G{vnum:<4}|n]")
             sdesc = crop(raw_ansi(obj['sdesc']), width=50) or ''
             table.add_row(vnum, sdesc, f"{obj['type']}")

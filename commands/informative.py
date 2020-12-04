@@ -1,6 +1,7 @@
 """
 holds informative type of commands
 """
+from evennia.contrib.rplanguage import obfuscate_language
 from world.calendar import DAYS, DAYS_IN_WEEK, HOLIDAYS, MONTHS, START_ERA, START_YEAR
 from world.paginator import BookEvMore
 from evennia import EvForm, EvTable
@@ -137,11 +138,23 @@ class CmdRead(Command):
             contents = book.db.contents
             date = book.db.date
 
-            book_contents = f"\n|gTitle|w: {title}\n|gAuthor|w: {author}\n|gDate|w: {date}\n\n|n{contents}"
+            book_contents = f"\n|gTitle|w: {title}\n|gAuthor|w: {author}\n|gDate|w: {date}\n\n|n"
             # evmore.msg(ch, book_contents)
             form = EvForm("resources.forms.book")
             form.map(cells={1: book.db.title, 2: book.db.author})
-            BookEvMore(ch, book_contents)
+
+            # translate book into language as specified in book extra settings
+            book_lang = book.db.language
+            lang_skill = ch.languages.get(book_lang, None)
+            if not lang_skill:  # language doesn't exist
+                BookEvMore(ch, book_contents + contents)
+            else:
+                ch.debug_msg(book_lang, lang_skill)
+                contents_translated = obfuscate_language(contents,
+                                                         level=1.0 -
+                                                         lang_skill.level,
+                                                         language=book_lang)
+                BookEvMore(ch, book_contents + contents_translated)
 
         if not self.args:
             ch.msg("what do you want to read?")

@@ -2,7 +2,7 @@
 Holds information regarding races of the scrolls
 """
 
-from world.languages import LanguageSkill, Tamrielic
+from world.languages import LanguageSkill, Tamrielic, Orcish
 from world.attributes import Attribute
 from world.traits import *
 from world.characteristics import StrChar, EndChar, AgiChar, IntChar, WpChar, PrcChar, PrsChar
@@ -387,6 +387,7 @@ class Orsimer(Race):
                             (ResistanceTrait, 1, 'magic')])
 
         self.upgradable_skills.extend(['smithing'])
+        self.known_languages.extend([Orcish.__lang_name__])
 
 
 class Redguard(Race):

@@ -35,10 +35,10 @@ class LanguageHandler(StorageHandler):
             if not getattr(self, lang, None):
                 setattr(self, lang, LanguageSkill.untrained)
 
-    def get(self, name):
+    def get(self, name, default=None):
         if name == 'common':
             name = 'tamrielic'
-        return getattr(self, name, None)
+        return getattr(self, name, default)
 
 
 class EquipmentHandler:
