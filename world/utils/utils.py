@@ -10,6 +10,9 @@ from world.utils.db import search_objdb
 from evennia.utils.utils import inherits_from, string_partial_matching
 from world.conditions import DetectHidden, DetectInvis, Hidden, HolyLight, Invisible, Sleeping, get_condition
 
+_CAP_PATTERN = re.compile(r'((?<=[\.\?!\n]\s)(\w+)|(^\w+))')
+_LANG_TAGS = re.compile('\>(.*?)\<', re.I)
+
 
 def highlight_words(block, key_targets, color_codes):
     key_targets = make_iter(key_targets)
@@ -21,6 +24,11 @@ def highlight_words(block, key_targets, color_codes):
     for idx, key in enumerate(key_targets):
         block.replace(key, f"{color_codes[idx]}{key}|n")
     return block
+
+
+def capitalize_sentence(string):
+    global _CAP_PATTERN
+    return _CAP_PATTERN.sub(lambda x: x.group().capitalize(), string)
 
 
 def rplanguage_parse_string(ch, string):
@@ -41,8 +49,9 @@ def rplanguage_parse_string(ch, string):
     If you plan on using this function, it is import that string supplied
     must have >[language]< first then contents in order for this function to parse correctly.
     """
-    pattern = re.compile('\>(.*?)\<', re.I)
-    chunks = re.split(pattern, string)[1:]
+    global _LANG_TAGS
+
+    chunks = re.split(_LANG_TAGS, string)[1:]
     if not chunks:
         # no tags found for a language
         return string
@@ -70,7 +79,8 @@ def rplanguage_parse_string(ch, string):
                                                language=lang)
         new_string.append(obfuscated_string)
 
-    return "".join(new_string)
+    translated_string = "".join(new_string)
+    return capitalize_sentence(translated_string)
 
 
 def apply_obj_effects(ch, obj):

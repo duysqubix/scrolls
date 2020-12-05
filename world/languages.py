@@ -125,10 +125,10 @@ class Orcish(_Language):
     __lang_name__ = "orcish"
 
     def define_language(self):
-        self.phonemes = "a u o g kh rz k r z th t m y ush am oo d ug zz gg eg ag oz uu us uth zu rul ol ru hz ri au ai kr"
+        self.phonemes = "a g kh rz k r z th t m ush am oo d ug zz gg eg ag oz uu us uth zu rul ol ru hz ri au ai kr gog rzn lag"
         self.vowels = "auo"
-        self.grammar = "ccvcc vccv cvccv cvccvcc"
-        self.word_length_variance = 1
+        self.grammar = "ccvvcc ccvcc vccv vccvccvcc ccvvcvcc cvcccvcc cvcc vccccvc vcvcc cvccccv ccvcvccc cvccvcc cvcvcvcc cvcccvc ccccvc vcvvc vccvcvc ccvcv cvccvc cvccccvc cvccc cvccvcvc cvvcvc ccvccvccvc vcccvc vcvcvc ccvccvc cvccv cvcvccvcc cvcvcvc cvcvcv cvcccv cvcvcc cvcvcccc vcvccvc vccvc ccvcvc cvccccc cvcccccc"
+        self.word_length_variance = 2
 
 
 VALID_LANGUAGES = {
