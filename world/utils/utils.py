@@ -80,8 +80,8 @@ def rplanguage_parse_string(ch, string):
         new_string.append(obfuscated_string)
 
     translated_string = "".join(new_string)
-    return capitalize_sentence(translated_string)
-
+    #return capitalize_sentence(translated_string)
+    return translated_string
 
 def apply_obj_effects(ch, obj):
     """
