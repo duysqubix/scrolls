@@ -40,6 +40,14 @@ class LanguageHandler(StorageHandler):
             name = 'tamrielic'
         return getattr(self, name, default)
 
+    def clear(self):
+        """ resets languages on self to 0.0"""
+        for lang in VALID_LANGUAGES.keys():
+            langattr = getattr(self, lang, None)
+            if not langattr:
+                continue
+            setattr(self, lang, LanguageSkill.untrained)
+
 
 class EquipmentHandler:
     """

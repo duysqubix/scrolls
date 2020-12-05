@@ -9,7 +9,7 @@ from evennia.contrib import custom_gametime
 from evennia.utils import evmore
 from evennia.utils.utils import inherits_from
 from commands.command import Command
-from world.utils.utils import can_see_obj, is_book, is_container, is_equipped, is_invis, is_obj, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation, rplanguage_parse_string
+from world.utils.utils import can_see_obj, capitalize_sentence, is_book, is_container, is_equipped, is_invis, is_obj, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation, rplanguage_parse_string
 from evennia.utils.ansi import raw as raw_ansi
 
 
@@ -154,6 +154,7 @@ class CmdRead(Command):
                                                          level=1.0 -
                                                          lang_skill.level,
                                                          language=book_lang)
+                contents_translated = capitalize_sentence(contents_translated)
                 BookEvMore(ch, book_contents + contents_translated)
 
         if not self.args:
