@@ -1,6 +1,7 @@
 """
 holds informative type of commands
 """
+from evennia.server.sessionhandler import SESSIONS
 from evennia.contrib.rplanguage import obfuscate_language
 from world.calendar import DAYS, DAYS_IN_WEEK, HOLIDAYS, MONTHS, START_ERA, START_YEAR
 from world.paginator import BookEvMore
@@ -11,6 +12,34 @@ from evennia.utils.utils import inherits_from
 from commands.command import Command
 from world.utils.utils import can_see_obj, capitalize_sentence, is_book, is_container, is_equipped, is_invis, is_obj, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation, rplanguage_parse_string
 from evennia.utils.ansi import raw as raw_ansi
+
+
+class CmdWho(Command):
+    """
+    Show all online
+
+    Usage:
+        who
+    """
+
+    key = 'who'
+    locks = "cmd:all()"
+
+    def func(self):
+        ch = self.caller
+
+        who_msg = "\n|w|[r       Players Online       |n\n"
+        table = self.styled_table("Level", "Name", border='incols')
+        for ses in SESSIONS.get_sessions():
+            if not ses.logged_in:
+                continue
+            vict = ses.get_account().puppet
+
+            level = vict.attrs.level.value
+            race = vict.attrs.race.name.capitalize()
+            name = vict.name.capitalize()
+            table.add_row(f"[{level:<3}{race:>10}]", name)
+        ch.msg(who_msg + str(table))
 
 
 class CmdTime(Command):
