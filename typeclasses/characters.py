@@ -10,7 +10,7 @@ creation commands.
 import copy
 from world.conditions import HolyLight
 from world.utils.act import Announce, act
-from world.utils.utils import delete_contents, is_equippable, is_obj, is_wiz, is_worn, apply_obj_effects, remove_obj_effects
+from world.utils.utils import delete_contents, is_equippable, is_obj, is_wieldable, is_wielded, is_wiz, is_worn, apply_obj_effects, remove_obj_effects
 from world.gender import Gender
 from world.races import NoRace
 from world.attributes import Attribute, VitalAttribute
@@ -57,10 +57,13 @@ class EquipmentHandler:
             self.location[loc.name] = None  # obj
 
         # now try to find objects in caller.location
-        # that are 1) is_equippable and 2)is_worn
+        # that are 1) is_equippable and 2)is_worn or 3) is wieldable and 4) is_wielded
         for obj in self.caller.contents:
-            if is_equippable(obj) and is_worn(obj):
+            if (is_equippable(obj) and is_worn(obj)):
                 self.location[obj.db.wear_loc] = obj
+
+            if (is_wieldable(obj) and is_wielded(obj)):
+                self.location['wield'] = obj
 
     def add(self, obj):
         """ 
