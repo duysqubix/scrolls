@@ -4,6 +4,7 @@
     "sdesc": "Book: Friend of All Mortals",
     "ldesc": "a book titled Friend of All Mortals.",
     "extra": {
+      "language": "tamrielic",
       "category": "religion",
       "date": "Unknown",
       "author": "The Resolute Templar of Ska'vyn",
@@ -16,6 +17,7 @@
     "sdesc": "Book: Keepers of the Razor",
     "ldesc": "a book titled: Keepers of the Razor",
     "extra": {
+      "language": "tamrielic",
       "category": "research",
       "date": "Unknown",
       "author": "Anyonymous",
@@ -28,6 +30,7 @@
     "sdesc": "Book: A Dance in Fire, v1",
     "ldesc": "a book titled: A Dance in Fire, v1",
     "extra": {
+      "language": "tamrielic",
       "category": "fiction",
       "date": "7 Frost Fall, 3E 397",
       "author": "Waughin Jarth",
@@ -40,6 +43,7 @@
     "sdesc": "Book: A Dance in Fire, v2",
     "ldesc": "a book titled: A Dance in Fire, v2",
     "extra": {
+      "language": "tamrielic",
       "category": "fiction",
       "date": "7 Frost Fall, 3E 397",
       "author": "Waughin Jarth",
@@ -52,6 +56,7 @@
     "sdesc": "Book: A Dance in Fire, v3",
     "ldesc": "a book titled: A Dance in Fire, v3",
     "extra": {
+      "language": "tamrielic",
       "category": "fiction",
       "date": "7 Frost Fall, 3E 397",
       "author": "Waughin Jarth",
@@ -64,6 +69,7 @@
     "sdesc": "Book: A Dance in Fire, v4",
     "ldesc": "a book titled: A Dance in Fire, v4",
     "extra": {
+      "language": "tamrielic",
       "category": "fiction",
       "date": "7 Frost Fall, 3E 397",
       "author": "Waughin Jarth",
@@ -76,6 +82,7 @@
     "sdesc": "Book: A Dance in Fire, v5",
     "ldesc": "a book titled: A Dance in Fire, v5",
     "extra": {
+      "language": "tamrielic",
       "category": "fiction",
       "date": "7 Frost Fall, 3E 397",
       "author": "Waughin Jarth",
@@ -88,6 +95,7 @@
     "sdesc": "Book: A Dance in Fire, v6",
     "ldesc": "a book titled: A Dance in Fire, v6",
     "extra": {
+      "language": "tamrielic",
       "category": "fiction",
       "date": "7 Frost Fall, 3E 397",
       "author": "Waughin Jarth",
@@ -100,6 +108,7 @@
     "sdesc": "Book: A Dance in Fire, v7",
     "ldesc": "a book titled: A Dance in Fire, v7",
     "extra": {
+      "language": "tamrielic",
       "category": "fiction",
       "date": "13 Sun's Dusk, 3E 397",
       "author": "Waughin Jarth",
@@ -112,6 +121,7 @@
     "sdesc": "Note: To My Dear Friend",
     "ldesc": "a note titled: To My Dear Friend",
     "extra": {
+      "language": "tamrielic",
       "category": "notes",
       "date": "Unknown",
       "author": " Rada al-Saran",
@@ -124,11 +134,25 @@
     "sdesc": "Book: Crafting High Elf Style",
     "ldesc": "a book titled: Crafting High Elf Stle",
     "extra": {
+      "language": "tamrielic",
       "category": "research",
       "date": "2E418-431",
       "author": "Doctor Alfidia Lupus ",
       "title": "Crafting: High Elf Style",
       "contents": " Being notes by Doctor Alfidia Lupus for a series of pamphlets on the major cultural styles of Tamriel\n \n(Dr. Lupus was Imperial Ethnographer for Potentate Savirien-Chorak from 2E 418 to 431)\n \n\nThis series will provide a survey-level overview of the symbolic and stylistic hallmarks that distinguish the major cultures of Tamriel in their arts and crafts. Our focus will be on the portable durable goods of the various races, that is, their clothing, ornamentation, arms, and armor, as these reliably reflect personal cultural expressions. When completed, this series will support the curricula of the introductory ethnographic courses at the Arcane University.\n\nWe begin with the High Elves, the reclusive Altmer of the Summerset Isles, because the argument can be made (and often is, by Elves) that civilization in Tamriel was brought here by the Aldmeri of Old Ehlnofey. Insofar as the Elves of Summerset consciously strive to maintain the heritage of their Merethic ancestors, their traditions are certainly closer to those of pre-First Era society than any other.\n\nThis is not to say that, in the thousands of years since the arrival of the first Aldmeri, the culture of the High Elves has not deviated and ramified in many ways, because it has. It is simply that, by viewing modern Altmeri culture with the eye of a historian, we can perceive the outlines of its origins.\n\nIn this initial effort I have benefited from the advice of the celebrated Morian Zenas, Professor of Transliminal Studies here at Arcane University. Professor Zenas is the only member of our faculty who has visited the Summerset Isles, specifically Artaeum, with a brief stop in transit at Dusk.\n\nI was a bit intimidated when I first visited Professor Zenas in his house in the Cathedral District, but I found him a charming old gentleman, undeserving of his reputation for peevishness. Morian (for so he asked me to address him) bade me stay for dinner, which was served by his laconic Argonian apprentice, Seif-ij Hidja.\n\nAs Morian explained, the High Elves strive for a simple elegance in their designs, in which flowing lines reflect graceful forms from the natural world. More-or-less abstract birds, flowers, and sea shells are common motifs, rendered in rich but muted colors. Armor will be tooled or embossed to represent scales or feathers, and even heavy cuirasses and helmets may sport stylized wings or beaks.\n\nMetallic items are often accented with a translucent greenish material called \"glass.\" This is a sort of jade-like obsidian that Elven smiths have learned to work by secretive processes known only to the Altmer. Though rigid enough to take a superb edge when cool, glass can be made malleable enough to assume almost any form, and the High Elves use it extensively on ornamental arms and armor.\n\nAfter dinner, over snifters of Cyrodilic Brandy, Morian asked me all sorts of questions about my motifs project, and about myself. It was really very flattering. I must find an excuse to talk with him again."
+    }
+  },
+  {
+    "key": "crafting orc style",
+    "sdesc": "Book: Crafting Orc Style",
+    "ldesc": "a book titled: Crafting Orc Style",
+    "extra": {
+      "language": "orcish",
+      "category": "research",
+      "date": "2E418-431",
+      "author": "Doctor Alfidia Lupus ",
+      "title": "Crafting: Orc Style",
+      "contents": "Being notes by Doctor Alfidia Lupus for a series of pamphlets on the major cultural styles of Tamriel\n\n(Dr. Lupus was Imperial Ethnographer for Potentate Savirien-Chorak from 2E 418 to 431)\n\nI saw Divayth last night, briefly, at the Torchbug. I told him I truly cared for him, but that Morian had won my heart. He clouded over like a storm in the Jeralls, but then took a deep breath and managed a dignified exit. Oh, I do hope he'll be all right.\n\nThough I confess, I'm more worried about Morian. His experiments with Divayth are reaching their climax, when Morian will open a gate and personally make a visit to Oblivion. He says he's going to try for Azura's realm of Moonshadow, as he says that ought to be relatively safe. Safe! I'm as anxious as a scrib on a griddle. I dearly want to see Morian before he goes, but he says he must concentrate on mastering the ritual and can't be interrupted.\n\nHe did send a note by Seif-ij saying I should take his place representing the University at the Potentate's state dinner for the new envoy from Orsinium. He must really be busy to skip that event, as I know he was keen to go. Well, all the better for my Racial Motifs project, I suppose\u2014work, work, work will take my mind off my worries!\n\nThe new province of Orsinium doesn't have an embassy yet, so for the dinner the Potentate's snake-staff set up a row of pavilions on the grounds of the White-Gold Tower. To honor Envoy Thuggikh they were all decorated with authentic Orcish paraphernalia imported from Wrothgar, so I got out my journal and took notes during the interminable speeches.\n\nStrange to think that a folk as brutish as the Orcs seem to be could design and create objects of such sophistication! Of course they're known across Tamriel as fine armorers, but I'd always assumed that was due to their great strength rather than skill. A glance at their arms and armor was enough to show me how wrong my assumption had been. Though never ornate or over-embellished, their metalwork, though even simpler and more utilitarian than the Nords', displays a deep understanding of the laws of proportion, symmetry, and harmonic congruity. An Orcish sword may be a weapon of violence, but to contemplate the dynamic sweep of its blade, visually balanced by its heavy but shapely hilt, obviously molded to flow into the hand of its wielder\u2014why, it's almost restful and reassuring.\n\nAfterwards at the reception I was happy to see somebody I recognized in Lady Opel the Arch-Magister. She greeted me warmly and, over some West Weald wine and Eidar cheese, asked me how things were going with me and my pair of wizards. I told her I thought I'd made a terrible muddle of things, but she assured me everything would work out in the end. She said she's known Morian for ever so long, and he's really quite sensible beneath his fussy old-man ways. She was glad he'd found someone as clever as I to keep him from completely vanishing into his laboratory.\n\nBut as far as I'm concerned, that's exactly what he's done. I think I'll go talk to Seif-ij again\u2014maybe he can help me get through to Morian before he leaves."
     }
   }
 ]
