@@ -48,6 +48,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(info.CmdInventory())
         self.add(info.CmdEquipment())
         self.add(info.CmdTime())
+        self.add(info.CmdWho())
 
         self.add(act_item.CmdPut())
         self.add(act_item.CmdGet())
@@ -114,7 +115,8 @@ class GodCmdSet(CmdSet):
     def at_cmdset_creation(self):
         self.add(wiz.CmdDBDump())
         self.add(wiz.CmdBookLoad())
-        self.add(CmdDBLoad())
+        self.add(wiz.CmdDBLoad())
+        self.add(wiz.CmdLanguageUpdate())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

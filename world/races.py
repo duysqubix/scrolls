@@ -2,8 +2,8 @@
 Holds information regarding races of the scrolls
 """
 
+from world.languages import LanguageSkill, Tamrielic, Orcish, Aldmeris
 from world.attributes import Attribute
-from typeclasses.scripts import Script
 from world.traits import *
 from world.characteristics import StrChar, EndChar, AgiChar, IntChar, WpChar, PrcChar, PrsChar
 
@@ -23,6 +23,8 @@ class Race:
         self.powers = []
         self.racials = []  # this is traits, but only race specific
         self.upgradable_skills = []
+        self.known_languages = [Tamrielic.__lang_name__
+                                ]  # languages here the player knows 100%
         self.init()
 
     def __str__(self):
@@ -103,6 +105,8 @@ class Altmer(Race):
             'alchemy', 'alteration', 'conjuration', 'destruction',
             'enchanting', 'illusion', 'mysticism', 'restoration'
         ])
+
+        self.known_languages.extend([Aldmeris.__lang_name__])
 
 
 class Argonian(Race):
@@ -385,6 +389,7 @@ class Orsimer(Race):
                             (ResistanceTrait, 1, 'magic')])
 
         self.upgradable_skills.extend(['smithing'])
+        self.known_languages.extend([Orcish.__lang_name__])
 
 
 class Redguard(Race):
@@ -445,3 +450,8 @@ def change_race(caller, race):
     caller.traits.add(*race.racials)
 
     caller.attrs.race = Attribute(race.name, value=race)
+
+    # add known languages of race
+    caller.languages.clear()  # reset languages to 0.0
+    for language in race.known_languages:
+        setattr(caller.languages, language, LanguageSkill.master)

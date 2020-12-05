@@ -1,4 +1,5 @@
 from json import dump
+from world.languages import VALID_LANGUAGES
 from world.utils.db import search_objdb
 from commands.act_item import CmdWear
 from commands.act_movement import CmdDown, CmdEast, CmdNorth, CmdSouth, CmdUp, CmdWest
@@ -24,6 +25,30 @@ __all__ = [
     "CmdSpawn", "CmdCharacterGen", "CmdWizInvis", "CmdOEdit", "CmdOList",
     "CmdLoad"
 ]
+
+
+class CmdLanguageUpdate(Command):
+    """
+    Update language system.
+
+    Usage:
+        language_update [force]
+    """
+
+    key = 'language_update'
+    locks = f"attr_ge(level.value, {GOD_LVL})"
+
+    def func(self):
+        ch = self.caller
+        args = self.args.strip()
+        force = False
+        if match_string('force', args):
+            force = True
+
+        for cls in VALID_LANGUAGES.values():
+            lang = cls()
+            ch.msg(f"Updating: {lang.__lang_name__}")
+            lang.add(override=force)  # add langauge and overwrite
 
 
 class CmdDBDump(Command):
@@ -275,7 +300,7 @@ class CmdOList(Command):
                                       border='incols')
             objs = search_objdb('all')
 
-            for vnum, obj in objs.items():
+            for vnum, obj in sorted(objs.items()):
                 data = objdb[vnum]
                 vnum = raw_ansi(f"[|G{vnum:<4}|n]")
                 sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
@@ -308,7 +333,7 @@ class CmdOList(Command):
             objs = search_objdb(criteria, **{extra_field: extra_criteria})
         else:
             objs = search_objdb(criteria)
-        for vnum, obj in objs.items():
+        for vnum, obj in sorted(objs.items()):
             vnum = raw_ansi(f"[|G{vnum:<4}|n]")
             sdesc = crop(raw_ansi(obj['sdesc']), width=50) or ''
             table.add_row(vnum, sdesc, f"{obj['type']}")

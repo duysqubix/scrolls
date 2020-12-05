@@ -232,7 +232,8 @@ def finish(caller, **kwargs):
 
     # set gender
     caller.attrs.gender = Attribute('gender', kwargs['gender'])
-    caller.msg(kwargs)
+
+    # caller.msg(kwargs)
     caller.attrs.update()
     caller.full_restore()
     return None, None

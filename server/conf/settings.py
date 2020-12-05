@@ -51,6 +51,11 @@ GLOBAL_SCRIPTS = {
         'persistent': True,
         'desc': 'storage for room data'
     },
+    'trigdb': {
+        'typeclass': 'typeclasses.scripts.EntityDB',
+        'persistent': True,
+        'desc': 'storage for triggers'
+    },
     'zonedb': {
         'typeclass': 'typeclasses.scripts.EntityDB',
         'persistent': True,

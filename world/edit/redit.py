@@ -3,7 +3,6 @@ online editting of room
 """
 
 import re, copy
-from typing import final
 from evennia.utils.utils import wrap
 from typeclasses.rooms.rooms import VALID_ROOM_FLAGS, VALID_ROOM_SECTORS, get_room
 from world.utils.utils import clear_terminal, has_zone, match_name, match_string, mxp_string, next_available_rvnum, room_exists

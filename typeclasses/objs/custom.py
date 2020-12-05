@@ -25,7 +25,8 @@ class Book(Object):
         "date": "",
         "author": "",
         "title": "",
-        "contents": ""
+        "contents": "",
+        "language": "tamrielic"
     }
 
 

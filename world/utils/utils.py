@@ -1,11 +1,17 @@
 import random
-from typeclasses.objs.object import VALID_OBJ_APPLIES
+import re
 from evennia import GLOBAL_SCRIPTS, create_object
+from evennia.contrib.rplanguage import obfuscate_language
+from evennia.utils import make_iter
+
+from typeclasses.objs.object import VALID_OBJ_APPLIES
 from world.globals import BUILDER_LVL, BOOK_CATEGORIES
 from world.utils.db import search_objdb
 from evennia.utils.utils import inherits_from, string_partial_matching
 from world.conditions import DetectHidden, DetectInvis, Hidden, HolyLight, Invisible, Sleeping, get_condition
-from evennia.utils import make_iter
+
+_CAP_PATTERN = re.compile(r'((?<=[\.\?!\n]\s)(\w+)|(^\w+))')
+_LANG_TAGS = re.compile('\>(.*?)\<', re.I)
 
 
 def highlight_words(block, key_targets, color_codes):
@@ -19,6 +25,63 @@ def highlight_words(block, key_targets, color_codes):
         block.replace(key, f"{color_codes[idx]}{key}|n")
     return block
 
+
+def capitalize_sentence(string):
+    global _CAP_PATTERN
+    return _CAP_PATTERN.sub(lambda x: x.group().capitalize(), string)
+
+
+def rplanguage_parse_string(ch, string):
+    """
+    Obfuscates string based on keys that set the type of language
+    and the skill of the player corresponding to that language.
+
+    ex:
+    x = ">aldmerish< This is something only one skilled in aldmerish can read"
+
+    # ch.languages.aldmerish.level == 0.5
+    new_string = obfuscate_string(ch, x)
+
+    new_string == "This is eyjhuadh only one yzychy in ygyshy can read"
+
+
+    *** Important ***
+    If you plan on using this function, it is import that string supplied
+    must have >[language]< first then contents in order for this function to parse correctly.
+    """
+    global _LANG_TAGS
+
+    chunks = re.split(_LANG_TAGS, string)[1:]
+    if not chunks:
+        # no tags found for a language
+        return string
+
+    if len(chunks) % 2 != 0:
+        raise ValueError("error in regex on rplanguage tag system.")
+
+    tmp = 0
+    languages = dict()
+    for i in range(0, len(chunks), 2):
+        languages[f"{chunks[i]}_{tmp}"] = chunks[i + 1].lstrip()
+        tmp += 1
+
+    new_string = []
+    for lang, text in languages.items():
+        lang = lang.split('_')[0]
+        lang_skill = ch.languages.get(lang)
+        if not lang_skill:
+            # language doesn't exist (tag is wrong or language isn't implemented)
+            new_string.append(text)
+            continue
+        lang_skill = lang_skill.level
+        obfuscated_string = obfuscate_language(text,
+                                               level=1.0 - lang_skill,
+                                               language=lang)
+        new_string.append(obfuscated_string)
+
+    translated_string = "".join(new_string)
+    #return capitalize_sentence(translated_string)
+    return translated_string
 
 def apply_obj_effects(ch, obj):
     """
