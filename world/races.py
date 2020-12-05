@@ -2,7 +2,7 @@
 Holds information regarding races of the scrolls
 """
 
-from world.languages import LanguageSkill, Tamrielic, Orcish
+from world.languages import LanguageSkill, Tamrielic, Orcish, Aldmeris
 from world.attributes import Attribute
 from world.traits import *
 from world.characteristics import StrChar, EndChar, AgiChar, IntChar, WpChar, PrcChar, PrsChar
@@ -105,6 +105,8 @@ class Altmer(Race):
             'alchemy', 'alteration', 'conjuration', 'destruction',
             'enchanting', 'illusion', 'mysticism', 'restoration'
         ])
+
+        self.known_languages.extend([Aldmeris.__lang_name__])
 
 
 class Argonian(Race):
@@ -450,5 +452,6 @@ def change_race(caller, race):
     caller.attrs.race = Attribute(race.name, value=race)
 
     # add known languages of race
+    caller.languages.clear()  # reset languages to 0.0
     for language in race.known_languages:
         setattr(caller.languages, language, LanguageSkill.master)
