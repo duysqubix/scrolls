@@ -1,8 +1,6 @@
 """
 on-line editing of objects
 """
-import copy
-from .model import _EditMode
 from typeclasses.objs.object import VALID_OBJ_APPLIES, VALID_OBJ_TAGS
 from evennia.utils.utils import inherits_from
 from typeclasses.objs.custom import CUSTOM_OBJS
@@ -10,6 +8,8 @@ from evennia import GLOBAL_SCRIPTS
 from evennia import CmdSet, EvEditor, EvMenu
 from commands.command import Command
 from evennia.commands.default.help import CmdHelp
+from .model import _EditMode
+
 from world.globals import DEFAULT_OBJ_STRUCT
 _OEDIT_PROMPT = "(|goedit|n) > "
 

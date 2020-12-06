@@ -77,6 +77,7 @@ class BuilderCmdSet(CmdSet):
         self.add(wiz.CmdLoad())
         self.add(wiz.CmdOEdit())
         self.add(wiz.CmdREdit())
+        self.add(wiz.CmdMEdit())
         self.add(wiz.CmdRestore())
         self.add(wiz.CmdOList())
         self.add(wiz.CmdRList())

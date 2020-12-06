@@ -1,6 +1,7 @@
 from json import dump
+from world.edit.medit import MEditMode
 from world.languages import VALID_LANGUAGES
-from world.utils.db import search_objdb
+from world.utils.db import search_mobdb, search_objdb
 from commands.act_item import CmdWear
 from commands.act_movement import CmdDown, CmdEast, CmdNorth, CmdSouth, CmdUp, CmdWest
 import json
@@ -35,13 +36,13 @@ class CmdWizHelp(Command):
     Usage:
         wizhelp
     """
-    
+
     key = 'wizhelp'
     locks = f"attr_ge(level.value, {BUILDER_LVL}"
 
     def func(self):
         ch = self.caller
-        
+
         cmdsets = ch.cmdset.all()
 
         table = self.styled_table("Staff Group", "Commands", border='cells')
@@ -52,14 +53,13 @@ class CmdWizHelp(Command):
             if cmdset.key == 'DefaultCharacter':
                 continue
 
-            commands = list_to_string([f"|c{x}|n" for x in cmdset.commands])
+            commands = list_to_string([
+                f"|c{x}|n"
+                for x in sorted(cmdset.commands, key=lambda x: x.key)
+            ])
             table.add_row(cmdset_name, wrap(commands, width=40))
             start_level -= 1
-        ch.msg(str(table)) 
-
-
-
-
+        ch.msg(str(table))
 
 
 class CmdLanguageUpdate(Command):
@@ -653,7 +653,8 @@ class CmdOEdit(Command):
     Generic building command.
 
     Syntax:
-      oedit <vnum/name>
+      oedit <vnum>
+      oedit new
 
     Open a building menu to edit the specified object.  This menu allows to
     change the object's key and description.
@@ -690,6 +691,63 @@ class CmdOEdit(Command):
 
         ch.ndb._oedit = OEditMode(self, vnum)
         ch.cmdset.add('world.edit.oedit.OEditCmdSet')
+        ch.execute_cmd("look")
+
+
+class CmdMEdit(Command):
+    """
+    Generic building command for monsters.
+
+    Syntax:
+      medit <vnum>
+      medit new
+
+    Open a building menu to edit the specified monster.  
+
+    Examples:
+      medit new    # creates a new mob with the next available vnum
+      medit 1231    #edit of mob vnum:1231
+
+    """
+
+    key = "medit"
+    locks = f"attr_ge(level.value, {BUILDER_LVL})"
+
+    def func(self):
+        ch = self.caller
+
+        if not ch.attributes.has('assigned_zone'):
+            self.msg("You must be assigned a zone before you can edit mobs.")
+            return
+
+        if not self.args.strip():
+            self.msg("You must provide vnum to edit or `new`")
+            return
+
+        mobdb = GLOBAL_SCRIPTS.mobdb
+
+        if 'new' in self.args.lower():
+            if not mobdb.vnum.keys():
+                vnum = 1
+            else:
+                vnum = max(mobdb.vnum.keys()) + 1
+        else:
+            vnum = self.args
+            try:
+                vnum = int(vnum)
+            except ValueError:
+                ch.msg("you must supply a valid vnum")
+                return
+            mob = search_mobdb(vnum)
+            if mob:
+                # check if you can edit this mob (has to be in same zone)
+                ch.msg(mob)
+                if mob[vnum]['zone'] != has_zone(ch):
+                    ch.msg("You don't have permissions to edit this mob. ")
+                    return
+
+        ch.ndb._medit = MEditMode(ch, vnum)
+        ch.cmdset.add('world.edit.medit.MEditCmdSet')
         ch.execute_cmd("look")
 
 

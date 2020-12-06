@@ -56,7 +56,7 @@ class _EditMode:
     def init(self):
         pass
 
-    def save(self, override=False):
+    def save(self, override=False, bypass_checks=False):
         raise NotImplementedError()
 
     def summarize(self):

@@ -1,12 +1,26 @@
 """
 Global variables and constants used in mud
 """
+from enum import IntEnum
 
 GOD_LVL = 205
 WIZ_LVL = 204
 IMM_LVL = 203
 BUILDER_LVL = 202
 HERO_LVL = 201
+
+DEFAULT_MOB_STRUCT = {
+    "key": "mob unfinished",
+    "sdesc": "the unfinished mob",
+    "ldesc": "An unfinished mob stands here",
+    "edesc": "It looks unfinished",
+    "position": "standing",
+    "attack": "hit",
+    "flags": [],
+    "applies": [],
+    "zone": "null",
+    "stats": None  # default, holds an empty instance of MobStat class
+}
 
 DEFAULT_OBJ_STRUCT = {
     "key": "an unfinshed object",
@@ -58,9 +72,29 @@ DEFAULT_TRIG_STRUCT = {
 
 DAM_TYPES = {
     "physical": {
-        "hit", "sting", "whip", "slash", "bite", "bludgeon", "crush", "pound",
-        "claw", "maul", "blast", "punch", "thrash", "pierce", "scratch",
-        "peck", "stab", "slap", "smash", "thwack", "claw", "cleave", "grep", ""
+        "hit",
+        "sting",
+        "whip",
+        "slash",
+        "bite",
+        "bludgeon",
+        "crush",
+        "pound",
+        "claw",
+        "maul",
+        "blast",
+        "punch",
+        "thrash",
+        "pierce",
+        "scratch",
+        "peck",
+        "stab",
+        "slap",
+        "smash",
+        "thwack",
+        "claw",
+        "cleave",
+        "grep",
     },
     "magical": {
         "acidic", "chill", "freezing", "magic", "wrath", "flame",
@@ -71,6 +105,7 @@ DAM_TYPES = {
 BOOK_CATEGORIES = ['fiction', 'religious', 'research', 'notes']
 
 VALID_DIRECTIONS = ('north', 'south', 'east', 'west', 'up', 'down')
+
 OPPOSITE_DIRECTION = {
     'north': 'south',
     'south': 'north',
@@ -79,6 +114,21 @@ OPPOSITE_DIRECTION = {
     'up': 'down',
     'down': 'up'
 }
+
+
+class Positions(IntEnum):
+    Dead = 0
+    MortallyWounded = 1
+    Incapacitated = 2
+    Stunned = 3
+    Sleeping = 4
+    Resting = 5
+    Sitting = 6
+    Fighting = 7
+    Standing = 8
+
+    def members():
+        return list(reversed(Positions._member_map_.keys()))
 
 
 class _WearLocation:
