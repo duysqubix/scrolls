@@ -70,7 +70,7 @@ class BuilderCmdSet(CmdSet):
     """
     The command sets for builders
     """
-    key = "DefaultBuilder"
+    key = "Builder"
 
     def at_cmdset_creation(self):
         self.add(wiz.CmdCharacterGen())
@@ -83,13 +83,14 @@ class BuilderCmdSet(CmdSet):
         self.add(wiz.CmdZList())
         self.add(wiz.CmdHolyLight())
         self.add(wiz.CmdGoto())
+        self.add(wiz.CmdWizHelp)
 
 
 class ImmCmdSet(CmdSet):
     """
     command sets for immortals
     """
-    key = "DefaultImmortal"
+    key = "Immortal"
 
     def at_cmdset_creation(self):
         self.add(wiz.CmdPurge())
@@ -99,7 +100,7 @@ class WizCmdSet(CmdSet):
     """
     commands for wizards
     """
-    key = "DefaultWizard"
+    key = "Wizard"
 
     def at_cmdset_creation(self):
         self.add(wiz.CmdZoneSet())
@@ -110,7 +111,7 @@ class GodCmdSet(CmdSet):
     """
     commands for super user only
     """
-    key = "DefaultGod"
+    key = "God"
 
     def at_cmdset_creation(self):
         self.add(wiz.CmdDBDump())

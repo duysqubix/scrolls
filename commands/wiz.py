@@ -8,7 +8,7 @@ import pathlib
 from world.edit.zedit import ZEditMode
 from world.edit.redit import REditMode
 from typeclasses.objs.custom import CUSTOM_OBJS
-from evennia.utils.utils import dedent, inherits_from, make_iter
+from evennia.utils.utils import dedent, inherits_from, make_iter, wrap
 from world.edit.oedit import OEditMode
 from world.utils.utils import delete_contents, has_zone, is_invis, is_wiz, match_string, mxp_string
 from world.conditions import HolyLight, get_condition
@@ -25,6 +25,41 @@ __all__ = [
     "CmdSpawn", "CmdCharacterGen", "CmdWizInvis", "CmdOEdit", "CmdOList",
     "CmdLoad"
 ]
+
+
+class CmdWizHelp(Command):
+    """
+    Shows available commands for wizards
+    categorized by different wiz levels.
+
+    Usage:
+        wizhelp
+    """
+    
+    key = 'wizhelp'
+    locks = f"attr_ge(level.value, {BUILDER_LVL}"
+
+    def func(self):
+        ch = self.caller
+        
+        cmdsets = ch.cmdset.all()
+
+        table = self.styled_table("Staff Group", "Commands", border='cells')
+        msg = ""
+        start_level = GOD_LVL
+        for cmdset in reversed(cmdsets):
+            cmdset_name = f"{cmdset.key} ({start_level})"
+            if cmdset.key == 'DefaultCharacter':
+                continue
+
+            commands = list_to_string([f"|c{x}|n" for x in cmdset.commands])
+            table.add_row(cmdset_name, wrap(commands, width=40))
+            start_level -= 1
+        ch.msg(str(table)) 
+
+
+
+
 
 
 class CmdLanguageUpdate(Command):
