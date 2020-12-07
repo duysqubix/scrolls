@@ -1,25 +1,29 @@
-from json import dump
-from world.edit.medit import MEditMode
-from world.languages import VALID_LANGUAGES
-from world.utils.db import search_mobdb, search_objdb
-from commands.act_item import CmdWear
-from commands.act_movement import CmdDown, CmdEast, CmdNorth, CmdSouth, CmdUp, CmdWest
+import sys, time
 import json
 import pathlib
+import traceback
+
+from evennia import EvMenu, create_object, search_object, GLOBAL_SCRIPTS, EvEditor
+from evennia.commands.default.help import COMMAND_DEFAULT_CLASS
+from evennia.commands.default.system import EvenniaPythonConsole
+from evennia.utils import crop, list_to_string, inherits_from
+from evennia.utils.ansi import raw as raw_ansi
+from evennia.utils.utils import make_iter, wrap
+
+from world.edit.medit import MEditMode
+from world.languages import VALID_LANGUAGES
+from world.utils.db import search_mobdb, search_objdb, search_roomdb, search_zonedb
+from commands.act_movement import CmdDown, CmdEast, CmdNorth, CmdSouth, CmdUp, CmdWest
 from world.edit.zedit import ZEditMode
 from world.edit.redit import REditMode
 from typeclasses.objs.custom import CUSTOM_OBJS
-from evennia.utils.utils import dedent, inherits_from, make_iter, wrap
 from world.edit.oedit import OEditMode
 from world.utils.utils import delete_contents, has_zone, is_invis, is_wiz, match_string, mxp_string
 from world.conditions import HolyLight, get_condition
 from world.utils.act import Announce, act
-from evennia import EvMenu, create_object, search_object
 from commands.command import Command
 from world.globals import BUILDER_LVL, GOD_LVL, VALID_DIRECTIONS, WIZ_LVL, IMM_LVL
-from evennia import GLOBAL_SCRIPTS
-from evennia.utils import crop, list_to_string
-from evennia.utils.ansi import raw as raw_ansi
+
 from server.conf.settings import BOOK_JSON
 
 __all__ = [
@@ -283,20 +287,29 @@ class CmdLoad(Command):
             ch.msg("invalid vnum number")
             return
 
-        # check to see if vnum exists
-        if vnum not in GLOBAL_SCRIPTS.objdb.vnum.keys():
-            ch.msg(f"that {obj_type}:{vnum} does not exist")
-            return
-        obj_bp = GLOBAL_SCRIPTS.objdb.vnum[vnum]
-        # create instance of object and either put in room
-        obj_type = CUSTOM_OBJS[obj_bp['type']]
-        obj = create_object(obj_type, key=vnum)
-        obj.move_to(ch.location)
-        act_msg = "$n motions $s hands around and $e creates"\
-            f" |G{obj.db.sdesc}|n"
-        act(act_msg, False, False, ch, None, None, Announce.ToRoom)
-        act(f"You create |G{obj.db.sdesc}|n", False, False, ch, None, None,
-            Announce.ToChar)
+        if obj_type == 'obj':
+            # check to see if vnum exists
+            if vnum not in GLOBAL_SCRIPTS.objdb.vnum.keys():
+                ch.msg(f"that {obj_type}:{vnum} does not exist")
+                return
+            obj_bp = GLOBAL_SCRIPTS.objdb.vnum[vnum]
+            # create instance of object and either put in room
+            obj_type = CUSTOM_OBJS[obj_bp['type']]
+            obj = create_object(obj_type, key=vnum)
+            obj.move_to(ch.location)
+            act_msg = "$n motions $s hands around and $e creates"\
+                f" |G{obj.db.sdesc}|n"
+            act(act_msg, False, False, ch, None, None, Announce.ToRoom)
+            act(f"You create |G{obj.db.sdesc}|n", False, False, ch, None, None,
+                Announce.ToChar)
+
+        elif obj_type == 'mob':
+            if vnum not in GLOBAL_SCRIPTS.mobdb.vnum.keys():
+                ch.msg(f"mob: {vnum} does not exist")
+                return
+            mob_bp = GLOBAL_SCRIPTS.mobdb.vnum[vnum]
+
+            ch.msg(f"You creating a mob: {vnum}")
 
 
 class CmdOList(Command):
@@ -309,10 +322,10 @@ class CmdOList(Command):
         olist type criteria <extra_field> <extra_criteria>
 
         ex:
-        olist                            # lists all objects in database
-        olist type book                  # lists all objects of type book
-        olist type equipment             # list all objects of type equipment
-        olist name fire                  # list all objects that have `fire` in sdesc
+        olist                 # lists all objects in database
+        olist type book       # lists all objects of type book
+        olist type equipment  # list all objects of type equipment
+        olist name fire       # list all objects named `fire`
         olist type book category fiction # list all books of fiction category
     """
     key = "olist"
@@ -358,16 +371,18 @@ class CmdOList(Command):
             ch.msg("Please supply either (type or name) to searchby")
             return
 
+        if type_ == 'name':
+            type_ = 'key'
         criteria = args[1]
 
         try:
             extra_field, extra_criteria = args[2], args[3]
+            objs = search_objdb(**{type_: criteria},
+                                extra=f"{extra_field} {extra_criteria}")
+
         except IndexError:
-            extra_field = extra_criteria = None
-        if extra_field and extra_criteria:
-            objs = search_objdb(criteria, **{extra_field: extra_criteria})
-        else:
-            objs = search_objdb(criteria)
+            objs = search_objdb(**{type_: criteria})
+
         for vnum, obj in sorted(objs.items()):
             vnum = raw_ansi(f"[|G{vnum:<4}|n]")
             sdesc = crop(raw_ansi(obj['sdesc']), width=50) or ''
@@ -375,6 +390,97 @@ class CmdOList(Command):
         msg = str(table)
         ch.msg(msg)
         return
+
+
+class CmdMList(Command):
+    """
+    Lists all available mobs set in mobdb
+
+    Usage:
+        mlist
+        mlist name <name>
+        mlist <criteria>
+        mlist <criteria> [condition] <criteria> ...
+
+        Valid conditions:
+            && - logical and
+            || - logical or
+            ! -  logical not
+
+        
+        Conditions are evaluated LHF style.
+        For example
+        mlist key puff || key dragon && position standing ! attack bite
+
+        will get monster that have either 'puff' or 'dragon' in 
+        their key and only if they are default standing, but does
+        contain the attack type of bite
+
+
+        ex:
+            #all mobs in db (defaults to zone only if editing a zone)
+            mlist       
+
+            # all mobs with name puff
+            mlist name puff    
+
+            #all mobs that have sneak,hidden added as default
+            mlist applies sneak,hidden      
+
+            
+            # mobs with nosummon,aggr flags AND sneak,hidden in applies
+            mlist flags nosummon,aggr && applies sneak,hidden
+
+
+            mlist position standing && attack hit || applies sneak,hidden ! flags nosummon
+
+
+    """
+    key = "mlist"
+    locks = f"attr_ge(level.value, {BUILDER_LVL})"
+
+    def func(self):
+        ch = self.caller
+        args = self.args.strip()
+        mobdb = dict(GLOBAL_SCRIPTS.mobdb.vnum)
+
+        if not mobdb:
+            ch.msg("There are no mobs within the game")
+            return
+
+        def show_table(dictionary):
+            table = self.styled_table("VNum",
+                                      "Description",
+                                      "Level",
+                                      border='incols')
+            for vnum, data in sorted(dictionary.items()):
+                vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
+                table.add_row(vnum, sdesc, data['level'])
+
+            ch.msg(table)
+
+        if not args:
+            mobs = search_mobdb('all')
+            show_table(mobs)
+            return
+
+        args = raw_ansi(args).split(' ')
+        if args[0] == 'name' and len(args) == 2:
+            mobs = search_mobdb(key=args[1])
+            show_table(mobs)
+            return
+        else:
+            if len(args) < 2:
+                ch.msg("Must supply a field:value for each criteria")
+                return
+            if len(args) == 2:
+                # process simple here
+                field, value = args
+                criteria = {field: value}
+                mobs = search_mobdb(**criteria)
+                show_table(mobs)
+                return
 
 
 class CmdZList(Command):
@@ -741,7 +847,6 @@ class CmdMEdit(Command):
             mob = search_mobdb(vnum)
             if mob:
                 # check if you can edit this mob (has to be in same zone)
-                ch.msg(mob)
                 if mob[vnum]['zone'] != has_zone(ch):
                     ch.msg("You don't have permissions to edit this mob. ")
                     return
@@ -1012,3 +1117,221 @@ class CmdCharacterGen(Command):
                cmdset_mergetype='Replace',
                cmdset_priority=1,
                auto_quit=True)
+
+
+############################### IN-GAME PYTHON COMMAND ################################3
+# Can't easily override some default actions on this without bringing some code over from base of evennia
+
+
+class CmdPy(COMMAND_DEFAULT_CLASS):
+    """
+    execute a snippet of python code
+    Usage:
+      py [cmd]
+      py/edit
+      py/time <cmd>
+      py/clientraw <cmd>
+      py/noecho
+    Switches:
+      time - output an approximate execution time for <cmd>
+      edit - open a code editor for multi-line code experimentation
+      clientraw - turn off all client-specific escaping. Note that this may
+        lead to different output depending on prototocol (such as angular brackets
+        being parsed as HTML in the webclient but not in telnet clients)
+      noecho - in Python console mode, turn off the input echo (e.g. if your client
+        does this for you already)
+    Without argument, open a Python console in-game. This is a full console,
+    accepting multi-line Python code for testing and debugging. Type `exit()` to
+    return to the game. If Evennia is reloaded, the console will be closed.
+    Enter a line of instruction after the 'py' command to execute it
+    immediately.  Separate multiple commands by ';' or open the code editor
+    using the /edit switch (all lines added in editor will be executed
+    immediately when closing or using the execute command in the editor).
+    A few variables are made available for convenience in order to offer access
+    to the system (you can import more at execution time).
+    Available variables in py environment:
+      self, me                   : caller
+      here                       : caller.location
+      evennia                    : the evennia API
+      inherits_from(obj, parent) : check object inheritance
+    You can explore The evennia API from inside the game by calling
+    the `__doc__` property on entities:
+        py evennia.__doc__
+        py evennia.managers.__doc__
+    |rNote: In the wrong hands this command is a severe security risk.  It
+    should only be accessible by trusted server admins/superusers.|n
+    """
+
+    key = "py"
+    aliases = ["!"]
+    switch_options = ("time", "edit", "clientraw", "noecho")
+    locks = "cmd:perm(py) or perm(Developer)"
+    help_category = "System"
+
+    def func(self):
+        """hook function"""
+
+        caller = self.caller
+        pycode = self.args
+
+        noecho = "noecho" in self.switches
+
+        if "edit" in self.switches:
+            caller.db._py_measure_time = "time" in self.switches
+            caller.db._py_clientraw = "clientraw" in self.switches
+            EvEditor(
+                self.caller,
+                loadfunc=_py_load,
+                savefunc=_py_code,
+                quitfunc=_py_quit,
+                key="Python exec: :w  or :!",
+                persistent=True,
+                codefunc=_py_code,
+            )
+            return
+
+        if not pycode:
+            # Run in interactive mode
+            console = EvenniaPythonConsole(self.caller)
+            banner = ("|gEvennia Interactive Python mode{echomode}\n"
+                      "Python {version} on {platform}".format(
+                          echomode=" (no echoing of prompts)"
+                          if noecho else "",
+                          version=sys.version,
+                          platform=sys.platform,
+                      ))
+            self.msg(banner)
+            line = ""
+            main_prompt = "|x[py mode - quit() to exit]|n"
+            prompt = main_prompt
+            while line.lower() not in ("exit", "exit()"):
+                try:
+                    line = yield (prompt)
+                    if noecho:
+                        prompt = "..." if console.push(line) else main_prompt
+                    else:
+                        prompt = line if console.push(
+                            line) else f"{line}\n{main_prompt}"
+                except SystemExit:
+                    break
+            self.msg("|gClosing the Python console.|n")
+            return
+
+        _run_code_snippet(
+            caller,
+            self.args,
+            measure_time="time" in self.switches,
+            client_raw="clientraw" in self.switches,
+        )
+
+
+def _evennia_local_vars(caller):
+    """Return Evennia local variables usable in the py command as a dictionary."""
+    import evennia
+
+    return {
+        "self": caller,
+        "me": caller,
+        "here": getattr(caller, "location", None),
+        "evennia": evennia,
+        "ev": evennia,
+        "inherits_from": inherits_from,
+        "search_objdb": search_objdb,
+        "search_mobdb": search_mobdb,
+        "search_zonedb": search_zonedb,
+        "search_roomdb": search_roomdb
+    }
+
+
+def _run_code_snippet(caller,
+                      pycode,
+                      mode="eval",
+                      measure_time=False,
+                      client_raw=False,
+                      show_input=True):
+    """
+    Run code and try to display information to the caller.
+    Args:
+        caller (Object): The caller.
+        pycode (str): The Python code to run.
+        measure_time (bool, optional): Should we measure the time of execution?
+        client_raw (bool, optional): Should we turn off all client-specific escaping?
+        show_input (bookl, optional): Should we display the input?
+    """
+    # Try to retrieve the session
+    session = caller
+    sessions = caller.sessions.all()
+
+    available_vars = _evennia_local_vars(caller)
+
+    if show_input:
+        for session in sessions:
+            try:
+                caller.msg(">>> %s" % pycode,
+                           session=session,
+                           options={"raw": True})
+            except TypeError:
+                caller.msg(">>> %s" % pycode, options={"raw": True})
+    # reroute standard output to game client console
+    old_stdout = sys.stdout
+    old_stderr = sys.stderr
+
+    try:
+
+        class FakeStd:
+            def __init__(self, caller):
+                self.caller = caller
+
+            def write(self, string):
+                self.caller.msg(string.rsplit("\n", 1)[0])
+
+        fake_std = FakeStd(caller)
+        sys.stdout = fake_std
+        sys.stderr = fake_std
+
+        try:
+            pycode_compiled = compile(pycode, "", mode)
+        except Exception:
+            mode = "exec"
+            pycode_compiled = compile(pycode, "", mode)
+
+        duration = ""
+        if measure_time:
+            t0 = time.time()
+            ret = eval(pycode_compiled, {}, available_vars)
+            t1 = time.time()
+            duration = " (runtime ~ %.4f ms)" % ((t1 - t0) * 1000)
+            caller.msg(duration)
+        else:
+            ret = eval(pycode_compiled, {}, available_vars)
+
+    except Exception:
+        errlist = traceback.format_exc().split("\n")
+        if len(errlist) > 4:
+            errlist = errlist[4:]
+        ret = "\n".join("%s" % line for line in errlist if line)
+    finally:
+        # return to old stdout
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
+
+    if ret is None:
+        return
+    elif isinstance(ret, tuple):
+        # we must convert here to allow msg to pass it (a tuple is confused
+        # with a outputfunc structure)
+        ret = str(ret)
+
+    for session in sessions:
+        try:
+            caller.msg(ret,
+                       session=session,
+                       options={
+                           "raw": True,
+                           "client_raw": client_raw
+                       })
+        except TypeError:
+            caller.msg(ret, options={"raw": True, "client_raw": client_raw})
+
+
+#########################################################################################

@@ -75,18 +75,18 @@ class REditMode(_EditMode):
         msg = f"""
 ********Room Summary*******
         {status}
-VNUM: [{self.vnum}]      ZONE:[|m{self.obj['zone']}|n]
+|GVNUM|n: [{self.vnum}]      |GZONE|n:[|m{self.obj['zone']}|n]
 
-name    : |y{self.obj['name']}|n
-desc    : |y{self.obj['desc']}|n
-flags   : 
-|y{room_flags}|n
+|Gname|n    : {self.obj['name']}
+|Gdesc|n    : {self.obj['desc']}
+|Gflags|n   : 
+{room_flags}
 
-sector  : |m{sector}|n, [{sector_symbol}]
-exits  : 
+|Gsector|n  : |m{sector}|n, [{sector_symbol}]
+|Gexits|n  : 
 {exit_summary}
 
-edesc   : 
+|Gedesc|n   : 
 {edesc_msg}
 ----------------Extras---------------------
 """

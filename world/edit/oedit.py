@@ -86,24 +86,24 @@ class OEditMode(_EditMode):
         msg = f"""
 ********Obj Summary*******
 
-VNUM: [{self.vnum}]
+|GVNUM|n: [{self.vnum}]
 
-key    : |y{self.obj['key']}|n
-sdesc  : |y{self.obj['sdesc']}|n
-ldesc  : 
-|y{self._cut_long_text(self.obj['ldesc'])}|n
+|Gkey|n    : {self.obj['key']}
+|Gsdesc|n  : {self.obj['sdesc']}
+|Gldesc|n  : 
+{self._cut_long_text(self.obj['ldesc'])}
 
-edesc  : {self._cut_long_text(self.obj['edesc'])}
-adesc  : {self.obj['adesc']}
-type   : {self.obj['type']}
-weight : {self.obj['weight']}
-cost   : {self.obj['cost']}
-level  : {self.obj['level']}
-applies: 
+|Gedesc|n  : {self._cut_long_text(self.obj['edesc'])}
+|Gadesc|n  : {self.obj['adesc']}
+|Gtype|n   : {self.obj['type']}
+|Gweight|n : {self.obj['weight']}
+|Gcost|n   : {self.obj['cost']}
+|Glevel|n  : {self.obj['level']}
+|Gapplies|n: 
 
 {applies}
 
-tags   : {", ".join(self.obj['tags'])}
+|Gtags|n   : {", ".join(self.obj['tags'])}
 ----------------Extras---------------------
 """
         self.caller.msg(self.obj['extra'])

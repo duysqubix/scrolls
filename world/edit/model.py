@@ -38,7 +38,7 @@ class _EditMode:
                             self.obj['extra'][efield] = evalue
             except:
                 caller.msg(
-                    f"<WARNING> entering {self.__prompt__} mode and custom_objs is not set. If this is for zedit, safely ignore"
+                    f"<WARNING> entering {self.__prompt__} mode and custom_objs is not set. If this is for zedit or medit, safely ignore"
                 )
 
         else:

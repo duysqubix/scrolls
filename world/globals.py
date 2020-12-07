@@ -19,6 +19,7 @@ DEFAULT_MOB_STRUCT = {
     "flags": [],
     "applies": [],
     "zone": "null",
+    "level": 0,
     "stats": None  # default, holds an empty instance of MobStat class
 }
 

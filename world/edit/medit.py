@@ -1,10 +1,11 @@
+from typeclasses.mobs.mob import VALID_MOB_APPLIES, VALID_MOB_FLAGS
 from evennia import CmdSet, Command, EvEditor, GLOBAL_SCRIPTS
 from evennia.commands.default.help import CmdHelp
 from evennia.utils.utils import crop, list_to_string, wrap
 from world.globals import DAM_TYPES, DEFAULT_MOB_STRUCT, Positions
 from world.edit.model import _EditMode
 
-_MEDIT_PROMPT = "(|ymedit|n))"
+_MEDIT_PROMPT = "(|ymedit|n)"
 
 
 class MEditMode(_EditMode):
@@ -39,6 +40,8 @@ class MEditMode(_EditMode):
                 # attack
                 # flags
                 # applies
+                # level
+                # self.obj['level'] = int(self.obj['level'])
                 # stats
                 pass
 
@@ -49,22 +52,22 @@ class MEditMode(_EditMode):
         msg = f"""
 ********Mob Summary*******
 
-VNUM: [{self.vnum}]      ZONE:[|r{self.obj['zone']}|n]
+|GVNUM|n: [{self.vnum}]      |GZONE|n:[|r{self.obj['zone']}|n]
 
-key    : |y{self.obj['key']}|n
-sdesc  : |y{self.obj['sdesc']}|n
-ldesc  : 
-|y{crop(self.obj['ldesc'])}|n
+|Gkey|n    : {self.obj['key']}
+|Gsdesc|n  : {self.obj['sdesc']}
+|Gldesc|n  : 
+{crop(self.obj['ldesc'])}
 
-edesc    : {crop(self.obj['edesc'])}
-position : {self.obj['position']}
-attack   : {self.obj['attack']}
-applies  : 
+|Gedesc|n    : 
+{crop(self.obj['edesc'])}
 
-{list_to_string(self.obj['applies'])}
-
-flags   : {list_to_string(self.obj['flags'])}
+|Gposition|n : {self.obj['position']}
+|Gattack|n   : {self.obj['attack']}
+|Gapplies|n  : {list_to_string(self.obj['applies'])}
+|Gflags|n    : {list_to_string(self.obj['flags'])}
 ----------------Stats---------------------
+Level: {self.obj['level']}
 """
 
         self.caller.msg(msg)
@@ -121,16 +124,31 @@ class Set(MEditCommand):
                 # here the user set the value of the supplied keyword
                 # directly in the field, set it and return
                 obj[keyword] = " ".join(args[1:]).strip()
-                ch.msg(f"{keyword} set.")
+                ch.msg(set_str)
             else:
                 # open eveditor
                 def save_func(_caller, buffer):
                     obj[keyword] = buffer
-                    ch.msg(f"{keyword} set.")
+                    ch.msg(set_str)
 
                 _ = EvEditor(ch,
                              loadfunc=(lambda _x: obj[keyword]),
                              savefunc=save_func)
+        elif keyword == 'level':
+            if len(args) > 1:
+                try:
+                    level = int(args[1].strip())
+                except:
+                    ch.msg("level must be a valid number")
+                    return
+                obj[keyword] = level
+                ch.msg(set_str)
+                return
+            else:
+                # reset level
+                obj[keyword] = 0
+                ch.msg(set_str)
+                return
         elif keyword == 'position':
             if len(args) > 1:
                 selected_position = args[1].strip()
@@ -169,6 +187,61 @@ class Set(MEditCommand):
                 table.add_row(wrap(dam_types, width=50))
 
                 ch.msg(str(table))
+                return
+
+        elif keyword == "flags":
+            if len(args) > 1:
+                selected_flags = [x.strip() for x in args[1:]]
+                for flag in selected_flags:
+                    if flag == 'clear':
+                        obj[keyword].clear()
+                        ch.msg("flags cleared")
+                        return
+                    if flag not in VALID_MOB_FLAGS:
+                        ch.msg("That is not a valid npc flag")
+                        continue
+
+                    if flag in obj[keyword]:
+                        ch.msg('removing flag')
+                        obj[keyword].remove(flag)
+                    else:
+                        obj[keyword].append(flag)
+                        ch.msg(set_str)
+                return
+            else:
+                # all flags
+                table = self.styled_table("Available NPC Flags")
+                flags = list_to_string(VALID_MOB_FLAGS)
+
+                table.add_row(wrap(flags, width=50))
+                ch.msg(table)
+                return
+
+        elif keyword == 'applies':
+            if len(args) > 1:
+                selected_applies = [x.strip() for x in args[1:]]
+                for apply in selected_applies:
+                    if apply == 'clear':
+                        obj[keyword].clear()
+                        ch.msg("affects cleared")
+                        return
+                    if apply not in VALID_MOB_APPLIES:
+                        ch.msg("That is not a valid npc affect")
+                        continue
+
+                    if apply in obj[keyword]:
+                        ch.msg('removing affect')
+                        obj[keyword].remove(apply)
+                    else:
+                        obj[keyword].append(apply)
+                        ch.msg(set_str)
+                return
+            else:
+                # list all available applies (conditions)
+                table = self.styled_table("Available NPC Affects")
+                affects = list_to_string(VALID_MOB_APPLIES)
+                table.add_row(wrap(affects, width=50))
+                ch.msg(table)
                 return
 
         # elif keyword in ('weight', 'cost', 'level'):
