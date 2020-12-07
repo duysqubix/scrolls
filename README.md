@@ -1,5 +1,6 @@
 # The Unofficial Elder Scrolls Mud
 
+
 Welcome, traveler, to the Unofficial Elder Scrolls Mud. A project that I am shocked hasn't been
 undertaken in the world of muds. This is an attempt to bring the world of Tamriel to the comfort of
 your terminal and/or client. Based roughly on the rules on [UESRPG][uesrpg] 3rd edition.
@@ -19,6 +20,10 @@ The game is currently in *pre-alpha* stage.
 
 The quickest way is to drop by and say hi on our [webclient][webclient_uri]
 or point your telnet client to __mud.scrollsmud.com 4040__
+
+## Contribution
+There are many ways to contribute to the project. If you would like to install this mud on your
+development environment, follow the steps highlighted in [contribution][contribute]
 
 
 
