@@ -8,6 +8,7 @@ creation commands.
 
 """
 import copy
+from world.utils.db import search_roomdb
 from evennia import DefaultCharacter, EvMenu, TICKER_HANDLER, search_object
 from evennia.utils.utils import inherits_from, lazy_property, make_iter
 
@@ -19,7 +20,7 @@ from world.gender import Gender
 from world.races import NoRace
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
-from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, Positions, WIZ_LVL, WEAR_LOCATIONS
+from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, Positions, START_LOCATION_VNUM, WIZ_LVL, WEAR_LOCATIONS
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
 from world.storagehandler import StorageHandler
@@ -392,12 +393,15 @@ class Character(DefaultCharacter):
                msg_receivers=None,
                **kwargs):
         mapping = {
-            'self': "You",
-            'object': self.name.capitalize() if is_pc(self) else self.db.sdesc
+            'self':
+            "You",
+            'object':
+            self.name.capitalize()
+            if is_pc(self) else self.db.sdesc.capitalize()
         }
-        msg_self = "{self} say, {speech}"
-        msg_location = "{object} says, {speech}"
-        msg_receivers = "{object} tells you, {speech}"
+        msg_self = "{self} say, |c{speech}|n"
+        msg_location = "{object} says, |c{speech}|n"
+        msg_receivers = "{object} tells you, |c{speech}|n"
         super().at_say(message=message,
                        msg_self=msg_self,
                        receivers=receivers,
@@ -431,8 +435,16 @@ class Character(DefaultCharacter):
             # set some vital things, if this is super users first login
             if self.is_superuser:
                 self.attrs.level.value = GOD_LVL
+
+                # load db into global scripts
                 self.execute_cmd('dbload all')
-                self.execute_cmd('goto 2')
+
+                # iterate through all rooms and create them if they dont' exist
+                rvnums = search_roomdb('all', return_keys=True)
+                for rvnum in rvnums:
+                    self.execute_cmd(f'goto {rvnum}')
+
+                self.execute_cmd('goto %s' % START_LOCATION_VNUM)
             #enter the chargen state
             EvMenu(self,
                    "world.chargen.gen",
@@ -528,6 +540,9 @@ class Character(DefaultCharacter):
     @lazy_property
     def languages(self):
         return LanguageHandler(self)
+
+    def full_title(self):
+        return f"{self.name.capitalize()}{self.attrs.title.value}"
 
     def get_prompt(self):
         self.attrs.update()

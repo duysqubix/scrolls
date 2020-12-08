@@ -9,6 +9,8 @@ IMM_LVL = 203
 BUILDER_LVL = 202
 HERO_LVL = 201
 
+START_LOCATION_VNUM = 2
+
 DEFAULT_MOB_STRUCT = {
     "key": "mob unfinished",
     "sdesc": "the unfinished mob",
