@@ -73,7 +73,8 @@ class CmdForce(Command):
 
         # force them
         ch.msg(f"You force {target_name} to `{cmd}`")
-
+        act(f"$n forces you to {cmd}", False, False, ch, None, target,
+            Announce.ToVict)
         target.execute_cmd(cmd)
         return
 
