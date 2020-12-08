@@ -76,12 +76,10 @@ class BuilderCmdSet(CmdSet):
     key = "Builder"
 
     def at_cmdset_creation(self):
-        self.add(wiz.CmdCharacterGen())
         self.add(wiz.CmdLoad())
         self.add(wiz.CmdOEdit())
         self.add(wiz.CmdREdit())
         self.add(wiz.CmdMEdit())
-        self.add(wiz.CmdRestore())
         self.add(wiz.CmdOList())
         self.add(wiz.CmdRList())
         self.add(wiz.CmdZList())
@@ -99,6 +97,8 @@ class ImmCmdSet(CmdSet):
 
     def at_cmdset_creation(self):
         self.add(wiz.CmdPurge())
+        self.add(wiz.CmdZoneSet())
+        self.add(wiz.CmdRestore())
 
 
 class WizCmdSet(CmdSet):
@@ -108,9 +108,9 @@ class WizCmdSet(CmdSet):
     key = "Wizard"
 
     def at_cmdset_creation(self):
-        self.add(wiz.CmdZoneSet())
         self.add(wiz.CmdZEdit())
         self.add(wiz.CmdForce())
+        self.add(wiz.CmdCharacterGen())
 
 
 class GodCmdSet(CmdSet):
