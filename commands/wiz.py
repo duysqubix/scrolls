@@ -9,7 +9,7 @@ from evennia.commands.default.help import COMMAND_DEFAULT_CLASS
 from evennia.commands.default.system import EvenniaPythonConsole
 from evennia.utils import crop, list_to_string, inherits_from
 from evennia.utils.ansi import raw as raw_ansi
-from evennia.utils.utils import make_iter, wrap
+from evennia.utils.utils import wrap
 
 from world.edit.medit import MEditMode
 from world.languages import VALID_LANGUAGES
@@ -19,18 +19,63 @@ from world.edit.zedit import ZEditMode
 from world.edit.redit import REditMode
 from typeclasses.objs.custom import CUSTOM_OBJS
 from world.edit.oedit import OEditMode
-from world.utils.utils import delete_contents, has_zone, is_invis, is_wiz, match_string, mxp_string
+from world.utils.utils import delete_contents, has_zone, is_invis, is_npc, is_pc, is_wiz, match_string
 from world.conditions import HolyLight, get_condition
 from world.utils.act import Announce, act
 from commands.command import Command
-from world.globals import BUILDER_LVL, GOD_LVL, VALID_DIRECTIONS, WIZ_LVL, IMM_LVL
+from world.globals import BUILDER_LVL, GOD_LVL, WIZ_LVL, IMM_LVL
 
-from server.conf.settings import BOOK_JSON
 
-__all__ = [
-    "CmdSpawn", "CmdCharacterGen", "CmdWizInvis", "CmdOEdit", "CmdOList",
-    "CmdLoad"
-]
+class CmdForce(Command):
+    """
+    Force an object to do your bidding.
+    Forces a pc/npc/obj to execute a command.
+    Must be in same room.
+
+    Usage:
+        force <mob/pc> [cmd]
+
+    Examples:
+        force tavis say hello there, travelers.
+        force puff emote picks his nose.
+        force tavis east #forces tavis to move east
+    """
+
+    key = 'force'
+    locks = f"attr_ge(level.value, {WIZ_LVL}"
+
+    def func(self):
+        ch = self.caller
+        args = self.args.strip().split()
+
+        if not args:
+            ch.msg("force whom?")
+            return
+
+        if len(args) < 2:
+            ch.msg("force whom to do what?")
+            return
+
+        target_name = args[0]
+        cmd = " ".join(args[1:])
+
+        target = None
+        for obj in ch.location.contents:
+            if is_npc(obj) and target_name in obj.db.key:
+                target = obj
+                break
+
+            elif is_pc(obj) and target_name in obj.name:
+                target = obj
+                break
+        if not target:
+            ch.msg("You can't find anyone to do your bidding.")
+
+        # force them
+        ch.msg(f"You force {target_name} to `{cmd}`")
+
+        target.execute_cmd(cmd)
+        return
 
 
 class CmdWizHelp(Command):

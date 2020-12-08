@@ -107,6 +107,7 @@ class WizCmdSet(CmdSet):
     def at_cmdset_creation(self):
         self.add(wiz.CmdZoneSet())
         self.add(wiz.CmdZEdit())
+        self.add(wiz.CmdForce())
 
 
 class GodCmdSet(CmdSet):

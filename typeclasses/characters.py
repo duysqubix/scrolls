@@ -8,9 +8,10 @@ creation commands.
 
 """
 import copy
+import re
 from world.conditions import HolyLight
 from world.utils.act import Announce, act
-from world.utils.utils import delete_contents, is_equippable, is_obj, is_wieldable, is_wielded, is_wiz, is_worn, apply_obj_effects, remove_obj_effects
+from world.utils.utils import can_see_obj, delete_contents, is_equippable, is_npc, is_obj, is_pc, is_pc_npc, is_wieldable, is_wielded, is_wiz, is_worn, apply_obj_effects, remove_obj_effects
 from world.gender import Gender
 from world.races import NoRace
 from world.attributes import Attribute, VitalAttribute
@@ -19,7 +20,7 @@ from evennia import DefaultCharacter, EvMenu, TICKER_HANDLER
 from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, WIZ_LVL, WEAR_LOCATIONS
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
-from evennia.utils.utils import inherits_from, lazy_property
+from evennia.utils.utils import inherits_from, lazy_property, make_iter
 from world.storagehandler import StorageHandler
 from world.languages import LanguageSkill, VALID_LANGUAGES
 
@@ -382,6 +383,28 @@ class Character(DefaultCharacter):
     at_post_puppet - Echoes "AccountName has entered the game" to the room.
 
     """
+    def at_say(self,
+               message,
+               msg_self=None,
+               msg_location=None,
+               receivers=None,
+               msg_receivers=None,
+               **kwargs):
+        mapping = {
+            'self': "You",
+            'object': self.name.capitalize() if is_pc(self) else self.db.sdesc
+        }
+        msg_self = "{self} say, {speech}"
+        msg_location = "{object} says, {speech}"
+        msg_receivers = "{object} tells you, {speech}"
+        super().at_say(message=message,
+                       msg_self=msg_self,
+                       receivers=receivers,
+                       msg_location=msg_location,
+                       msg_receivers=msg_receivers,
+                       mapping=mapping,
+                       **kwargs)
+
     def at_after_move(self, src_location):
         self.execute_cmd("look")
 
@@ -552,6 +575,7 @@ class Character(DefaultCharacter):
     def at_object_creation(self):
         self.db.look_index = 0
         self.db.new_character = True  # used for character generation
+        self.db.name = self.name
         self.db.attrs = {}
         self.db.stats = {}
         self.db.skills = {}
