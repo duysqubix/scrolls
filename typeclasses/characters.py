@@ -8,7 +8,10 @@ creation commands.
 
 """
 import copy
-import re
+from evennia import DefaultCharacter, EvMenu, TICKER_HANDLER, search_object
+from evennia.utils.utils import inherits_from, lazy_property, make_iter
+
+from typeclasses.rooms.rooms import Room
 from world.conditions import HolyLight
 from world.utils.act import Announce, act
 from world.utils.utils import can_see_obj, delete_contents, is_equippable, is_npc, is_obj, is_pc, is_pc_npc, is_wieldable, is_wielded, is_wiz, is_worn, apply_obj_effects, remove_obj_effects
@@ -16,11 +19,9 @@ from world.gender import Gender
 from world.races import NoRace
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
-from evennia import DefaultCharacter, EvMenu, TICKER_HANDLER
 from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, Positions, WIZ_LVL, WEAR_LOCATIONS
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
-from evennia.utils.utils import inherits_from, lazy_property, make_iter
 from world.storagehandler import StorageHandler
 from world.languages import LanguageSkill, VALID_LANGUAGES
 
@@ -622,3 +623,8 @@ class Character(DefaultCharacter):
         self.add_attr('stamina', None, is_vital=True)
         self.add_attr('speed', None, is_vital=True)
         self.add_attr('carry', None, is_vital=True)
+
+        # set new starting location here
+        start_loc = search_object('2', typeclass=Room)
+        if start_loc:
+            self.location = start_loc[0]
