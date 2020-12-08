@@ -601,11 +601,7 @@ class Character(DefaultCharacter):
         self.db.is_pc = True
 
         # level
-        level = None
-        if self.is_superuser:
-            level = GOD_LVL
-        else:
-            level = 1
+        level = GOD_LVL if self.is_superuser else 1
         # attributes
         self.add_attr('gender', Gender.NoGender)
         self.add_attr('exp', 0)

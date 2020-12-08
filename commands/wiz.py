@@ -2,6 +2,7 @@ import sys, time
 import json
 import pathlib
 import traceback
+from typeclasses.characters import Character
 from typeclasses.mobs.mob import Mob
 
 from evennia import EvMenu, create_object, search_object, GLOBAL_SCRIPTS, EvEditor
@@ -201,22 +202,57 @@ class CmdGoto(Command):
     def func(self):
         ch = self.caller
 
+        def poof(location):
+            act("With a thunderous clap, $n leaves the room.", False, False,
+                ch, None, None, Announce.ToRoom)
+            ch.move_to(location)
+            act("With a thunderous clap, $n enters the room.", False, False,
+                ch, None, None, Announce.ToRoom)
+            ch.execute_cmd('look')
+
         if not self.args:
-            ch.msg("supply a rvnum to goto")
+            ch.msg("supply a rvnum or name of a player to go to")
             return
 
-        vnum = self.args.strip()
+        # try to find person first
+        target_name = self.args.strip()
+
         try:
-            vnum = int(vnum)
+            vnum = int(target_name)
         except:
-            ch.msg("That is not a valid vnum")
+
+            pc_target = search_object(target_name.lower(), typeclass=Character)
+            npc_target_key = search_mobdb(key=target_name, return_keys=True)
+
+            if not npc_target_key:
+                npc_target = None
+            else:
+                npc_target = search_object(str(npc_target_key[0]),
+                                           typeclass=Mob)
+
+            if not pc_target and not npc_target:
+                ch.msg("There is no one like that.")
+                return
+
+            # pc takes precedense over npc
+            if pc_target:
+                target = pc_target[0]
+                if not target.has_account:
+                    ch.msg("They are not online")
+                    return
+                poof(target.location)
+                return
+
+            if npc_target:
+                target = npc_target[0]
+                poof(target.location)
+                return
             return
 
         # handle special case of void here
         if vnum == 1:
             void = search_object('#2')[0]
-            ch.move_to(void)
-            ch.execute_cmd('look')
+            poof(void)
             return
 
         # try to find vnum in database
@@ -232,9 +268,9 @@ class CmdGoto(Command):
                 ch.msg("That room does not exist")
                 return
             room = create_object('typeclasses.rooms.rooms.Room', key=vnum)
-            ch.move_to(room)
+            poof(room)
         else:
-            ch.move_to(room[0])
+            poof(room[0])
 
 
 class CmdZoneSet(Command):
