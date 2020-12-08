@@ -2,6 +2,7 @@ import sys, time
 import json
 import pathlib
 import traceback
+from typeclasses.mobs.mob import Mob
 
 from evennia import EvMenu, create_object, search_object, GLOBAL_SCRIPTS, EvEditor
 from evennia.commands.default.help import COMMAND_DEFAULT_CLASS
@@ -308,7 +309,13 @@ class CmdLoad(Command):
                 ch.msg(f"mob: {vnum} does not exist")
                 return
             mob_bp = GLOBAL_SCRIPTS.mobdb.vnum[vnum]
-
+            mob = create_object(Mob, key=vnum)
+            mob.move_to(ch.location)
+            act_msg = "$n motions $s hands around and $e creates"\
+                f" |G{mob.db.sdesc}|n"
+            act(act_msg, False, False, ch, None, None, Announce.ToRoom)
+            act(f"You create |G{mob.db.sdesc}|n", False, False, ch, None, None,
+                Announce.ToChar)
             ch.msg(f"You creating a mob: {vnum}")
 
 
@@ -693,7 +700,7 @@ class CmdRList(Command):
                 zone = data['zone']
                 exits = [
                     f"{dir[0].capitalize()}[{num}]"
-                    for dir, num in data['exits'].items()  #if num > 0
+                    for dir, num in data['exits'].items() if num > 0
                 ]
                 table.add_row(vnum, name, list_to_string(exits), zone)
 

@@ -550,6 +550,7 @@ class Character(DefaultCharacter):
             self.db.attrs[name] = Attribute(name=name, value=value)
 
     def at_object_creation(self):
+        self.db.look_index = 0
         self.db.new_character = True  # used for character generation
         self.db.attrs = {}
         self.db.stats = {}
