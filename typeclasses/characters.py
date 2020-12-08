@@ -17,7 +17,7 @@ from world.races import NoRace
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
 from evennia import DefaultCharacter, EvMenu, TICKER_HANDLER
-from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, WIZ_LVL, WEAR_LOCATIONS
+from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, Positions, WIZ_LVL, WEAR_LOCATIONS
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
 from evennia.utils.utils import inherits_from, lazy_property, make_iter
@@ -405,6 +405,20 @@ class Character(DefaultCharacter):
                        mapping=mapping,
                        **kwargs)
 
+    def announce_move_from(self,
+                           destination,
+                           msg=None,
+                           mapping=None,
+                           **kwargs):
+        pass
+
+    def announce_move_to(self,
+                         source_location,
+                         msg=None,
+                         mapping=None,
+                         **kwargs):
+        pass
+
     def at_after_move(self, src_location):
         self.execute_cmd("look")
 
@@ -595,6 +609,7 @@ class Character(DefaultCharacter):
         # attributes
         self.add_attr('gender', Gender.NoGender)
         self.add_attr('exp', 0)
+        self.add_attr('title', ", the new blood.")
         self.add_attr('level', level)
         self.add_attr('race', NoRace())
         self.add_attr('immunity', {
@@ -605,6 +620,7 @@ class Character(DefaultCharacter):
         self.add_attr('AR', 0),
         self.add_attr('MAR', 0)
         self.add_attr('birthsign', NoSign())
+        self.add_attr('position', Positions.Standing)
         self.add_attr('health', None, is_vital=True)
         self.add_attr('magicka', None, is_vital=True)
         self.add_attr('stamina', None, is_vital=True)

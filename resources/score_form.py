@@ -3,7 +3,7 @@ TABLECHAR = "c"
 
 FORM = '''
 |y.--------------------------------------------------------.  
-|y|  |nName: xxxxx1xxxxx                    Level: xx10xx   |y |
+|y|  |nName: xxxxx1xxxxxxxxxxxxxxxxxxxxxxx  Level: xx10xx   |y |
 |y|  |nRace: xxx20xxxx                     Gender: xxx21xxx |y |
 |y >------------------------------------------------------<
 |y|                                                        |

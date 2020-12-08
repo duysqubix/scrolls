@@ -338,7 +338,7 @@ class CmdLook(Command):
                 if is_pc(obj):
                     if obj.id == ch.id:
                         continue
-                    room_msg += f"{obj.name.capitalize()}\n"
+                    room_msg += f"{obj.name.capitalize()}{obj.attrs.title.value} is {obj.attrs.position.value.name.lower()} here\n"
 
                 elif is_npc(obj) and can_see_obj(ch, obj):
                     room_msg += f"{obj.db.ldesc}\n"
@@ -450,7 +450,7 @@ class CmdScore(Command):
 
         form = EvForm("resources.score_form")
         form.map({
-            1: ch.name.capitalize(),
+            1: f"{ch.name.capitalize()}{ch.attrs.title.value}",
             2: ch.stats.str.base,
             3: green_or_red(ch.stats.str.bonus),
             4: ch.stats.agi.base,
