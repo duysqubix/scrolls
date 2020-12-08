@@ -2,6 +2,9 @@ import sys, time
 import json
 import pathlib
 import traceback
+
+from evennia.utils.dbserialize import deserialize
+from typeclasses.characters import Character
 from typeclasses.mobs.mob import Mob
 
 from evennia import EvMenu, create_object, search_object, GLOBAL_SCRIPTS, EvEditor
@@ -42,7 +45,6 @@ class CmdForce(Command):
     """
 
     key = 'force'
-    locks = f"attr_ge(level.value, {WIZ_LVL}"
 
     def func(self):
         ch = self.caller
@@ -89,7 +91,6 @@ class CmdWizHelp(Command):
     """
 
     key = 'wizhelp'
-    locks = f"attr_ge(level.value, {BUILDER_LVL}"
 
     def func(self):
         ch = self.caller
@@ -122,7 +123,6 @@ class CmdLanguageUpdate(Command):
     """
 
     key = 'language_update'
-    locks = f"attr_ge(level.value, {GOD_LVL})"
 
     def func(self):
         ch = self.caller
@@ -148,7 +148,6 @@ class CmdDBDump(Command):
     """
 
     key = 'dbdump'
-    locks = f"attr_ge(level.value, {GOD_LVL})"
 
     def func(self):
         ch = self.caller
@@ -159,9 +158,10 @@ class CmdDBDump(Command):
         zonedb = deserialize(GLOBAL_SCRIPTS.zonedb.vnum)
         objdb = deserialize(GLOBAL_SCRIPTS.objdb.vnum)
         roomdb = deserialize(GLOBAL_SCRIPTS.roomdb.vnum)
+        mobdb = deserialize(GLOBAL_SCRIPTS.mobdb.vnum)
         books = []
 
-        objs = {'zones': zonedb, 'rooms': roomdb, 'objs': objdb}
+        objs = {'zones': zonedb, 'rooms': roomdb, 'objs': objdb, 'mobs': mobdb}
         for fname, obj in sorted(objs.items()):
             if fname == 'objs':
                 # remove books from dict
@@ -196,27 +196,61 @@ class CmdGoto(Command):
     """
 
     key = 'goto'
-    locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         ch = self.caller
 
+        def poof(location):
+            act("With a thunderous clap, $n leaves the room.", False, False,
+                ch, None, None, Announce.ToRoom)
+            ch.move_to(location)
+            act("With a thunderous clap, $n enters the room.", False, False,
+                ch, None, None, Announce.ToRoom)
+            ch.execute_cmd('look')
+
         if not self.args:
-            ch.msg("supply a rvnum to goto")
+            ch.msg("supply a rvnum or name of a player to go to")
             return
 
-        vnum = self.args.strip()
+        # try to find person first
+        target_name = self.args.strip()
+
         try:
-            vnum = int(vnum)
+            vnum = int(target_name)
         except:
-            ch.msg("That is not a valid vnum")
+
+            pc_target = search_object(target_name.lower(), typeclass=Character)
+            npc_target_key = search_mobdb(key=target_name, return_keys=True)
+
+            if not npc_target_key:
+                npc_target = None
+            else:
+                npc_target = search_object(str(npc_target_key[0]),
+                                           typeclass=Mob)
+
+            if not pc_target and not npc_target:
+                ch.msg("There is no one like that.")
+                return
+
+            # pc takes precedense over npc
+            if pc_target:
+                target = pc_target[0]
+                if not target.has_account:
+                    ch.msg("They are not online")
+                    return
+                poof(target.location)
+                return
+
+            if npc_target:
+                target = npc_target[0]
+                poof(target.location)
+                return
             return
 
         # handle special case of void here
         if vnum == 1:
             void = search_object('#2')[0]
-            ch.move_to(void)
-            ch.execute_cmd('look')
+            poof(void)
             return
 
         # try to find vnum in database
@@ -232,9 +266,9 @@ class CmdGoto(Command):
                 ch.msg("That room does not exist")
                 return
             room = create_object('typeclasses.rooms.rooms.Room', key=vnum)
-            ch.move_to(room)
+            poof(room)
         else:
-            ch.move_to(room[0])
+            poof(room[0])
 
 
 class CmdZoneSet(Command):
@@ -249,7 +283,6 @@ class CmdZoneSet(Command):
     """
 
     key = 'zone'
-    locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         ch = self.caller
@@ -310,7 +343,6 @@ class CmdLoad(Command):
     """
 
     key = 'load'
-    locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         ch = self.caller
@@ -382,43 +414,39 @@ class CmdOList(Command):
         olist type book category fiction # list all books of fiction category
     """
     key = "olist"
-    locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         ch = self.caller
-        ch.msg(self.args)
+
+        def show_table(dictionary):
+            table = self.styled_table("VNum",
+                                      "Description",
+                                      "Type",
+                                      border='incols')
+            for vnum, data in sorted(dictionary.items()):
+                vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                desc = crop(raw_ansi(data['sdesc']), width=50) or ''
+                type = data['type']
+                table.add_row(vnum, desc, type)
+
+            ch.msg(table)
+
         args = self.args.strip()
-        objdb = dict(GLOBAL_SCRIPTS.objdb.vnum)
+        objdb = deserialize(GLOBAL_SCRIPTS.objdb.vnum)
 
         if not objdb:
             ch.msg("There are no objects within the game")
             return
 
         if not args:
-            table = self.styled_table("VNum",
-                                      "Description",
-                                      "Type",
-                                      border='incols')
             objs = search_objdb('all')
-
-            for vnum, obj in sorted(objs.items()):
-                data = objdb[vnum]
-                vnum = raw_ansi(f"[|G{vnum:<4}|n]")
-                sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
-                table.add_row(vnum, sdesc, f"{data['type']}")
-
-            msg = str(table)
-            ch.msg(msg)
+            show_table(objs)
             return
 
         args = args.split(' ')
         if len(args) < 2:
             ch.msg("Supply either type or name to search for")
             return
-        table = self.styled_table("VNum",
-                                  "Description",
-                                  "Type",
-                                  border='incols')
         type_ = args[0]
         if type_ not in ('type', 'name'):
             ch.msg("Please supply either (type or name) to searchby")
@@ -435,13 +463,7 @@ class CmdOList(Command):
 
         except IndexError:
             objs = search_objdb(**{type_: criteria})
-
-        for vnum, obj in sorted(objs.items()):
-            vnum = raw_ansi(f"[|G{vnum:<4}|n]")
-            sdesc = crop(raw_ansi(obj['sdesc']), width=50) or ''
-            table.add_row(vnum, sdesc, f"{obj['type']}")
-        msg = str(table)
-        ch.msg(msg)
+        show_table(objs)
         return
 
 
@@ -490,7 +512,6 @@ class CmdMList(Command):
 
     """
     key = "mlist"
-    locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         ch = self.caller
@@ -545,63 +566,46 @@ class CmdZList(Command):
         zlist <name> <criteria>
     """
     key = "zlist"
-    locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         ch = self.caller
-        ch.msg(self.args)
-        args = self.args.strip()
-        zonedb = dict(GLOBAL_SCRIPTS.zonedb.vnum)
-        if not zonedb:
-            ch.msg("There are no zones within the game")
-            return
 
-        vnum_zonedb = zonedb.keys()
-        min_ = min(vnum_zonedb)
-        max_ = max(vnum_zonedb)
-
-        legend = ["VNum", "Name", "Builders"]
-        try:
-            _ = zonedb[1]
-        except KeyError:
-            ch.msg("No zones are saved to database, try creating one first")
-            return
-
-        if not args:
-            table = self.styled_table(*legend, border='incols')
-
-            for vnum in range(min_, max_ + 1):
-                data = zonedb[vnum]
+        def show_table(dictionary):
+            table = self.styled_table("VNum",
+                                      "Name",
+                                      "Builders",
+                                      border='incols')
+            for vnum, data in sorted(dictionary.items()):
                 vnum = raw_ansi(f"[|G{vnum:<4}|n]")
                 table.add_row(vnum, data['name'],
                               list_to_string(data['builders']))
 
-            msg = str(table)
-            ch.msg(msg)
+            ch.msg(table)
+
+        args = self.args.strip()
+        search_criteria = "all" if not args else args.strip()
+        if not args:
+            zones = search_zonedb('all')
+
+            if not zones:
+                ch.msg("No zones found.")
+                return
+            show_table(zones)
             return
 
         args = args.split(' ')
         if len(args) < 2:
             ch.msg("Supply name to search for")
             return
-        table = self.styled_table(*legend, border='incols')
-        type_ = args[0]
-        if type_ not in ('name'):
-            ch.msg("Please supply name to search by")
+        type_, criteria = args
+
+        zones = search_zonedb(**{type_: criteria})
+        if not zones:
+            ch.msg("No zones found matching the criteria")
             return
 
-        criteria = args[1]
-        for vnum in range(min_, max_ + 1):
-            # for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
-            data = zonedb[vnum]
-            if type_ == 'name':
-                if match_string(criteria, data['name'].split()):
-                    vnum = raw_ansi(f"[|G{vnum:<4}|n]")
-                    table.add_row(vnum, data['name'],
-                                  list_to_string(data['builders']))
-                    continue
-        msg = str(table)
-        ch.msg(msg)
+        show_table(zones)
+
         return
 
 
@@ -618,7 +622,6 @@ class CmdZEdit(Command):
     """
 
     key = 'zedit'
-    locks = f"attr_ge(level.value, {IMM_LVL})"
 
     def func(self):
         if not self.args.strip():
@@ -660,7 +663,6 @@ class CmdREdit(Command):
     """
 
     key = 'redit'
-    locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         ch = self.caller
@@ -729,7 +731,6 @@ class CmdRList(Command):
         rlist name cellar # returns all rooms that matches cellar in room name
     """
     key = "rlist"
-    locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         ch = self.caller
@@ -817,7 +818,6 @@ class CmdOEdit(Command):
     """
 
     key = "oedit"
-    locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         if not self.args.strip():
@@ -862,7 +862,6 @@ class CmdMEdit(Command):
     """
 
     key = "medit"
-    locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         ch = self.caller
@@ -910,7 +909,6 @@ class CmdPurge(Command):
     """
 
     key = 'purge'
-    locks = f"attr_ge(level.value, {IMM_LVL})"
 
     def func(self):
         ch = self.caller
@@ -931,7 +929,6 @@ class CmdHolyLight(Command):
     """
     key = 'holylight'
     aliases = ['holy']
-    locks = f"attr_ge(level.value, {IMM_LVL})"
 
     def func(self):
         ch = self.caller
@@ -952,7 +949,6 @@ class CmdWizInvis(Command):
     """
 
     key = 'wizinvis'
-    locks = f"attr_ge(level.value, {IMM_LVL})"
 
     def func(self):
         ch = self.caller
@@ -980,7 +976,6 @@ class CmdRestore(Command):
         restore <obj>
     """
     key = "restore"
-    locks = f"attr_ge(level.value, {IMM_LVL})"
     arg_regex = r"\s|$"
 
     def func(self):
@@ -1006,15 +1001,17 @@ class CmdRestore(Command):
 
 class CmdDBLoad(Command):
     """
-    Restore internal database from backup json files
+    Restore blueprints for mobs, objs, zones, and room
+    using this command. It reads the associated json files found in
+    |cresources|n folder and updates the associated blueprint databases
 
     Usage:
-        dbload <obj||room||zone||mob||all>
+        dbload all
+
 
     """
 
     key = 'dbload'
-    locks = f"attr_ge(level.value, {GOD_LVL}"
 
     def func(self):
         ch = self.caller
@@ -1022,41 +1019,39 @@ class CmdDBLoad(Command):
         dumping_ground = pathlib.Path(
             __file__).parent.parent / "resources" / "json"
 
-        def load_objs():
-            with open(dumping_ground / "objs.json", "r") as f:
-                zones = json.load(f)
-                for zvnum, data in zones.items():
-                    GLOBAL_SCRIPTS.zonedb.vnum[int(zvnum)] = data
-            ch.msg("loaded objs")
-
-        def load_zones():
-            with open(dumping_ground / "zones.json", "r") as f:
-                zones = json.load(f)
-                for zvnum, data in zones.items():
-                    GLOBAL_SCRIPTS.zonedb.vnum[int(zvnum)] = data
-            ch.msg("loaded zones")
-
-        def load_mobs():
-            pass
-
-        def load_rooms():
-            with open(dumping_ground / "rooms.json", "r") as f:
-                rooms = json.load(f)
-                for rvnum, data in rooms.items():
-                    GLOBAL_SCRIPTS.roomdb.vnum[int(rvnum)] = data
-
-            ch.msg("loaded rooms")
+        def load_db(name):
+            dbname = name + 'db'
+            GLOBAL_SCRIPTS.get(dbname).vnum.clear()
+            with open(dumping_ground / f"{name}s.json", "r") as f:
+                data = json.load(f)
+                for vnum, data in data.items():
+                    GLOBAL_SCRIPTS.get(dbname).vnum[int(vnum)] = data
+            ch.msg(f"loaded {name}")
 
         if not self.args:
-            ch.msg("Must supply: <obj||room||zone||mob||all>")
+            names = [f"|c{x.name[:-2]}|n"
+                     for x in GLOBAL_SCRIPTS.all()] + ["|cbook|n"]
+            ch.msg(f"Valid dbnames:\n|gall|n or\n{list_to_string(names)}")
             return
+
         args = self.args.strip()
 
         if args == 'all':
-            load_zones()
-            load_rooms()
-            load_mobs()
-            load_objs()
+            for db in ('mob', 'room', 'zone', 'obj', 'trig', 'book'):
+                if db == 'book':
+                    ch.execute_cmd('book_load')
+                    continue
+                load_db(db)
+            return
+        if args == "book":
+            ch.execute_cmd('book_load')
+            return
+
+        if args + 'db' not in [x.name for x in GLOBAL_SCRIPTS.all()]:
+            ch.msg("That is not a valid dbname")
+            return
+
+        load_db(args)
 
 
 class CmdBookLoad(Command):
@@ -1066,13 +1061,10 @@ class CmdBookLoad(Command):
     """
 
     key = 'book_load'
-    locks = f"attr_ge(level.value, {GOD_LVL}"
     arg_regex = r"\s|$"
 
     def func(self):
         ch = self.caller
-        #TODO: find a better way to get book.json file
-        from evennia import GLOBAL_SCRIPTS
 
         file = pathlib.Path(
             __file__).parent.parent / "resources" / "json" / "books.json"
@@ -1112,9 +1104,9 @@ class CmdBookLoad(Command):
 
             next_vnum = max(GLOBAL_SCRIPTS.objdb.vnum.keys()) + 1
         # create new ones
-        ch.msg(str((len(books), book_idx, next_vnum)))
+        # ch.msg(str((len(books), book_idx, next_vnum)))
         for book in books[book_idx:]:
-            ch.msg("adding book")
+            # ch.msg("adding book")
             book.update(obj_info)
             GLOBAL_SCRIPTS.objdb.vnum[next_vnum] = book
             next_vnum += 1
@@ -1131,7 +1123,6 @@ class CmdCharacterGen(Command):
     """
 
     key = "chargen"
-    locks = f"attr_ge(level.value, {WIZ_LVL}"
     arg_regex = r"\s|$"
 
     def func(self):
@@ -1210,7 +1201,6 @@ class CmdPy(COMMAND_DEFAULT_CLASS):
     key = "py"
     aliases = ["!"]
     switch_options = ("time", "edit", "clientraw", "noecho")
-    locks = "cmd:perm(py) or perm(Developer)"
     help_category = "System"
 
     def func(self):

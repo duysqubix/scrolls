@@ -8,7 +8,11 @@ creation commands.
 
 """
 import copy
-import re
+from world.utils.db import search_roomdb
+from evennia import DefaultCharacter, EvMenu, TICKER_HANDLER, search_object
+from evennia.utils.utils import inherits_from, lazy_property, make_iter
+
+from typeclasses.rooms.rooms import Room
 from world.conditions import HolyLight
 from world.utils.act import Announce, act
 from world.utils.utils import can_see_obj, delete_contents, is_equippable, is_npc, is_obj, is_pc, is_pc_npc, is_wieldable, is_wielded, is_wiz, is_worn, apply_obj_effects, remove_obj_effects
@@ -16,11 +20,9 @@ from world.gender import Gender
 from world.races import NoRace
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
-from evennia import DefaultCharacter, EvMenu, TICKER_HANDLER
-from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, Positions, WIZ_LVL, WEAR_LOCATIONS
+from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, Positions, START_LOCATION_VNUM, WIZ_LVL, WEAR_LOCATIONS
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
-from evennia.utils.utils import inherits_from, lazy_property, make_iter
 from world.storagehandler import StorageHandler
 from world.languages import LanguageSkill, VALID_LANGUAGES
 
@@ -391,12 +393,15 @@ class Character(DefaultCharacter):
                msg_receivers=None,
                **kwargs):
         mapping = {
-            'self': "You",
-            'object': self.name.capitalize() if is_pc(self) else self.db.sdesc
+            'self':
+            "You",
+            'object':
+            self.name.capitalize()
+            if is_pc(self) else self.db.sdesc.capitalize()
         }
-        msg_self = "{self} say, {speech}"
-        msg_location = "{object} says, {speech}"
-        msg_receivers = "{object} tells you, {speech}"
+        msg_self = "{self} say, |c{speech}|n"
+        msg_location = "{object} says, |c{speech}|n"
+        msg_receivers = "{object} tells you, |c{speech}|n"
         super().at_say(message=message,
                        msg_self=msg_self,
                        receivers=receivers,
@@ -427,6 +432,19 @@ class Character(DefaultCharacter):
         # here we can check to see if this is the first time logging in.
         if self.attributes.has('new_character'):
 
+            # set some vital things, if this is super users first login
+            if self.is_superuser:
+                self.attrs.level.value = GOD_LVL
+
+                # load db into global scripts
+                self.execute_cmd('dbload all')
+
+                # iterate through all rooms and create them if they dont' exist
+                rvnums = search_roomdb('all', return_keys=True)
+                for rvnum in rvnums:
+                    self.execute_cmd(f'goto {rvnum}')
+
+                self.execute_cmd('goto %s' % START_LOCATION_VNUM)
             #enter the chargen state
             EvMenu(self,
                    "world.chargen.gen",
@@ -523,6 +541,9 @@ class Character(DefaultCharacter):
     def languages(self):
         return LanguageHandler(self)
 
+    def full_title(self):
+        return f"{self.name.capitalize()}{self.attrs.title.value}"
+
     def get_prompt(self):
         self.attrs.update()
         hp = self.attrs.health
@@ -601,11 +622,7 @@ class Character(DefaultCharacter):
         self.db.is_pc = True
 
         # level
-        level = None
-        if self.is_superuser:
-            level = GOD_LVL
-        else:
-            level = 1
+        level = GOD_LVL if self.is_superuser else 1
         # attributes
         self.add_attr('gender', Gender.NoGender)
         self.add_attr('exp', 0)
@@ -626,3 +643,8 @@ class Character(DefaultCharacter):
         self.add_attr('stamina', None, is_vital=True)
         self.add_attr('speed', None, is_vital=True)
         self.add_attr('carry', None, is_vital=True)
+
+        # set new starting location here
+        start_loc = search_object('2', typeclass=Room)
+        if start_loc:
+            self.location = start_loc[0]

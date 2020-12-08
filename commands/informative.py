@@ -28,18 +28,22 @@ class CmdWho(Command):
     def func(self):
         ch = self.caller
 
-        who_msg = "\n|w|[r       Players Online       |n\n"
+        who_msg = "\n|w|[r       Players Online:{num_players:>4}       |n\n"
         table = self.styled_table("Level", "Name", border='incols')
+
+        num_players = 0
         for ses in SESSIONS.get_sessions():
             if not ses.logged_in:
                 continue
+            num_players += 1
             vict = ses.get_account().puppet
 
             level = vict.attrs.level.value
             race = vict.attrs.race.name.capitalize()
             name = vict.name.capitalize()
-            table.add_row(f"[{level:<3}{race:>10}]", name)
-        ch.msg(who_msg + str(table))
+            title = vict.attrs.title.value
+            table.add_row(f"[{level:<3}{race:>10}]", f"{name}{title}")
+        ch.msg(who_msg.format(num_players=num_players) + str(table))
 
 
 class CmdTime(Command):
@@ -371,12 +375,18 @@ class CmdLook(Command):
                 if is_obj(obj):
                     if obj_name in obj.db.name:
                         edesc = rplanguage_parse_string(ch, obj.db.edesc)
-                        ch.msg(edesc)
+                        ch.msg(f"You look at {obj.db.sdesc}\n{edesc}")
                         return
                 elif is_npc(obj):
                     if obj_name in obj.db.key:
                         edesc = rplanguage_parse_string(ch, obj.db.edesc)
-                        ch.msg(edesc)
+                        ch.msg(f"You look at {obj.db.sdesc}\n{edesc}")
+                        return
+
+                elif is_pc(obj):
+                    if obj_name in obj.name:
+                        edesc = rplanguage_parse_string(ch, obj.db.desc)
+                        ch.msg(f"You look at {obj.full_title()}\n{edesc}")
                         return
             # try looking for an obj in your inventory, if found send back edesc
             for obj in ch.contents:
@@ -450,7 +460,7 @@ class CmdScore(Command):
 
         form = EvForm("resources.score_form")
         form.map({
-            1: f"{ch.name.capitalize()}{ch.attrs.title.value}",
+            1: f"{ch.full_title()}",
             2: ch.stats.str.base,
             3: green_or_red(ch.stats.str.bonus),
             4: ch.stats.agi.base,
