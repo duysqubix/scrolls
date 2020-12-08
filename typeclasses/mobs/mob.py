@@ -71,7 +71,7 @@ class Mob(Character):
 
 VALID_MOB_FLAGS = {
     'sentinel', 'scavenger', 'aware', 'aggr', 'stay_zone', 'memory', 'helper',
-    'nosummon', 'noblind', 'nosleep'
+    'nosummon', 'noblind', 'nosleep', 'nokill'
 }
 
 VALID_MOB_APPLIES = {
