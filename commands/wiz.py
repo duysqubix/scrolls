@@ -666,25 +666,45 @@ class CmdRList(Command):
 
     Usage:
         rlist
-        rlist <zone||name> <criteria>
+        rlist <zone||name> <parameter>
+
+    Example
+
+        rlist # returns all rooms, if assigned to zone, will return rooms only in current zone
+
+        rlist zone myzone # returns room based in zone
+        rlist name cellar # returns all rooms that matches cellar in room name
     """
     key = "rlist"
     locks = f"attr_ge(level.value, {BUILDER_LVL})"
 
     def func(self):
         ch = self.caller
-        ch.msg(self.args)
+
+        def show_table(dictionary):
+            table = self.styled_table("VNum",
+                                      "Name",
+                                      "Exits",
+                                      "Zone",
+                                      border='incols')
+            for vnum, data in sorted(dictionary.items()):
+                vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+                name = data['name']
+                zone = data['zone']
+                exits = [
+                    f"{dir[0].capitalize()}[{num}]"
+                    for dir, num in data['exits'].items()  #if num > 0
+                ]
+                table.add_row(vnum, name, list_to_string(exits), zone)
+
+            ch.msg(table)
+
         args = self.args.strip()
         roomdb = dict(GLOBAL_SCRIPTS.roomdb.vnum)
         if not roomdb:
             ch.msg("There are no rooms within the game")
             return
 
-        vnum_roomdb = roomdb.keys()
-        min_ = min(vnum_roomdb)
-        max_ = max(vnum_roomdb)
-
-        legend = ["VNum", "Name", "Exits", "Zone"]
         try:
             _ = roomdb[1]
         except KeyError:
@@ -692,65 +712,37 @@ class CmdRList(Command):
             return
 
         if not args:
-            table = self.styled_table(*legend, border='incols')
             ch_zone = has_zone(ch)
 
             if ch_zone:
-                for vnum in range(min_, max_ + 1):
-                    data = roomdb[vnum]
-                    if match_string(ch_zone, make_iter(data['zone'])):
-                        exits = {
-                            k: v
-                            for k, v in data['exits'].items() if v > 0
-                        }
-                        vnum = raw_ansi(f"[|G{vnum:<4}|n]")
-                        sdesc = crop(raw_ansi(data['name']), width=50) or ''
-                        table.add_row(vnum, sdesc, f"{exits}", data['zone'])
+                rooms = search_roomdb(zone=ch_zone)
             else:
-                for vnum in range(min_, max_ + 1):
-                    data = roomdb[vnum]
-                    exits = {k: v for k, v in data['exits'].items() if v > 0}
-                    vnum = raw_ansi(f"[|G{vnum:<4}|n]")
-                    sdesc = crop(raw_ansi(data['name']), width=50) or ''
-                    table.add_row(vnum, sdesc, f"{exits}", data['zone'])
+                rooms = search_roomdb('all')
+            show_table(rooms)
 
-            msg = str(table)
-            ch.msg(msg)
             return
 
         args = args.split(' ')
         if len(args) < 2:
             ch.msg("Supply either type or name to search for")
             return
-        table = self.styled_table(*legend, border='incols')
         type_ = args[0]
         if type_ not in ('zone', 'name'):
             ch.msg("Please supply either (type or name) to searchby")
             return
 
         criteria = args[1]
-        for vnum in range(min_, max_ + 1):
-            # for vnum, data in GLOBAL_SCRIPTS.objdb.vnum.items():
-            data = roomdb[vnum]
-            if type_ == 'zone':
-                if match_string(criteria, make_iter(data['zone'])):
-                    exits = {k: v for k, v in data['exits'].items() if v > 0}
+        rooms = None
+        if type_ == 'zone':
+            rooms = search_roomdb(zone=criteria)
+        elif type_ == 'name':
+            rooms = search_roomdb(name=criteria)
 
-                    vnum = raw_ansi(f"[|G{vnum:<4}|n]")
-                    sdesc = crop(raw_ansi(data['name']), width=50) or ''
-                    table.add_row(vnum, sdesc, f"{exits}", data['zone'])
-                    continue
+        if not rooms:
+            ch.msg("No such rooms were found")
+            return
 
-            if type_ == 'name':
-                if match_string(criteria, data['name'].split()):
-                    exits = {k: v for k, v in data['exits'].items() if v > 0}
-
-                    vnum = raw_ansi(f"[|G{vnum:<4}|n]")
-                    sdesc = crop(raw_ansi(data['name']), width=50) or ''
-                    table.add_row(vnum, sdesc, f"{exits}", data['zone'])
-                    continue
-        msg = str(table)
-        ch.msg(msg)
+        show_table(rooms)
         return
 
 

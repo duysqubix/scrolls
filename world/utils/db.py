@@ -11,29 +11,53 @@ from typeclasses.objs.custom import CUSTOM_OBJS
 _RE_COMPARATOR_PATTERN = re.compile(r"(<[>=]?|>=?|!)")
 
 
-def _search_db(db, criteria=None, return_keys=False, **kwargs):
+def _search_db(db, vnum=None, return_keys=False, **kwargs):
     """
     Searches database based on kwargs. Citeria matches on either
     'all' or vnum of target. The kwargs only return if a record
-    in db matches all supplied kwargs.
+    in db matches all supplied kwargs. 
+
+    If vnum is used, it ignores kwargs, vice-versa
+
+    vnum quick-hand search function
 
     Args:
-        criteria: string to represent vnum OR 'all'
+        db:  dictionary representation of the database
+        vnum: string to represent vnum OR 'all'
         return_keys: only returns the vnums from the search
         kwargs: extra keywords that are used to filter down results
 
-    
-    Extra Field:
-        Some entities contain a special attribute on their blueprint called the
+    Returns:
+        Dictionary of matched records in the form as specified in DEFAULT_*_STRUCT in globals.py
+
+
+    Usage:
+        search_mobdb(1) # returns mob vnum 1
+
+        search_mobdb('puff') # all mobs with the key 'puff' or 'puff' in sdesc
+
+        search_mobdb(key='dog', attack='bite') # all mobs with the key of dog and attack of bite
+
+        # search for equipment that cost more than 100 coin and weigh less than 10
+        objs = search_objdb(type='equipment', weight="<10", cost=">=100")
+
+        # search for monsters that have the name 'dog' and between the levels of 10 and 15 (but not 10 or 15)
+        mobs = search_mobdb(name='dog', level=">10")
+        mobs = search_mobdb(db=mobs, level="<15")
+        
+        search_mobdb('all') # returns all mobs in db
+
+    Extra Field - Special Parsing:
+        Some typeclasses contain a special attribute on their blueprint called the
         `extra` field. This field is notable on the objects, and vary between each
         custom type of object (book, equipment, weapon, etc...) there is a special 
         handle in this function that handles this. 
 
         # search books that are in the aldmerish language
-        books = search_obj(type='book', extra="langauge aldmerish")
+        books = search_objdb(type='book', extra="langauge aldmerish")
 
         # search containers that have 10 item capacity
-        containers = search_obj(type='container', extra='limit 10')
+        containers = search_objdb(type='container', extra='limit 10')
 
     Notes:
         In Kwargs, you can add flavor to the values to represent an integer
@@ -47,26 +71,18 @@ def _search_db(db, criteria=None, return_keys=False, **kwargs):
         # to get objects that weight between 2-10lbs
         results = search_objs(db=search_objs(weight=">=2"), weight="<=10")
 
-
-    Usage:
-        search_mobdb(1) # returns mob vnum 1
-
-        search_mobdb('puff') # all mobs with the key 'puff' or 'puff' in sdesc
-
-        search_mobdb(key='dog', attack='bite') # all mobs with the key of dog and attack of bite
-
-        search_mobdb('all') # returns all mobs in db
     """
     results = dict()
     db = db
 
-    if not criteria and not kwargs:
+    # must supply either or
+    if not vnum and not kwargs:
         return None
 
-    if criteria:
-        # try to see if criteria is vnum
+    if vnum:
+        # try to see if vnum is a valid integer
         try:
-            vnum = int(criteria)
+            vnum = int(vnum)
             mob = db.get(vnum, None)
             if not mob:
                 return None
@@ -76,30 +92,41 @@ def _search_db(db, criteria=None, return_keys=False, **kwargs):
         except:
             pass
 
-        if criteria == 'all':
+        # return everything in db
+        if vnum == 'all':
             results.update(dict(db))
             return results if not return_keys else list(results.keys())
 
     for vnum, data in db.items():
         if kwargs:
-            success_matches = 0
+
+            success_matches = 0  # uses a counting system to make sure a specific record matches on ALL supplied kwargs
             for kfield, kvalue in kwargs.items():
                 dvalue = data.get(kfield, None)
                 dtype = type(dvalue)
                 if not kfield:
                     break
 
+                # some extra parsing protocols for each
+                # data type depending on what the datatype is for the value in data
+
                 # handle base list type
                 if dtype is list:
+                    # allows matching like so
+                    # "1 2 3" == [1,2,3]
                     kvalue = dtype(kvalue.split(' '))
                     matches = all([x in dvalue for x in kvalue])
                     if not matches:
                         break
-                    # results[vnum] = data
                     success_matches += 1
                     continue
 
-                #  handle int types and ">=, >"... syntax
+                #  parses int types and parses the custom logical operator tags
+                # >=, >, <= <
+                # currently only supports single operators.
+                # This is invalid:
+                #  x = "10<,15>=" or something like that, it expects the format
+                # [operator][value]
                 elif dtype is int:
                     matches = re.split(_RE_COMPARATOR_PATTERN, kvalue)
                     if matches and len(matches) > 1:
@@ -117,14 +144,19 @@ def _search_db(db, criteria=None, return_keys=False, **kwargs):
                         continue
 
                     else:
-                        kvalue = dtype(
-                            kvalue)  # cast to type of what dvalue is
+                        # cast to type of what dvalue is, this case it is int
+                        kvalue = dtype(kvalue)
                         if kvalue == dvalue:
                             # results[vnum] = data
                             success_matches += 1
                             continue
 
-                # handle dict on extra special fields
+                # handle parsing of on extra fields
+                # extra field on data is simply another dictionary
+                # within the dictionary.
+                # allows the following to match:
+                #
+                # "language aldmerish" == {'language': 'aldmerish'}
                 elif dtype is dict and kfield == 'extra':
                     key, value = kvalue.split(' ')
                     for k, v, in dvalue.items():
@@ -133,7 +165,7 @@ def _search_db(db, criteria=None, return_keys=False, **kwargs):
                             success_matches += 1
                             continue
 
-                # handle str types as well as the logical tags
+                # handle str types
                 elif dtype is str:
                     kvalue = dtype(
                         kvalue).lower()  # cast to type of what dvalue is
@@ -145,42 +177,34 @@ def _search_db(db, criteria=None, return_keys=False, **kwargs):
                     logger.log_errmsg(f"not supported data type: {dtype}")
                     continue
 
+            # if the number of success_matches == len(kwargs)
+            # then each iteration of kwargs.items() found match, meaning
+            # this record passes, and is stored
             if success_matches == len(kwargs):
                 results[vnum] = data
 
+    # return results, or keys if specified.
     return results if not return_keys else list(results.keys())
 
 
-def search_mobdb(criteria=None, db=None, return_keys=False, **kwargs):
+def search_mobdb(vnum=None, db=None, return_keys=False, **kwargs):
     db = deserialize(GLOBAL_SCRIPTS.mobdb.vnum) if not db else db
-    return _search_db(db=db,
-                      criteria=criteria,
-                      return_keys=return_keys,
-                      **kwargs)
+    return _search_db(db=db, vnum=vnum, return_keys=return_keys, **kwargs)
 
 
-def search_objdb(criteria=None, db=None, return_keys=False, **kwargs):
+def search_objdb(vnum=None, db=None, return_keys=False, **kwargs):
     db = deserialize(GLOBAL_SCRIPTS.objdb.vnum) if not db else db
-    return _search_db(db=db,
-                      criteria=criteria,
-                      return_keys=return_keys,
-                      **kwargs)
+    return _search_db(db=db, vnum=vnum, return_keys=return_keys, **kwargs)
 
 
-def search_zonedb(criteria=None, db=None, return_keys=False, **kwargs):
+def search_zonedb(vnum=None, db=None, return_keys=False, **kwargs):
     db = deserialize(GLOBAL_SCRIPTS.zonedb.vnum) if not db else db
-    return _search_db(db=db,
-                      criteria=criteria,
-                      return_keys=return_keys,
-                      **kwargs)
+    return _search_db(db=db, vnum=vnum, return_keys=return_keys, **kwargs)
 
 
-def search_roomdb(criteria=None, db=None, return_keys=False, **kwargs):
+def search_roomdb(vnum=None, db=None, return_keys=False, **kwargs):
     db = deserialize(GLOBAL_SCRIPTS.roomdb.vnum) if not db else db
-    return _search_db(db=db,
-                      criteria=criteria,
-                      return_keys=return_keys,
-                      **kwargs)
+    return _search_db(db=db, vnum=vnum, return_keys=return_keys, **kwargs)
 
 
 # def search_objdb(criteria, **kwargs):
