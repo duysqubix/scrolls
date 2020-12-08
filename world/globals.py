@@ -128,7 +128,9 @@ class Positions(IntEnum):
     Fighting = 7
     Standing = 8
 
-    def members():
+    def members(return_dict=False):
+        if return_dict:
+            return {k.lower(): v for k, v, in Positions._member_map_.items()}
         return list(reversed(Positions._member_map_.keys()))
 
 

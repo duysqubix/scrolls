@@ -19,6 +19,7 @@ from evennia.commands.default.building import CmdDig as OrigCmdDig
 import commands.informative as info
 import commands.act_item as act_item
 import commands.act_movement as act_mov
+import commands.act_other as act_other
 import commands.wiz as wiz
 from commands.wiz import CmdBookLoad, CmdDBLoad
 from world.globals import BUILDER_LVL
@@ -56,6 +57,8 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(act_item.CmdRemove())
         self.add(act_item.CmdDrop())
         self.add(act_item.CmdWield())
+
+        self.add(act_other.CmdTitle())
 
         # movement commands
         self.add(act_mov.CmdNorth())
@@ -107,6 +110,7 @@ class WizCmdSet(CmdSet):
     def at_cmdset_creation(self):
         self.add(wiz.CmdZoneSet())
         self.add(wiz.CmdZEdit())
+        self.add(wiz.CmdForce())
 
 
 class GodCmdSet(CmdSet):

@@ -208,8 +208,7 @@ def delete_contents(obj, exclude=[], do_not_delete_chars=True):
     """
 
     for o in obj.contents:
-        if o in exclude or (do_not_delete_chars and inherits_from(
-                o, 'typeclasses.characters.Character')):
+        if o in exclude or (do_not_delete_chars and o.db.is_pc):
             continue
         if o.contents:
             delete_contents(obj=o)

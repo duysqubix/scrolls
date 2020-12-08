@@ -10,7 +10,7 @@ from evennia.contrib import custom_gametime
 from evennia.utils import evmore
 from evennia.utils.utils import inherits_from
 from commands.command import Command
-from world.utils.utils import can_see_obj, capitalize_sentence, is_book, is_container, is_equipped, is_invis, is_obj, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation, rplanguage_parse_string
+from world.utils.utils import can_see_obj, capitalize_sentence, is_book, is_container, is_equipped, is_invis, is_npc, is_obj, is_pc, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation, rplanguage_parse_string
 from evennia.utils.ansi import raw as raw_ansi
 
 
@@ -333,13 +333,17 @@ class CmdLook(Command):
 
             # get room contents
             # get objects
-            for obj in location.contents:
-                if inherits_from(obj, 'typeclasses.characters.Character'):
+            for obj in sorted(location.contents,
+                              key=lambda x: x.db.look_index):
+                if is_pc(obj):
                     if obj.id == ch.id:
                         continue
-                    room_msg += f"{obj.name.capitalize()}\n"
+                    room_msg += f"{obj.name.capitalize()}{obj.attrs.title.value} is {obj.attrs.position.value.name.lower()} here\n"
 
-                if is_obj(obj):
+                elif is_npc(obj) and can_see_obj(ch, obj):
+                    room_msg += f"{obj.db.ldesc}\n"
+
+                elif is_obj(obj):
                     if is_invis(obj) and not can_see_obj(ch, obj):
                         ch.msg("Couldn't see")
                         continue
@@ -364,8 +368,13 @@ class CmdLook(Command):
                 return
             # look for obj in room
             for obj in ch.location.contents:
-                if obj.db.name:
+                if is_obj(obj):
                     if obj_name in obj.db.name:
+                        edesc = rplanguage_parse_string(ch, obj.db.edesc)
+                        ch.msg(edesc)
+                        return
+                elif is_npc(obj):
+                    if obj_name in obj.db.key:
                         edesc = rplanguage_parse_string(ch, obj.db.edesc)
                         ch.msg(edesc)
                         return
@@ -441,7 +450,7 @@ class CmdScore(Command):
 
         form = EvForm("resources.score_form")
         form.map({
-            1: ch.name.capitalize(),
+            1: f"{ch.name.capitalize()}{ch.attrs.title.value}",
             2: ch.stats.str.base,
             3: green_or_red(ch.stats.str.bonus),
             4: ch.stats.agi.base,

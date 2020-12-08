@@ -1,3 +1,4 @@
+from world.utils.act import Announce, act
 from evennia import search_object, logger
 from commands.command import Command
 from typeclasses.rooms.rooms import Room
@@ -42,8 +43,13 @@ class _CmdMove(Command):
         # special condition if ch is in redit
         if ch.ndb._redit:
             ch.ndb._redit.__init__(ch, exit)
+
+        # announce to the contents in rooms
+        act(f"$n leaves {self.key}", True, True, ch, None, None,
+            Announce.ToRoom)
         # valid, lets move
         ch.move_to(room)
+        act(f"$n arrives", True, True, ch, None, None, Announce.ToRoom)
 
 
 class CmdNorth(_CmdMove):

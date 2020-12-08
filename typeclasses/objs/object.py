@@ -2,6 +2,7 @@
 Default Scrolls object
 All objects must inherit this class to work properly
 """
+from evennia.utils.dbserialize import deserialize
 from world.globals import DEFAULT_OBJ_STRUCT
 from world.conditions import ALL_CONDITIONS, get_condition
 from evennia import DefaultObject, GLOBAL_SCRIPTS
@@ -185,15 +186,15 @@ class Object(DefaultObject):
 
         tags = ""
         if 'invis' in self.db.tags:
-            tags += "(|Cinvis|n)"
+            tags += "(|Cinvis|n) "
         if 'cursed' in self.db.tags:
-            tags += "(|rcursed|n)"
+            tags += "(|rcursed|n) "
         if 'daedric' in self.db.tags:
-            tags += "(|rda|Yed|rric|n)"
+            tags += "(|rda|Yed|rric|n) "
 
         if not ldesc:
-            return tags + " " + self.db.sdesc
-        return tags + " " + self.db.ldesc
+            return tags + self.db.sdesc
+        return tags + self.db.ldesc
 
     def at_object_creation(self):
         """ 
@@ -201,8 +202,8 @@ class Object(DefaultObject):
         which caller sets the key == vnum
         """
         self.db.is_obj = True
-
-        obj = dict(GLOBAL_SCRIPTS.objdb.vnum[int(self.key)])
+        self.db.look_index = 2
+        obj = deserialize(GLOBAL_SCRIPTS.objdb.vnum[int(self.key)])
 
         # set fields that didn't exist before, mostly used
         # if future fields are added and old already created objs
