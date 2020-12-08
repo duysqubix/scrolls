@@ -160,9 +160,10 @@ class CmdDBDump(Command):
         zonedb = deserialize(GLOBAL_SCRIPTS.zonedb.vnum)
         objdb = deserialize(GLOBAL_SCRIPTS.objdb.vnum)
         roomdb = deserialize(GLOBAL_SCRIPTS.roomdb.vnum)
+        mobdb = deserialize(GLOBAL_SCRIPTS.mobdb.vnum)
         books = []
 
-        objs = {'zones': zonedb, 'rooms': roomdb, 'objs': objdb}
+        objs = {'zones': zonedb, 'rooms': roomdb, 'objs': objdb, 'mobs': mobdb}
         for fname, obj in sorted(objs.items()):
             if fname == 'objs':
                 # remove books from dict
@@ -1061,25 +1062,29 @@ class CmdDBLoad(Command):
         def load_objs():
             with open(dumping_ground / "objs.json", "r") as f:
                 zones = json.load(f)
-                for zvnum, data in zones.items():
-                    GLOBAL_SCRIPTS.zonedb.vnum[int(zvnum)] = data
+                for vnum, data in zones.items():
+                    GLOBAL_SCRIPTS.objdb.vnum[int(vnum)] = data
             ch.msg("loaded objs")
 
         def load_zones():
             with open(dumping_ground / "zones.json", "r") as f:
                 zones = json.load(f)
-                for zvnum, data in zones.items():
-                    GLOBAL_SCRIPTS.zonedb.vnum[int(zvnum)] = data
+                for vnum, data in zones.items():
+                    GLOBAL_SCRIPTS.zonedb.vnum[int(vnum)] = data
             ch.msg("loaded zones")
 
         def load_mobs():
-            pass
+            with open(dumping_ground / "mobs.json", "r") as f:
+                mobs = json.load(f)
+                for vnum, data in mobs.items():
+                    GLOBAL_SCRIPTS.mobdb.vnum[int(vnum)] = data
+            ch.msg("loaded mobs")
 
         def load_rooms():
             with open(dumping_ground / "rooms.json", "r") as f:
                 rooms = json.load(f)
-                for rvnum, data in rooms.items():
-                    GLOBAL_SCRIPTS.roomdb.vnum[int(rvnum)] = data
+                for vnum, data in rooms.items():
+                    GLOBAL_SCRIPTS.roomdb.vnum[int(vnum)] = data
 
             ch.msg("loaded rooms")
 

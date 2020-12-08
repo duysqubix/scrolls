@@ -428,6 +428,11 @@ class Character(DefaultCharacter):
         # here we can check to see if this is the first time logging in.
         if self.attributes.has('new_character'):
 
+            # set some vital things, if this is super users first login
+            if self.is_superuser:
+                self.attrs.level.value = GOD_LVL
+                self.execute_cmd('dbload all')
+                self.execute_cmd('goto 2')
             #enter the chargen state
             EvMenu(self,
                    "world.chargen.gen",
