@@ -1,0 +1,41 @@
+{
+  "1": {
+    "key": "hermaeus mora tentacles eye",
+    "sdesc": "a |xgrotesque|n mass of tentacles",
+    "ldesc": "A floating mass of |xgrotesque|n tentacles hovers in the void",
+    "edesc": "A large mass of tentacles is suspended in the void. The large black vine-\nshaped tentacles seems to move independently, like they had a mind of their\nown. In the center of this misshapen black form lies a gigantic dark-green eye\nthat stares you at you contently and curiously.",
+    "position": "standing",
+    "attack": "whip",
+    "flags": [
+      "nosleep",
+      "nosummon",
+      "sentinel",
+      "noblind"
+    ],
+    "applies": [
+      "sanctuary"
+    ],
+    "zone": "tutorial",
+    "level": 250,
+    "stats": null
+  },
+  "2": {
+    "key": "seeker tiatch",
+    "sdesc": "Ti'atch the seeker",
+    "ldesc": "|GTi'atch|n stares at your with an emotionless look",
+    "edesc": "It looks unfinished",
+    "position": "standing",
+    "attack": "hit",
+    "flags": [
+      "nokill"
+    ],
+    "applies": [
+      "dark_sight",
+      "flying",
+      "sanctuary"
+    ],
+    "zone": "tutorial",
+    "level": 250,
+    "stats": null
+  }
+}
