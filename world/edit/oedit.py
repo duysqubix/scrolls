@@ -1,8 +1,6 @@
 """
 on-line editing of objects
 """
-import copy
-from .model import _EditMode
 from typeclasses.objs.object import VALID_OBJ_APPLIES, VALID_OBJ_TAGS
 from evennia.utils.utils import inherits_from
 from typeclasses.objs.custom import CUSTOM_OBJS
@@ -10,6 +8,8 @@ from evennia import GLOBAL_SCRIPTS
 from evennia import CmdSet, EvEditor, EvMenu
 from commands.command import Command
 from evennia.commands.default.help import CmdHelp
+from .model import _EditMode
+
 from world.globals import DEFAULT_OBJ_STRUCT
 _OEDIT_PROMPT = "(|goedit|n) > "
 
@@ -86,24 +86,24 @@ class OEditMode(_EditMode):
         msg = f"""
 ********Obj Summary*******
 
-VNUM: [{self.vnum}]
+|GVNUM|n: [{self.vnum}]
 
-key    : |y{self.obj['key']}|n
-sdesc  : |y{self.obj['sdesc']}|n
-ldesc  : 
-|y{self._cut_long_text(self.obj['ldesc'])}|n
+|Gkey|n    : {self.obj['key']}
+|Gsdesc|n  : {self.obj['sdesc']}
+|Gldesc|n  : 
+{self._cut_long_text(self.obj['ldesc'])}
 
-edesc  : {self._cut_long_text(self.obj['edesc'])}
-adesc  : {self.obj['adesc']}
-type   : {self.obj['type']}
-weight : {self.obj['weight']}
-cost   : {self.obj['cost']}
-level  : {self.obj['level']}
-applies: 
+|Gedesc|n  : {self._cut_long_text(self.obj['edesc'])}
+|Gadesc|n  : {self.obj['adesc']}
+|Gtype|n   : {self.obj['type']}
+|Gweight|n : {self.obj['weight']}
+|Gcost|n   : {self.obj['cost']}
+|Glevel|n  : {self.obj['level']}
+|Gapplies|n: 
 
 {applies}
 
-tags   : {", ".join(self.obj['tags'])}
+|Gtags|n   : {", ".join(self.obj['tags'])}
 ----------------Extras---------------------
 """
         self.caller.msg(self.obj['extra'])

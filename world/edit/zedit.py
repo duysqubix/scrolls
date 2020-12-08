@@ -34,14 +34,14 @@ class ZEditMode(_EditMode):
 
 ********Zone Summary*******
 
-VNUM: [{self.vnum}]      ZONE:[|m{self.obj['name']}|n]
+|GVNUM|n: [{self.vnum}]      |GZONE|n:[|m{self.obj['name']}|n]
 
-builders    : 
-|y{builders}|n
+|Gbuilders|n    : 
+{builders}
 
-lifespan    : |y{self.obj['lifespan']}|n
-level_range : |m{lvl_range}|n
-reset_msg   : 
+|Glifespan|n    : |y{self.obj['lifespan']}|n
+|Glevel_range|n : |m{lvl_range}|n
+|Greset_msg|n   : 
 |c{self.obj['reset_msg']}|n
         """
 

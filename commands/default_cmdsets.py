@@ -77,10 +77,12 @@ class BuilderCmdSet(CmdSet):
         self.add(wiz.CmdLoad())
         self.add(wiz.CmdOEdit())
         self.add(wiz.CmdREdit())
+        self.add(wiz.CmdMEdit())
         self.add(wiz.CmdRestore())
         self.add(wiz.CmdOList())
         self.add(wiz.CmdRList())
         self.add(wiz.CmdZList())
+        self.add(wiz.CmdMList())
         self.add(wiz.CmdHolyLight())
         self.add(wiz.CmdGoto())
         self.add(wiz.CmdWizHelp)
@@ -118,6 +120,7 @@ class GodCmdSet(CmdSet):
         self.add(wiz.CmdBookLoad())
         self.add(wiz.CmdDBLoad())
         self.add(wiz.CmdLanguageUpdate())
+        self.add(wiz.CmdPy())
 
 
 class AccountCmdSet(default_cmds.AccountCmdSet):

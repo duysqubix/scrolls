@@ -83,6 +83,7 @@ def rplanguage_parse_string(ch, string):
     #return capitalize_sentence(translated_string)
     return translated_string
 
+
 def apply_obj_effects(ch, obj):
     """
     apply the loaded effects from obj onto ch

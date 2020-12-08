@@ -342,6 +342,18 @@ class Stunned(Condition):
         caller.attrs.action_points.value = 0
 
 
+class Sanctuary(Condition):
+    __obj_name__ = "sanctuary"
+    __activate_msg__ = "A white aura momentarily surround you"
+    __deactivate_msg__ = "Your white aura fades away"
+
+    def at_condition(self, caller):
+        pass  # here mutate caller so that damage is halved
+
+    def after_condition(self, caller):
+        pass  # remove half damage
+
+
 class Unconscious(Condition):
     __obj_name__ = 'unconcious'
 
@@ -393,7 +405,18 @@ class Flying(Condition):
     __deactivate_msg__ = "Your feet touch the ground."
 
 
-ALL_CONDITIONS = (
+class WaterWalking(Condition):
+    __obj_name__ = "water_walking"
+    __activate_msg__ = "You struggle to sink through water"
+    __deactivate_msg__ = "Your weight returns to you."
+
+
+class Sneak(Condition):
+    __obj_name__ = "sneak"
+    __activate_msg__ = "You try to move more quietly."
+
+
+ALL_CONDITIONS = {
     Bleeding,
     Blinded,
     Burning,
@@ -420,12 +443,15 @@ ALL_CONDITIONS = (
     Prone,
     Paralyzed,
     Restrained,
+    Sanctuary,
     Silenced,
     Slowed,
     Sleeping,
+    Sneak,
     Stunned,
     Unconscious,
-)
+    WaterWalking
+}
 
 
 def get_condition(con_name, x=None, y=None):
