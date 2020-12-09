@@ -4,7 +4,7 @@ Inherits the Character class, but isn't by default pupppeted.
 """
 import copy
 from world.traits import DiseaseResistTrait, DiseasedTrait, ImmunityTrait
-from world.globals import Positions
+from world.globals import Positions, Size
 from evennia import GLOBAL_SCRIPTS
 
 from evennia.utils.dbserialize import deserialize
@@ -59,6 +59,9 @@ class Mob(Character):
         # positions is an IntEnum so we can use sleeping<standing == True
         self.db.position = Positions.members(return_dict=True)[obj['position']]
 
+        # size is an IntEnum so we can small<large == True
+        self.db.size = Size.members(return_dict=True)[obj['size']]
+
         # applies, here actually apply them
         for condition in obj['applies']:
             self.conditions.add(get_condition(con_name=condition))
@@ -68,6 +71,8 @@ class Mob(Character):
         self.add_attr('level', obj['level'])
 
         # do stats here
+        for stat_name, stat_value in obj['stats'].items():
+            self.attributes.add(stat_name, stat_value)
 
 
 VALID_MOB_FLAGS = {
