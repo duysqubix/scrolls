@@ -1,9 +1,15 @@
-from typeclasses.mobs.mob import VALID_MOB_APPLIES, VALID_MOB_FLAGS
+import numpy as np
+
 from evennia import CmdSet, Command, EvEditor, GLOBAL_SCRIPTS
 from evennia.commands.default.help import CmdHelp
 from evennia.utils.utils import crop, list_to_string, wrap
-from world.globals import DAM_TYPES, DEFAULT_MOB_STRUCT, Positions, Size
+
+from evennia.contrib.dice import roll_dice
+
+from world.globals import DAM_TYPES, DEFAULT_MOB_STRUCT, MAX_LEVEL, MIN_LEVEL, Positions, Size
 from world.edit.model import _EditMode
+from typeclasses.mobs.mob import VALID_MOB_APPLIES, VALID_MOB_FLAGS
+from world.utils.utils import mxp_string
 
 _MEDIT_PROMPT = "(|ymedit|n)"
 
@@ -73,11 +79,15 @@ class MEditMode(_EditMode):
 |GSize|n: {self.obj['size']:<5}
 |r----------------|rStats|R---------------------|n
 
-Str: {s['str']:<3}  Wp : {s['wp']:<3}    HP: {s['hp']:<3}   dam_roll: {s['dam_roll']:<5}
-End: {s['end']:<3}  Prc: {s['prc']:<3}    MP: {s['mp']:<3}   hit_roll: {s['hit_roll']:<5}
+Str: {s['str']:<3}  Wp : {s['wp']:<3}    HP: {s['hp']:<3}   
+End: {s['end']:<3}  Prc: {s['prc']:<3}    MP: {s['mp']:<3}   
 Agi: {s['agi']:<3}  Prs: {s['prs']:<3}    SP: {s['sp']:<3}   
 Int: {s['int']:<3}  Lck: {s['lck']:<3}    AR: {s['ar']:<3}
 
+dam_num : {s['dam_num']:<5}
+dam_size: {s['dam_size']:<5}
+dam_mod : {s['dam_mod']:<5}
+(range |Y{s['dam_mod']+s['dam_num']}|n to |Y{s['dam_mod']+(s['dam_size']*s['dam_num'])}|n)
 """
 
         self.caller.msg(msg)
@@ -93,11 +103,100 @@ class MEditCmdSet(CmdSet):
         self.add(Look())
         self.add(CmdHelp())
         self.add(Set())
+        self.add(AutoLevel())
 
 
 class MEditCommand(Command):
     def at_post_cmd(self):
         self.caller.msg(prompt=_MEDIT_PROMPT)
+
+
+class AutoLevel(Command):
+    """
+    Sets stats for character based on 
+    human friendly language..
+
+    This uses a random dice roller from a base stat of
+    25 in all stats. This represents the easy category.
+    Calling the other level types, adds a direct modifier to 
+    the base in multiples of 2.
+
+    Meaning that: 
+        a hard mob is 4x harder than a medium, which is 16x harder than an easy, and 64x harder than a wimpy
+
+
+    Usage:
+        autolevel [wimpy/easy/medium/hard/insane/chaotic]
+    """
+
+    _base_multiplier = 3
+    _base_stat = 25
+
+    key = 'autolevel'
+    aliases = ['auto']
+
+    def func(self):
+        ch = self.caller
+        args = self.args.strip()
+        obj = ch.ndb._medit.obj
+
+        valid_levels = ('wimpy', 'easy', 'medium', 'hard', 'insane', 'chaotic')
+        if not args:
+            level = 'easy'
+        else:
+            if args not in valid_levels:
+                ch.msg(
+                    f"That is not a valid toughness, try {mxp_string('help autolevel', 'help autolevel')})"
+                )
+                return
+            level = args
+
+        rollfunc = np.vectorize(lambda x: x + roll_dice(2, 10))
+        base_stats = np.full((8, ),
+                             fill_value=self._base_stat,
+                             dtype=np.float64)
+
+        if level == 'wimpy':
+            base_stats *= (self._base_multiplier**-1)
+        elif level == 'easy':
+            # pass, this is default
+            pass
+        elif level == 'medium':
+            base_stats *= (self._base_multiplier**1)
+        elif level == 'hard':
+            base_stats *= (self._base_multiplier**2)
+
+        elif level == 'insane':
+            base_stats *= (self._base_multiplier**3)
+
+        elif level == 'chaotic':
+            base_stats *= (self._base_multiplier**4)
+
+        olvl = obj['level']
+        base = rollfunc(base_stats).astype(np.int).tolist()
+        obj['stats']['str'] = base[0]
+        obj['stats']['end'] = base[1]
+        obj['stats']['agi'] = base[2]
+        obj['stats']['int'] = base[3]
+        obj['stats']['wp'] = base[4]
+        obj['stats']['prc'] = base[5]
+        obj['stats']['prs'] = base[6]
+        obj['stats']['lck'] = base[7]
+
+        obj['stats']['hp'] = int(obj['stats']['end'] // 2 + 1) + int(
+            olvl * 0.5)
+
+        obj['stats']['sp'] = int(
+            (obj['stats']['end'] + obj['stats']['agi']) / 4) + int(olvl * 0.5)
+
+        obj['stats']['mp'] = int(obj['stats']['int']) + int(olvl * 0.5)
+
+        #TODO: find a good wayto auto set dam_roll based on level
+        # obj['stats']['dam_num'] = num_dice
+        # obj['stats']['dam_size'] = size_dice
+        # obj['stats']['dam_mod'] = mod_dice
+
+        ch.msg(f"mob autoleveled on {level}")
 
 
 class Set(MEditCommand):

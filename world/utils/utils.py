@@ -1,5 +1,7 @@
 import random
 import re
+from functools import reduce
+
 from evennia import GLOBAL_SCRIPTS, create_object
 from evennia.contrib.rplanguage import obfuscate_language
 from evennia.utils import make_iter
@@ -12,6 +14,16 @@ from world.conditions import DetectHidden, DetectInvis, Hidden, HolyLight, Invis
 
 _CAP_PATTERN = re.compile(r'((?<=[\.\?!\n]\s)(\w+)|(^\w+))')
 _LANG_TAGS = re.compile('\>(.*?)\<', re.I)
+
+
+def factors(n):
+    """
+    efficiently find the factors of a given number
+    """
+    return set(
+        reduce(list.__add__, ([i, n // i]
+                              for i in range(1,
+                                             int(n**0.5) + 1) if n % i == 0)))
 
 
 def highlight_words(block, key_targets, color_codes):

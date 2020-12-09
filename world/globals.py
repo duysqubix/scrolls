@@ -2,7 +2,8 @@
 Global variables and constants used in mud
 """
 from enum import IntEnum
-
+MAX_LEVEL = 250
+MIN_LEVEL = 1
 GOD_LVL = 205
 WIZ_LVL = 204
 IMM_LVL = 203
@@ -36,7 +37,9 @@ DEFAULT_MOB_STRUCT = {
         "mp": 0,
         "sp": 0,
         "ar": 0,
-        "dam_roll": 0,
+        "dam_num": 1,
+        "dam_size": 2,
+        "dam_mod": 0,
         "hit_roll": 0
     }
 }

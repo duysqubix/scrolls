@@ -16,7 +16,26 @@
       "sanctuary"
     ],
     "zone": "tutorial",
-    "level": 250
+    "level": 250,
+    "size": "huge",
+    "stats": {
+      "str": 0,
+      "end": 0,
+      "agi": 0,
+      "int": 0,
+      "wp": 0,
+      "prc": 0,
+      "prs": 0,
+      "lck": 0,
+      "hp": 0,
+      "mp": 0,
+      "sp": 0,
+      "ar": 0,
+      "dam_num": 1,
+      "dam_size": 2,
+      "dam_mod": 0,
+      "hit_roll": 0
+    }
   },
   "2": {
     "key": "seeker tiatch",
