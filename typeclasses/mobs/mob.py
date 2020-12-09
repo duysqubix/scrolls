@@ -3,13 +3,14 @@ Base Mob class
 Inherits the Character class, but isn't by default pupppeted.
 """
 import copy
+from world.traits import DiseaseResistTrait, DiseasedTrait, ImmunityTrait
 from world.globals import Positions
 from evennia import GLOBAL_SCRIPTS
 
 from evennia.utils.dbserialize import deserialize
 
 from world.characteristics import CHARACTERISTICS
-from world.conditions import Blinded, DarkSight, Flying, Hidden, Invisible, Sanctuary, Sneak, WaterWalking, get_condition
+from world.conditions import Blinded, DarkSight, DetectHidden, DetectInvis, Diseased, Flying, Hidden, Invisible, Sanctuary, Silenced, Sneak, WaterWalking, get_condition
 from typeclasses.characters import Character
 
 
@@ -77,5 +78,6 @@ VALID_MOB_FLAGS = {
 VALID_MOB_APPLIES = {
     Blinded.__obj_name__, Invisible.__obj_name__, WaterWalking.__obj_name__,
     DarkSight.__obj_name__, Sanctuary.__obj_name__, Hidden.__obj_name__,
-    Sneak.__obj_name__, Flying.__obj_name__
+    Sneak.__obj_name__, Flying.__obj_name__, DetectHidden.__obj_name__,
+    DetectInvis.__obj_name__, Silenced.__obj_name__
 }

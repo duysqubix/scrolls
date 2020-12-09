@@ -16,8 +16,7 @@
       "sanctuary"
     ],
     "zone": "tutorial",
-    "level": 250,
-    "stats": null
+    "level": 250
   },
   "2": {
     "key": "seeker tiatch",
@@ -35,7 +34,6 @@
       "sanctuary"
     ],
     "zone": "tutorial",
-    "level": 250,
-    "stats": null
+    "level": 250
   }
 }

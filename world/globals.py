@@ -22,7 +22,23 @@ DEFAULT_MOB_STRUCT = {
     "applies": [],
     "zone": "null",
     "level": 0,
-    "stats": None  # default, holds an empty instance of MobStat class
+    "size": 'standard',
+    "stats": {
+        "str": 0,
+        "end": 0,
+        "agi": 0,
+        "int": 0,
+        "wp": 0,
+        "prc": 0,
+        "prs": 0,
+        "lck": 0,
+        "hp": 0,
+        "mp": 0,
+        "sp": 0,
+        "ar": 0,
+        "dam_roll": 0,
+        "hit_roll": 0
+    }
 }
 
 DEFAULT_OBJ_STRUCT = {
@@ -134,6 +150,21 @@ class Positions(IntEnum):
         if return_dict:
             return {k.lower(): v for k, v, in Positions._member_map_.items()}
         return list(reversed(Positions._member_map_.keys()))
+
+
+class Size(IntEnum):
+    Puny = 0
+    Tiny = 1
+    Small = 2
+    Standard = 3
+    Large = 4
+    Huge = 5
+    Enormous = 6
+
+    def members(return_dict=False):
+        if return_dict:
+            return {k.lower(): v for k, v, in Size._member_map_.items()}
+        return list(reversed(Size._member_map_.keys()))
 
 
 class _WearLocation:

@@ -2,7 +2,7 @@ from typeclasses.mobs.mob import VALID_MOB_APPLIES, VALID_MOB_FLAGS
 from evennia import CmdSet, Command, EvEditor, GLOBAL_SCRIPTS
 from evennia.commands.default.help import CmdHelp
 from evennia.utils.utils import crop, list_to_string, wrap
-from world.globals import DAM_TYPES, DEFAULT_MOB_STRUCT, Positions
+from world.globals import DAM_TYPES, DEFAULT_MOB_STRUCT, Positions, Size
 from world.edit.model import _EditMode
 
 _MEDIT_PROMPT = "(|ymedit|n)"
@@ -49,6 +49,8 @@ class MEditMode(_EditMode):
             self.caller.msg('mob saved')
 
     def summarize(self):
+        self.caller.msg(list(self.obj.keys()))
+        s = self.obj['stats']
         msg = f"""
 ********Mob Summary*******
 
@@ -66,8 +68,16 @@ class MEditMode(_EditMode):
 |Gattack|n   : {self.obj['attack']}
 |Gapplies|n  : {list_to_string(self.obj['applies'])}
 |Gflags|n    : {list_to_string(self.obj['flags'])}
-----------------Stats---------------------
-Level: {self.obj['level']}
+
+|GLevel|n: {self.obj['level']}  
+|GSize|n: {self.obj['size']:<5}
+|r----------------|rStats|R---------------------|n
+
+Str: {s['str']:<3}  Wp : {s['wp']:<3}    HP: {s['hp']:<3}   dam_roll: {s['dam_roll']:<5}
+End: {s['end']:<3}  Prc: {s['prc']:<3}    MP: {s['mp']:<3}   hit_roll: {s['hit_roll']:<5}
+Agi: {s['agi']:<3}  Prs: {s['prs']:<3}    SP: {s['sp']:<3}   
+Int: {s['int']:<3}  Lck: {s['lck']:<3}    AR: {s['ar']:<3}
+
 """
 
         self.caller.msg(msg)
@@ -237,146 +247,48 @@ class Set(MEditCommand):
                         ch.msg(set_str)
                 return
             else:
-                # list all available applies (conditions)
-                table = self.styled_table("Available NPC Affects")
-                affects = list_to_string(VALID_MOB_APPLIES)
+                # list all available (conditions)
+                table = self.styled_table("Available NPC Conditions")
+                affects = list_to_string(sorted(VALID_MOB_APPLIES))
                 table.add_row(wrap(affects, width=50))
                 ch.msg(table)
                 return
+        elif keyword == 'size':
+            if len(args) > 1:
+                size = args[1].strip().lower()
+                if size.capitalize() not in Size.members():
+                    ch.msg("not a valid size")
+                    return
+                obj[keyword] = size
+                ch.msg(set_str)
+            else:
+                # list all sizes
+                table = self.styled_table("Available NPC Sizes")
+                sizes = list_to_string(Size.members())
+                table.add_row(wrap(sizes, width=50))
+                ch.msg(table)
+                return
+        elif keyword == 'stats':
+            if len(args) > 2:
+                stat, value = args[1].strip(), args[2].strip()
+                if stat not in obj[keyword].keys():
+                    ch.msg("Not a valid stat")
+                    return
+                try:
+                    value = int(value)
+                except ValueError:
+                    ch.msg("stat values must be a valid number")
+                    return
 
-        # elif keyword in ('weight', 'cost', 'level'):
-        #     # set can't be < 0
-        #     try:
-        #         weight = int(args[1].strip())
-        #     except:
-        #         ch.msg(f"{keyword} not a valid integer")
-        #         return
-
-        #     if weight < 0:
-        #         weight = 0
-        #     obj[keyword] = weight
-        #     ch.msg(f'{keyword} set.')
-        #     return
-
-        # elif keyword == 'applies':
-        #     #args=    [0]     [1]    [2]    [3]  [4]
-        #     # ex: set applies attrs [attr] [mod]
-        #     # ex: set applies stats [stat] [mod]
-        #     # ex: set applies conditions blinded x,y
-        #     if len(args) > 1:
-        #         if args[1] == 'clear':
-        #             obj[keyword].clear()
-        #             return
-        #         if len(args) < 3:
-        #             ch.msg("invalid entry, see |chelp oedit-menu-applies|n")
-        #             return
-
-        #         apply_type = args[1]
-        #         if apply_type not in VALID_OBJ_APPLIES.keys():
-        #             ch.msg("not a valid apply type")
-        #             return
-
-        #         if apply_type == 'attrs':
-        #             attr = args[2]
-        #             if attr not in VALID_OBJ_APPLIES['attrs']:
-        #                 ch.msg("not a valid attribute to modify")
-        #                 return
-        #             try:
-        #                 mod = int(args[3])
-        #             except:
-        #                 ch.msg("not a valid number for modifier")
-        #                 return
-
-        #             pair = (attr, mod)
-        #             if pair in obj[keyword]:
-        #                 obj[keyword].remove(pair)
-        #                 return
-        #             obj[keyword].append(pair)
-
-        #         elif apply_type == 'stats':
-        #             stat = args[2]
-        #             if stat not in VALID_OBJ_APPLIES['stats']:
-        #                 ch.msg("not a valid stat to modify")
-        #                 return
-        #             try:
-        #                 mod = int(args[3])
-        #             except:
-        #                 ch.msg("not a valid number for modifier")
-        #                 return
-
-        #             pair = (stat, mod)
-        #             if pair in obj[keyword]:
-        #                 obj[keyword].remove(pair)
-        #                 return
-        #             obj[keyword].append(pair)
-
-        #         elif apply_type == 'conditions':
-        #             # ex: set applies conditions <condition> x y
-        #             condition = args[2]
-        #             if condition not in VALID_OBJ_APPLIES['conditions']:
-        #                 ch.msg("not a valid condition")
-        #                 return
-
-        #             x, y = None, None
-        #             if len(args) == 4:
-        #                 # only x is given
-        #                 try:
-        #                     #TODO: sometimes x can be float depending on condition
-        #                     x = int(args[3])
-        #                 except:
-        #                     ch.msg("X must be valid number")
-        #                     return
-        #             elif len(args) == 5:
-        #                 # x and y is given
-        #                 try:
-        #                     x = int(args[3])
-        #                     y = int(args[4])
-        #                 except:
-        #                     ch.msg("XY must be a valid number")
-        #                     return
-
-        #             pair = (condition, x, y)
-        #             if pair in obj[keyword]:
-        #                 obj[keyword].remove(pair)
-        #                 return
-        #             obj[keyword].append(pair)
-        #         else:
-        #             raise ValueError(
-        #                 "bug encountered, you shouldn't have gotten here.")
-        #     else:
-        #         # show all applies
-        #         applies = ""
-        #         for apply_type, components in VALID_OBJ_APPLIES.items():
-        #             applies += f"\n|c{apply_type}|n\n    "
-        #             c = ", ".join(components)
-        #             applies += c
-
-        #         ch.msg(applies)
-        #         return
-
-        # elif keyword == 'tags':
-        #     if len(args) > 1:
-        #         tag = args[1].strip()
-
-        #         if tag == 'clear':
-        #             obj[keyword].clear()
-        #             return
-        #         if tag not in VALID_OBJ_TAGS:
-        #             ch.msg("Not a valid tag")
-        #             return
-        #         if tag in obj[keyword]:
-        #             obj[keyword].remove(tag)
-        #             ch.msg(f"{tag} tag removed")
-        #         else:
-        #             obj[keyword].append(tag)
-        #             ch.msg(f"{tag} tag applied")
-        #         return
-        #     else:
-        #         # show all tags
-        #         tags = ", ".join(VALID_OBJ_TAGS)
-        #         msg = f"Available Tags:\n{tags}"
-        #         ch.msg(msg)
-        #         return
+                obj[keyword][stat] = value
+                ch.msg(f"set {stat}")
+            else:
+                # show available stats
+                table = self.styled_table("Available NPC Settable Stats")
+                stats = sorted(list(obj[keyword].keys()))
+                table.add_row(wrap(list_to_string(stats), width=50))
+                ch.msg(table)
+                return
 
 
 class Look(MEditCommand):

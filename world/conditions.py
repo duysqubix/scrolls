@@ -416,6 +416,14 @@ class Sneak(Condition):
     __activate_msg__ = "You try to move more quietly."
 
 
+class Diseased(Condition):
+    __obj_name__ = "diseased"
+
+    def at_condition(self, caller):
+        if self.X is None:
+            raise ValueError("diseased trait must have X defined")
+
+
 ALL_CONDITIONS = {
     Bleeding,
     Blinded,
@@ -429,6 +437,7 @@ ALL_CONDITIONS = {
     Deafened,
     DetectHidden,
     DetectInvis,
+    Diseased,
     Fatigued,
     Fear,
     Flying,
