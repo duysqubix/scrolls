@@ -1,7 +1,7 @@
 import random
 import re
 from functools import reduce
-
+import numpy as np
 from evennia import GLOBAL_SCRIPTS, create_object
 from evennia.contrib.rplanguage import obfuscate_language
 from evennia.utils import make_iter

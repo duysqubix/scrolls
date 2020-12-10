@@ -1,3 +1,4 @@
+from enum import IntEnum
 import numpy as np
 
 from evennia import CmdSet, Command, EvEditor, GLOBAL_SCRIPTS
@@ -129,8 +130,10 @@ class AutoLevel(Command):
         autolevel [wimpy/easy/medium/hard/insane/chaotic]
     """
 
-    _base_multiplier = 3
-    _base_stat = 25
+    _base_multiplier = 2
+    _base_stat = 0
+    _base_stat_mult = 1.5
+    _mob_difficulty = 2
 
     key = 'autolevel'
     aliases = ['auto']
@@ -140,56 +143,39 @@ class AutoLevel(Command):
         args = self.args.strip()
         obj = ch.ndb._medit.obj
 
-        valid_levels = ('wimpy', 'easy', 'medium', 'hard', 'insane', 'chaotic')
+        valid_attrs = ('str', 'end', 'agi', 'int', 'wp', 'prc', 'prs', 'lck')
+
         if not args:
             level = 'easy'
         else:
-            if args not in valid_levels:
+            if args not in MobDifficulty.members():
                 ch.msg(
                     f"That is not a valid toughness, try {mxp_string('help autolevel', 'help autolevel')})"
                 )
                 return
             level = args
 
-        rollfunc = np.vectorize(lambda x: x + roll_dice(2, 10))
-        base_stats = np.full((8, ),
-                             fill_value=self._base_stat,
-                             dtype=np.float64)
+        dice = np.vectorize(lambda x: x + roll_dice(2, 5))
+        base_stats = np.full((8, ), fill_value=self._base_stat, dtype=np.int64)
 
-        if level == 'wimpy':
-            base_stats *= (self._base_multiplier**-1)
-        elif level == 'easy':
-            # pass, this is default
-            pass
-        elif level == 'medium':
-            base_stats *= (self._base_multiplier**1)
-        elif level == 'hard':
-            base_stats *= (self._base_multiplier**2)
+        base_stats = dice(base_stats)
 
-        elif level == 'insane':
-            base_stats *= (self._base_multiplier**3)
+        mob_level = MobDifficulty.members(return_dict=True)[level]
 
-        elif level == 'chaotic':
-            base_stats *= (self._base_multiplier**4)
+        seed = {
+            "base_mult": self._base_stat_mult,
+            "olvl": obj['level'],
+            "diff_mod": self._mob_difficulty**mob_level.value
+        }
 
-        olvl = obj['level']
-        base = rollfunc(base_stats).astype(np.int).tolist()
-        obj['stats']['str'] = base[0]
-        obj['stats']['end'] = base[1]
-        obj['stats']['agi'] = base[2]
-        obj['stats']['int'] = base[3]
-        obj['stats']['wp'] = base[4]
-        obj['stats']['prc'] = base[5]
-        obj['stats']['prs'] = base[6]
-        obj['stats']['lck'] = base[7]
+        for idx, name in enumerate(valid_attrs):
+            obj['stats'][name] = base_stats[idx]
 
-        obj['stats']['hp'] = int(obj['stats']['end'] // 2 + 1) + int(
-            olvl * 0.5)
+        seed.update(obj['stats'])
 
-        obj['stats']['sp'] = int(
-            (obj['stats']['end'] + obj['stats']['agi']) / 4) + int(olvl * 0.5)
-
-        obj['stats']['mp'] = int(obj['stats']['int']) + int(olvl * 0.5)
+        obj['stats']['hp'] = Hp(**seed).calc()
+        obj['stats']['sp'] = Sp(**seed).calc()
+        obj['stats']['mp'] = Wp(**seed).calc()
 
         #TODO: find a good wayto auto set dam_roll based on level
         # obj['stats']['dam_num'] = num_dice
@@ -424,3 +410,71 @@ class Exit(MEditCommand):
         except:
             ch.ndb._medit.save(override=False, bypass_checks=False)
             del ch.ndb._medit
+
+
+class MobDifficulty(IntEnum):
+    wimpy = -1
+    easy = 0
+    medium = 1
+    hard = 2
+    insane = 3
+    chaotic = 4
+
+    def members(return_dict=False):
+        if return_dict:
+            return {
+                k.lower(): v
+                for k, v, in MobDifficulty._member_map_.items()
+            }
+        return list(reversed(MobDifficulty._member_map_.keys()))
+
+
+class ndict(dict):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for k, v in self.items():
+            setattr(self, k, v)
+
+    def __setattr__(self, k, v):
+        super().__setattr__(k, v)
+        self[k] = v
+
+    def __getattr__(self, k):
+        return self[k]
+
+
+class CalcVitals:
+    def __init__(self, **kwargs):
+        self.value = None
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def calc(self):
+        raise NotImplementedError()
+
+    @property
+    def base(self):
+        return (self.base_mult * np.log2(self.olvl)) * self.olvl
+
+    def __repr__(self):
+        return str(self.calc())
+
+
+class Hp(CalcVitals):
+    def calc(self):
+        val = int((self.base * np.log(self.end)) * self.diff_mod)
+        return max(val, 3)
+
+
+class Wp(CalcVitals):
+    def calc(self):
+        val = int((self.base * np.log(
+            (self.int + self.wp) / 2)) * self.diff_mod)
+        return max(val, 3)
+
+
+class Sp(CalcVitals):
+    def calc(self):
+        val = int((self.base * np.log(
+            (self.end + self.agi) / 2)) * self.diff_mod)
+        return max(val, 3)

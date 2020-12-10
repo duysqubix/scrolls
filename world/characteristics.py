@@ -39,6 +39,10 @@ class Characteristic:
         return "{:>12}: {:>3}({:>3})".format(self.name.capitalize(), self.base,
                                              self.bonus)
 
+    def collect(self):
+        """gets total sum of base&bonus"""
+        return self.base + self.bonus
+
 
 class StrChar(Characteristic):
     __obj_name__ = "str"
