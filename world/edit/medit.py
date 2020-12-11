@@ -57,8 +57,9 @@ class MEditMode(_EditMode):
 
     def summarize(self):
         s = self.obj['stats']
+
         dam_min = s['dam_size'] + s['dam_mod']
-        dam_max = s['dam_max'] + s['dam_mod']
+        dam_max = (s['dam_size'] * s['dam_num']) + s['dam_mod']
         dam_avg = int(((s['dam_size'] + 1) / 2) * s['dam_num']) + s['dam_mod']
         msg = f"""
 ********Mob Summary*******
@@ -187,10 +188,9 @@ class AutoLevel(Command):
 
         #TODO: find a good wayto auto set dam_roll based on level
         # obj['stats']['dam_num'] = num_dice
-        num, size, max_ = auto.calc_dam()
-        self.caller.debug_msg(num, size, max_)
+        num, size = auto.calc_dam()
+        _max = int(num * size)
         obj['stats']['dam_num'] = num
-        obj['stats']['dam_max'] = max_
         obj['stats']['dam_size'] = size
         obj['stats']['hit_roll'] = auto.calc_hit()
 
@@ -516,8 +516,7 @@ class AutoMobScaling:
         if v:
             dam_num = v[0]
             dam_size = v[1]
-            dam_max = int(dam_num * dam_size)
-            return dam_num, dam_size, dam_max
+            return dam_num, dam_size
 
     def calc_hit(self):
         hit_roll = min(
