@@ -2,7 +2,8 @@
 Global variables and constants used in mud
 """
 from enum import IntEnum
-
+MAX_LEVEL = 250
+MIN_LEVEL = 1
 GOD_LVL = 205
 WIZ_LVL = 204
 IMM_LVL = 203
@@ -22,7 +23,25 @@ DEFAULT_MOB_STRUCT = {
     "applies": [],
     "zone": "null",
     "level": 0,
-    "stats": None  # default, holds an empty instance of MobStat class
+    "size": 'standard',
+    "stats": {
+        "str": 0,
+        "end": 0,
+        "agi": 0,
+        "int": 0,
+        "wp": 0,
+        "prc": 0,
+        "prs": 0,
+        "lck": 0,
+        "hp": 0,
+        "mp": 0,
+        "sp": 0,
+        "ar": 0,
+        "dam_num": 0,
+        "dam_size": 0,
+        "dam_mod": 0,
+        "hit_roll": 0,
+    }
 }
 
 DEFAULT_OBJ_STRUCT = {
@@ -136,6 +155,21 @@ class Positions(IntEnum):
         return list(reversed(Positions._member_map_.keys()))
 
 
+class Size(IntEnum):
+    Puny = 0
+    Tiny = 1
+    Small = 2
+    Standard = 3
+    Large = 4
+    Huge = 5
+    Enormous = 6
+
+    def members(return_dict=False):
+        if return_dict:
+            return {k.lower(): v for k, v, in Size._member_map_.items()}
+        return list(reversed(Size._member_map_.keys()))
+
+
 class _WearLocation:
     def __init__(self, name, display_msg=None):
         self.name = name
@@ -226,3 +260,26 @@ _PROFICIENY_GRADIENT = {
     5: Expert,
     6: Master
 }
+
+
+class classdict(dict):
+    """
+    like a normal dictionary, but keys are accessible as
+    properties
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for k, v in self.items():
+            setattr(self, k, v)
+
+    def get(self, name, default=None):
+        return getattr(self, name, default)
+
+    def __getattr__(self, name, default=None):
+        try:
+            return self[name]
+        except KeyError:
+            return default
+
+    def __setattr__(self, name, value) -> None:
+        self[name] = value

@@ -1,9 +1,16 @@
-from typeclasses.mobs.mob import VALID_MOB_APPLIES, VALID_MOB_FLAGS
+from enum import IntEnum
+import numpy as np
+
 from evennia import CmdSet, Command, EvEditor, GLOBAL_SCRIPTS
 from evennia.commands.default.help import CmdHelp
 from evennia.utils.utils import crop, list_to_string, wrap
-from world.globals import DAM_TYPES, DEFAULT_MOB_STRUCT, Positions
+
+from evennia.contrib.dice import roll_dice
+
+from world.globals import DAM_TYPES, DEFAULT_MOB_STRUCT, MAX_LEVEL, MIN_LEVEL, Positions, Size
 from world.edit.model import _EditMode
+from typeclasses.mobs.mob import VALID_MOB_APPLIES, VALID_MOB_FLAGS
+from world.utils.utils import mxp_string
 
 _MEDIT_PROMPT = "(|ymedit|n)"
 
@@ -49,6 +56,10 @@ class MEditMode(_EditMode):
             self.caller.msg('mob saved')
 
     def summarize(self):
+        s = self.obj['stats']
+        dam_min = s['dam_size'] + s['dam_mod']
+        dam_max = s['dam_max'] + s['dam_mod']
+        dam_avg = int(((s['dam_size'] + 1) / 2) * s['dam_num']) + s['dam_mod']
         msg = f"""
 ********Mob Summary*******
 
@@ -66,8 +77,26 @@ class MEditMode(_EditMode):
 |Gattack|n   : {self.obj['attack']}
 |Gapplies|n  : {list_to_string(self.obj['applies'])}
 |Gflags|n    : {list_to_string(self.obj['flags'])}
-----------------Stats---------------------
-Level: {self.obj['level']}
+
+|GLevel|n: {self.obj['level']}  
+|GSize|n: {self.obj['size']:<5}
+|r----------------|rStats|R---------------------|n
+
+|GStr|n: {s['str']:<3}  |GWp |n: {s['wp']:<3}    |GHP|n: {s['hp']:<3}   
+|GEnd|n: {s['end']:<3}  |GPrc|n: {s['prc']:<3}    |GMP|n: {s['mp']:<3}   
+|GAgi|n: {s['agi']:<3}  |GPrs|n: {s['prs']:<3}    |GSP|n: {s['sp']:<3}   
+|GInt|n: {s['int']:<3}  |GLck|n: {s['lck']:<3}    |GAR|n: {s['ar']:<3}
+
+|Ghit_roll |n: {s['hit_roll']:<5}
+
+
+Damage Statistics:
+---------------------------------
+|Gdam_num|n: {s['dam_num']}
+|Gdam_size|n: {s['dam_size']}
+|Gdam_mod |n: {s['dam_mod']:<4} (|Y{dam_min}|n to |Y{dam_max}|n) (|G{dam_avg}|n)
+---------------------------------
+
 """
 
         self.caller.msg(msg)
@@ -83,11 +112,89 @@ class MEditCmdSet(CmdSet):
         self.add(Look())
         self.add(CmdHelp())
         self.add(Set())
+        self.add(AutoLevel())
 
 
 class MEditCommand(Command):
     def at_post_cmd(self):
         self.caller.msg(prompt=_MEDIT_PROMPT)
+
+
+class AutoLevel(Command):
+    """
+    Sets stats for character based on 
+    human friendly language..
+
+    This uses a random dice roller from a base stat of
+    25 in all stats. This represents the easy category.
+    Calling the other level types, adds a direct modifier to 
+    the base in multiples of 2.
+
+    Meaning that: 
+        a hard mob is 4x harder than a medium, which is 16x harder than an easy, and 64x harder than a wimpy
+
+
+    Usage:
+        autolevel [wimpy/easy/medium/hard/insane/chaotic]
+    """
+
+    _base_multiplier = 2
+    _base_stat = 0
+    _base_stat_mult = 1.5
+    _mob_difficulty = 2
+
+    key = 'autolevel'
+    aliases = ['auto']
+
+    def func(self):
+        ch = self.caller
+        args = self.args.strip()
+        obj = ch.ndb._medit.obj
+
+        valid_attrs = ('str', 'end', 'agi', 'int', 'wp', 'prc', 'prs', 'lck')
+
+        if not args:
+            level = 'easy'
+        else:
+            if args not in MobDifficulty.members():
+                ch.msg(
+                    f"That is not a valid toughness, try {mxp_string('help autolevel', 'help autolevel')})"
+                )
+                return
+            level = args
+
+        dice = np.vectorize(lambda x: x + roll_dice(2, 5))
+        base_stats = np.full((8, ), fill_value=self._base_stat, dtype=np.int64)
+
+        base_stats = dice(base_stats)
+
+        members = MobDifficulty.members(return_dict=True)
+        seed = {
+            "base_mult": self._base_stat_mult,
+            "olvl": obj['level'],
+            "diff_mult": self._mob_difficulty,
+            "diff": members[level]
+        }
+
+        for idx, name in enumerate(valid_attrs):
+            obj['stats'][name] = base_stats[idx]
+
+        seed.update(obj['stats'])
+        auto = AutoMobScaling(**seed)
+        obj['stats']['hp'] = auto.calc_hp()
+        obj['stats']['sp'] = auto.calc_sp()
+        obj['stats']['mp'] = auto.calc_mp()
+
+        #TODO: find a good wayto auto set dam_roll based on level
+        # obj['stats']['dam_num'] = num_dice
+        num, size, max_ = auto.calc_dam()
+        self.caller.debug_msg(num, size, max_)
+        obj['stats']['dam_num'] = num
+        obj['stats']['dam_max'] = max_
+        obj['stats']['dam_size'] = size
+        obj['stats']['hit_roll'] = auto.calc_hit()
+
+        ch.msg(f"mob autoleveled on {level}")
 
 
 class Set(MEditCommand):
@@ -237,146 +344,48 @@ class Set(MEditCommand):
                         ch.msg(set_str)
                 return
             else:
-                # list all available applies (conditions)
-                table = self.styled_table("Available NPC Affects")
-                affects = list_to_string(VALID_MOB_APPLIES)
+                # list all available (conditions)
+                table = self.styled_table("Available NPC Conditions")
+                affects = list_to_string(sorted(VALID_MOB_APPLIES))
                 table.add_row(wrap(affects, width=50))
                 ch.msg(table)
                 return
+        elif keyword == 'size':
+            if len(args) > 1:
+                size = args[1].strip().lower()
+                if size.capitalize() not in Size.members():
+                    ch.msg("not a valid size")
+                    return
+                obj[keyword] = size
+                ch.msg(set_str)
+            else:
+                # list all sizes
+                table = self.styled_table("Available NPC Sizes")
+                sizes = list_to_string(Size.members())
+                table.add_row(wrap(sizes, width=50))
+                ch.msg(table)
+                return
+        elif keyword == 'stats':
+            if len(args) > 2:
+                stat, value = args[1].strip(), args[2].strip()
+                if stat not in obj[keyword].keys():
+                    ch.msg("Not a valid stat")
+                    return
+                try:
+                    value = int(value)
+                except ValueError:
+                    ch.msg("stat values must be a valid number")
+                    return
 
-        # elif keyword in ('weight', 'cost', 'level'):
-        #     # set can't be < 0
-        #     try:
-        #         weight = int(args[1].strip())
-        #     except:
-        #         ch.msg(f"{keyword} not a valid integer")
-        #         return
-
-        #     if weight < 0:
-        #         weight = 0
-        #     obj[keyword] = weight
-        #     ch.msg(f'{keyword} set.')
-        #     return
-
-        # elif keyword == 'applies':
-        #     #args=    [0]     [1]    [2]    [3]  [4]
-        #     # ex: set applies attrs [attr] [mod]
-        #     # ex: set applies stats [stat] [mod]
-        #     # ex: set applies conditions blinded x,y
-        #     if len(args) > 1:
-        #         if args[1] == 'clear':
-        #             obj[keyword].clear()
-        #             return
-        #         if len(args) < 3:
-        #             ch.msg("invalid entry, see |chelp oedit-menu-applies|n")
-        #             return
-
-        #         apply_type = args[1]
-        #         if apply_type not in VALID_OBJ_APPLIES.keys():
-        #             ch.msg("not a valid apply type")
-        #             return
-
-        #         if apply_type == 'attrs':
-        #             attr = args[2]
-        #             if attr not in VALID_OBJ_APPLIES['attrs']:
-        #                 ch.msg("not a valid attribute to modify")
-        #                 return
-        #             try:
-        #                 mod = int(args[3])
-        #             except:
-        #                 ch.msg("not a valid number for modifier")
-        #                 return
-
-        #             pair = (attr, mod)
-        #             if pair in obj[keyword]:
-        #                 obj[keyword].remove(pair)
-        #                 return
-        #             obj[keyword].append(pair)
-
-        #         elif apply_type == 'stats':
-        #             stat = args[2]
-        #             if stat not in VALID_OBJ_APPLIES['stats']:
-        #                 ch.msg("not a valid stat to modify")
-        #                 return
-        #             try:
-        #                 mod = int(args[3])
-        #             except:
-        #                 ch.msg("not a valid number for modifier")
-        #                 return
-
-        #             pair = (stat, mod)
-        #             if pair in obj[keyword]:
-        #                 obj[keyword].remove(pair)
-        #                 return
-        #             obj[keyword].append(pair)
-
-        #         elif apply_type == 'conditions':
-        #             # ex: set applies conditions <condition> x y
-        #             condition = args[2]
-        #             if condition not in VALID_OBJ_APPLIES['conditions']:
-        #                 ch.msg("not a valid condition")
-        #                 return
-
-        #             x, y = None, None
-        #             if len(args) == 4:
-        #                 # only x is given
-        #                 try:
-        #                     #TODO: sometimes x can be float depending on condition
-        #                     x = int(args[3])
-        #                 except:
-        #                     ch.msg("X must be valid number")
-        #                     return
-        #             elif len(args) == 5:
-        #                 # x and y is given
-        #                 try:
-        #                     x = int(args[3])
-        #                     y = int(args[4])
-        #                 except:
-        #                     ch.msg("XY must be a valid number")
-        #                     return
-
-        #             pair = (condition, x, y)
-        #             if pair in obj[keyword]:
-        #                 obj[keyword].remove(pair)
-        #                 return
-        #             obj[keyword].append(pair)
-        #         else:
-        #             raise ValueError(
-        #                 "bug encountered, you shouldn't have gotten here.")
-        #     else:
-        #         # show all applies
-        #         applies = ""
-        #         for apply_type, components in VALID_OBJ_APPLIES.items():
-        #             applies += f"\n|c{apply_type}|n\n    "
-        #             c = ", ".join(components)
-        #             applies += c
-
-        #         ch.msg(applies)
-        #         return
-
-        # elif keyword == 'tags':
-        #     if len(args) > 1:
-        #         tag = args[1].strip()
-
-        #         if tag == 'clear':
-        #             obj[keyword].clear()
-        #             return
-        #         if tag not in VALID_OBJ_TAGS:
-        #             ch.msg("Not a valid tag")
-        #             return
-        #         if tag in obj[keyword]:
-        #             obj[keyword].remove(tag)
-        #             ch.msg(f"{tag} tag removed")
-        #         else:
-        #             obj[keyword].append(tag)
-        #             ch.msg(f"{tag} tag applied")
-        #         return
-        #     else:
-        #         # show all tags
-        #         tags = ", ".join(VALID_OBJ_TAGS)
-        #         msg = f"Available Tags:\n{tags}"
-        #         ch.msg(msg)
-        #         return
+                obj[keyword][stat] = value
+                ch.msg(f"set {stat}")
+            else:
+                # show available stats
+                table = self.styled_table("Available NPC Settable Stats")
+                stats = sorted(list(obj[keyword].keys()))
+                table.add_row(wrap(list_to_string(stats), width=50))
+                ch.msg(table)
+                return
 
 
 class Look(MEditCommand):
@@ -413,3 +422,106 @@ class Exit(MEditCommand):
         except:
             ch.ndb._medit.save(override=False, bypass_checks=False)
             del ch.ndb._medit
+
+
+class MobDifficulty(IntEnum):
+    wimpy = 0
+    easy = 1
+    medium = 2
+    hard = 3
+    insane = 4
+    chaotic = 5
+
+    def members(return_dict=False):
+        if return_dict:
+            return {
+                k.lower(): v
+                for k, v, in MobDifficulty._member_map_.items()
+            }
+        return list(reversed(MobDifficulty._member_map_.keys()))
+
+    def next(self):
+        value = self.value + 1
+        if value > MobDifficulty.chaotic.value:
+            return self
+
+        return MobDifficulty(value)
+
+
+class AutoMobScaling:
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    @property
+    def base(self):
+        return (self.base_mult * np.log2(self.olvl)) * self.olvl
+
+    @property
+    def diff_mod(self):
+        return self.diff_mult**(self.diff.value - 1)
+
+    def __repr__(self):
+        return str(self.calc())
+
+    def translate(self, value, leftMin, leftMax, rightMin, rightMax):
+        # Figure out how 'wide' each range is
+        leftSpan = leftMax - leftMin
+        rightSpan = rightMax - rightMin
+
+        # Convert the left range into a 0-1 range (float)
+        valueScaled = float(value - leftMin) / float(leftSpan)
+
+        # Convert the 0-1 range into a value in the right range.
+        return rightMin + (valueScaled * rightSpan)
+
+    def calc_hp(self):
+        val = int((self.base * np.log(self.end)) * self.diff_mod)
+        return max(val, 3)
+
+    def calc_mp(self):
+        val = int((self.base * np.log(
+            (self.int + self.wp) / 2)) * self.diff_mod)
+        return max(val, 3)
+
+    def calc_sp(self):
+        val = int((self.base * np.log(
+            (self.end + self.agi) / 2)) * self.diff_mod)
+        return max(val, 3)
+
+    def calc_dam(self):
+        """returns tuple of dice roller
+        num, size, mod, (avg)
+        ex: [num]D[size] + mod
+        """
+        old_min = MobDifficulty.wimpy.value
+        old_max = MobDifficulty.chaotic.value
+        avg = self.calc_hp() / self.translate(
+            self.diff.value, old_min, old_max, old_max + 1, old_min + 1)
+        num = max(1, int(avg * 1.1))
+
+        vals = []
+        threshold = 3
+        while not vals:
+            for x in range(1, 200):  # x
+                for y in range(1, 200):  # y
+                    tavg = int((((y + 1) / 2) * x))
+                    if abs(tavg - num) < threshold:
+                        vals.append((x, y))
+            threshold += 10
+        v = None
+        mwp = len(vals) // 2
+        if vals:
+            v = vals[mwp]
+        if v:
+            dam_num = v[0]
+            dam_size = v[1]
+            dam_max = int(dam_num * dam_size)
+            return dam_num, dam_size, dam_max
+
+    def calc_hit(self):
+        hit_roll = min(
+            99,
+            int(self.translate(self.olvl, 1, 250, 40, 100)) +
+            int(self.translate(self.diff.value, 0, 5, -5, 25)))
+        return hit_roll

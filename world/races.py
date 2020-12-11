@@ -87,13 +87,13 @@ class Altmer(Race):
 
     def init(self):
         self.stats.extend([
-            StrChar(20),
-            EndChar(23),
-            AgiChar(23),
-            IntChar(30),
-            WpChar(38),
-            PrcChar(25),
-            PrsChar(25)
+            StrChar(1),  # 1
+            EndChar(3),  # 3 
+            AgiChar(3),  # 3
+            IntChar(8),  # 7
+            WpChar(9),  # 9
+            PrcChar(4),  # 4
+            PrsChar(4)  # 4
         ])
 
         self.traits.extend([(DiseaseResistTrait, 50, None),
@@ -131,13 +131,13 @@ class Argonian(Race):
 
     def init(self):
         self.stats.extend([
-            StrChar(25),
-            EndChar(24),
-            AgiChar(28),
-            IntChar(27),
-            WpChar(24),
-            PrcChar(25),
-            PrsChar(22)
+            StrChar(3),  # 3
+            EndChar(2),  # 2
+            AgiChar(6),  # 6
+            IntChar(5),  # 5
+            WpChar(2),  # 2
+            PrcChar(3),  # 3
+            PrsChar(1)  # 1
         ])
 
         self.traits.extend([(DiseaseResistTrait, 75, None),
@@ -170,13 +170,13 @@ class Bosmer(Race):
 
     def init(self):
         self.stats.extend([
-            StrChar(21),
-            EndChar(21),
-            AgiChar(31),
-            IntChar(25),
-            WpChar(23),
-            PrcChar(26),
-            PrsChar(24)
+            StrChar(1),  # 1
+            EndChar(1),  # 1
+            AgiChar(7),  # 7
+            IntChar(4),  # 4
+            WpChar(3),  # 3
+            PrcChar(5),  # 5
+            PrsChar(4)  # 4
         ])
 
         self.traits.extend([(DiseaseResistTrait, 50, None),
@@ -207,13 +207,13 @@ class Breton(Race):
 
     def init(self):
         self.stats.extend([
-            StrChar(23),
-            EndChar(21),
-            AgiChar(22),
-            IntChar(28),
-            WpChar(30),
-            PrcChar(25),
-            PrsChar(25)
+            StrChar(3),  # 3
+            EndChar(1),  # 1
+            AgiChar(2),  # 2
+            IntChar(6),  # 6
+            WpChar(7),  # 7
+            PrcChar(4),  # 4
+            PrsChar(4)  # 4
         ])
         self.traits.extend([(ResistanceTrait, 2, 'magic'),
                             (PowerWellTrait, 10, None)])
@@ -247,13 +247,13 @@ class Dunmer(Race):
 
     def init(self):
         self.stats.extend([
-            StrChar(25),
-            EndChar(24),
-            AgiChar(29),
-            IntChar(25),
-            WpChar(24),
-            PrcChar(25),
-            PrsChar(23)
+            StrChar(4),  # 4
+            EndChar(3),  # 3
+            AgiChar(7),  # 7
+            IntChar(6),  # 6
+            WpChar(3),  # 3
+            PrcChar(4),  # 4
+            PrsChar(2)  # 2
         ])
 
         self.traits.extend([(ResistanceTrait, 3, 'fire')])
@@ -271,13 +271,13 @@ class Imperial(Race):
 
     def init(self):
         self.stats.extend([
-            StrChar(25),
-            EndChar(25),
-            AgiChar(24),
-            IntChar(25),
-            WpChar(24),
-            PrcChar(25),
-            PrsChar(28)
+            StrChar(4),  #4
+            EndChar(4),  #4
+            AgiChar(3),  #3 
+            IntChar(4),  #4
+            WpChar(4),  #4
+            PrcChar(5),  #5
+            PrsChar(7)  #7
         ])
 
 
@@ -304,13 +304,13 @@ class SuthayRaht(Race):
 
     def init(self):
         self.stats.extend([
-            StrChar(22),
-            EndChar(22),
-            AgiChar(29),
-            IntChar(25),
-            WpChar(21),
-            PrcChar(28),
-            PrsChar(24)
+            StrChar(2),  #2
+            EndChar(2),  #2
+            AgiChar(7),  #7
+            IntChar(5),  #5
+            WpChar(1),  #1
+            PrcChar(6),  #6
+            PrsChar(4)  #4
         ])
 
         self.traits.extend([(NaturalWeaponsTrait, '1d4', 'slashing'),
@@ -340,13 +340,13 @@ class Nord(Race):
 
     def init(self):
         self.stats.extend([
-            StrChar(30),
-            EndChar(28),
-            AgiChar(23),
-            IntChar(21),
-            WpChar(24),
-            PrcChar(25),
-            PrsChar(23)
+            StrChar(5),  #5
+            EndChar(7),  #7
+            AgiChar(3),  #3 
+            IntChar(1),  #1
+            WpChar(3),  #3
+            PrcChar(5),  #5
+            PrsChar(3)  #3
         ])
 
         self.traits.extend([(ToughTrait, None, None),
@@ -375,13 +375,13 @@ class Orsimer(Race):
 
     def init(self):
         self.stats.extend([
-            StrChar(28),
-            EndChar(30),
-            AgiChar(22),
-            IntChar(23),
-            WpChar(26),
-            PrcChar(24),
-            PrsChar(22)
+            StrChar(8),  #8
+            EndChar(8),  #8
+            AgiChar(4),  #4
+            IntChar(2),  #2
+            WpChar(1),  #1
+            PrcChar(1),  #1
+            PrsChar(1)  #1
         ])
 
         self.traits.extend([(ResilientTrait, 3, None),
@@ -411,13 +411,13 @@ class Redguard(Race):
 
     def init(self):
         self.stats.extend([
-            StrChar(27),
-            EndChar(28),
-            AgiChar(26),
-            IntChar(22),
-            WpChar(23),
-            PrcChar(25),
-            PrsChar(24)
+            StrChar(4),  #4
+            EndChar(4),  #4
+            AgiChar(7),  #7
+            IntChar(3),  #3
+            WpChar(1),  #1
+            PrcChar(8),  #8
+            PrsChar(7)  #7
         ])
 
         self.traits.extend([(DiseaseResistTrait, 75, None),

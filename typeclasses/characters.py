@@ -8,6 +8,7 @@ creation commands.
 
 """
 import copy
+import numpy as np
 from world.utils.db import search_roomdb
 from evennia import DefaultCharacter, EvMenu, TICKER_HANDLER, search_object
 from evennia.utils.utils import inherits_from, lazy_property, make_iter
@@ -25,6 +26,40 @@ from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
 from world.storagehandler import StorageHandler
 from world.languages import LanguageSkill, VALID_LANGUAGES
+
+
+class _CalcVitals:
+    def __init__(self, level, **kwargs):
+        self.level = level
+        self.base_mult = 3.0
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def calc(self):
+        raise NotImplementedError()
+
+    @property
+    def base(self):
+        return (self.base_mult * np.log2(self.lvl)) * self.lvl
+
+    def __repr__(self):
+        return str(self.calc())
+
+
+class Hp(_CalcVitals):
+    def calc(self):
+        val = int((self.base + (self.end)) * self.diff_mod)
+        return val
+
+
+class Wp(_CalcVitals):
+    def calc(self):
+        return int((self.base + ((self.int + self.wp) / 2) * self.diff_mod))
+
+
+class Sp(_CalcVitals):
+    def calc(self):
+        return int((self.base + ((self.end + self.agi) / 2) * self.diff_mod))
 
 
 class LanguageHandler(StorageHandler):
@@ -241,6 +276,11 @@ class AttrHandler(StorageHandler):
         self.max_speed()
         self.max_stamina()
 
+    @property
+    def base_vital(self):
+        level = self.caller.attrs.level.value
+        return (1.5 * np.log2(level)) * level
+
     def change_vital(self, attr_type, by=0, update=True):
         """
         helper function to change current vital value 
@@ -324,26 +364,29 @@ class AttrHandler(StorageHandler):
         self.update()
 
     def max_health(self):
-        health = (self.caller.stats.end.base // 2 + 1)
-        tot = health + self.health.mods
+        health = self.base_vital * np.log(self.caller.stats.end.base)
+        tot = int(health) + self.health.mods
 
-        self.health.max = tot
-        return tot
+        self.health.max = max(tot, 3)
+        return max(tot, 3)
 
     def max_stamina(self):
-        stamina = self.caller.stats.end.bonus
-        tot = stamina + self.stamina.mods + 20
+        end = self.caller.stats.end.base
+        agi = self.caller.stats.agi.base
+        stamina = self.base_vital * np.log(((end + agi) / 2))
+        tot = int(stamina) + self.stamina.mods
 
-        self.stamina.max = tot
-        return tot
+        self.stamina.max = max(tot, 3)
+        return max(tot, 3)
 
     def max_magicka(self):
-        magicka = self.caller.stats.int.base
+        wp = self.caller.stats.wp.base
+        int_ = self.caller.stats.int.base
+        magicka = self.base_vital * np.log((wp + int_) / 2)
+        tot = int(magicka) + self.magicka.mods + 20
 
-        tot = magicka + self.magicka.mods + 20
-
-        self.magicka.max = tot
-        return tot
+        self.magicka.max = max(tot, 3)
+        return max(tot, 3)
 
     def max_speed(self):
         sb = self.caller.stats.str.bonus
@@ -356,11 +399,11 @@ class AttrHandler(StorageHandler):
 
     def max_carry(self):
         # carry rating
-        sb = self.caller.stats.str.bonus
-        eb = self.caller.stats.end.bonus
-        carry = ((4 * sb) + (2 * eb)) + 50
+        str = self.caller.stats.str.collect()
+        end = self.caller.stats.end.collect()
+        carry = ((0.75 * str) + (0.25 * end)) + 50
 
-        tot = carry + self.carry.mods
+        tot = int(carry) + self.carry.mods
         self.carry.max = tot
         return tot
 

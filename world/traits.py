@@ -4,7 +4,7 @@ Much like conditions....
 from collections import namedtuple
 from evennia import search_object
 from evennia.utils.utils import inherits_from
-from world.conditions import BreathUnderWater, Burning, Condition, DarkSight, Fear, Flying, Intangible, get_condition
+from world.conditions import BreathUnderWater, Burning, Condition, DarkSight, Diseased, Fear, Flying, Intangible, get_condition
 
 
 class Trait(Condition):
@@ -67,12 +67,8 @@ class DiseaseResistTrait(Trait):
             raise ValueError("disease resistance trait must have X defined")
 
 
-class DiseasedTrait(Trait):
-    __obj_name__ = "diseased"
-
-    def at_condition(self, caller):
-        if self.X is None:
-            raise ValueError("diseased trait must have X defined")
+class DiseasedTrait(Diseased, Trait):
+    pass
 
 
 class FlyerTrait(Flying, Trait):

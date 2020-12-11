@@ -1,17 +1,17 @@
 """
 Holds entire character generation process using evennia menus
 """
-import random
+import operator
 import copy
-from world.attributes import Attribute
 import numpy as np
-from evennia import GLOBAL_SCRIPTS
+
+from evennia.utils.evform import EvForm, EvTable
 from evennia.contrib.dice import roll_dice
 from world.characteristics import CHARACTERISTICS
 from world.birthsigns import *
 from world.races import PLAYABLE_RACES, change_race, get_race
 from world.gender import ALL_GENDERS
-from evennia.utils.evform import EvForm, EvTable
+from world.attributes import Attribute
 
 
 def pick_race(caller, **kwargs):
@@ -127,35 +127,45 @@ def favored_characteristics_2(caller, **kwargs):
 
 
 def gen_characteristics_3(caller, **kwargs):
-    stats = copy.deepcopy(get_race(kwargs['race']).stats)
-    stat_keys = dict({x.short: x.base for x in stats})
-    for _ in range(7):
-        k1 = random.choice(list(stat_keys.keys()))
-        k2 = random.choice(list(stat_keys.keys()))
-        _, _, _, (roll1, roll2) = roll_dice(2, 10, return_tuple=True)
-        stat_keys[k1] += roll1
-        stat_keys[k2] += roll2
+    race_stats = copy.deepcopy(get_race(kwargs['race']).stats)
 
-    race_base = dict({x.short: x.base for x in stats})
+    stat_keys = dict({x.short: x.base for x in race_stats})
 
-    text = "Roll for stats (enter for reroll)\n\n"
+    dice = np.vectorize(lambda x: x + roll_dice(1, 8))
 
-    lck = roll_dice(2, 10, ('+', 30))
-    if lck > 50:
-        lck = 50
+    stats = (dice(np.full((7, ), fill_value=0, dtype=np.int64)) +
+             list(stat_keys.values())).tolist()
+    stat_keys = dict(zip(stat_keys.keys(), stats))
+
+    race_base = dict({x.short: x.base for x in race_stats})
+
+    # return None, None
+    form = EvForm('resources.forms.chargen_attribute_roll')
+    map = {}
+    cntr = 1
+
+    _max = max(stat_keys.items(), key=operator.itemgetter(1))[0]
+    _min = min(stat_keys.items(), key=operator.itemgetter(1))[0]
+    caller.debug_msg(_min, _max)
+    for name, base in race_base.items():
+        new_stat = stat_keys[name]
+
+        if name == _max:
+            new_stat = f"|g{new_stat}|n"
+        if name == _min:
+            new_stat = f"|r{new_stat}|n"
+
+        map[cntr] = new_stat
+        map[cntr + 1] = base
+        cntr += 2
+        # text += f"{name.capitalize()}: {stat_keys[name]} ({base})\n"
+    form.map(cells=map)
+    text = str(form)
+
+    lck = roll_dice(3, 5)
     stat_keys['lck'] = lck
     k = kwargs.copy()
     k['stats'] = stat_keys.copy()
-
-    _max = max(stat_keys.keys(), key=(lambda key: stat_keys[key]))
-    _min = min(stat_keys.keys(), key=(lambda key: stat_keys[key]))
-
-    stat_keys[_max] = f"|g{stat_keys[_max]}|n"
-    stat_keys[_min] = f"|r{stat_keys[_min]}|n"
-
-    for name, base in race_base.items():
-        text += f"{name.capitalize():>3}: {stat_keys[name]} ({base})\n"
-
     options = ({
         'key': 'accept',
         'goto': ('determine_birthsign', k)
