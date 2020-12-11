@@ -37,10 +37,10 @@ DEFAULT_MOB_STRUCT = {
         "mp": 0,
         "sp": 0,
         "ar": 0,
-        "dam_num": 1,
-        "dam_size": 2,
+        "dam_num": 0,
+        "dam_size": 0,
         "dam_mod": 0,
-        "hit_roll": 0
+        "hit_roll": 0,
     }
 }
 
@@ -260,3 +260,26 @@ _PROFICIENY_GRADIENT = {
     5: Expert,
     6: Master
 }
+
+
+class classdict(dict):
+    """
+    like a normal dictionary, but keys are accessible as
+    properties
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for k, v in self.items():
+            setattr(self, k, v)
+
+    def get(self, name, default=None):
+        return getattr(self, name, default)
+
+    def __getattr__(self, name, default=None):
+        try:
+            return self[name]
+        except KeyError:
+            return default
+
+    def __setattr__(self, name, value) -> None:
+        self[name] = value

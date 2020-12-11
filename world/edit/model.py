@@ -1,5 +1,7 @@
 import copy
 
+from evennia.utils.dbserialize import deserialize
+
 
 class _EditMode:
     __cname__ = ""
@@ -18,12 +20,18 @@ class _EditMode:
 
         # attempt to find vnum in objdb
         if self.vnum in self.db.vnum.keys():
-            self.obj = self.db.vnum[self.vnum]
-
+            self.obj = deserialize(self.db.vnum[self.vnum])
+            self.caller.msg("|rstart|n")
             # account for new fields added to default object builder
             for field, value in self.__default_struct__.items():
                 if field not in self.obj.keys():
                     self.obj[field] = value
+
+                # handle special case if value is type dict
+                if field in self.obj.keys() and isinstance(value, dict):
+                    for nfield, nvalue in value.items():
+                        if not self.obj[field].get(nfield, None):
+                            self.obj[field][nfield] = nvalue
 
             # if obj is a special type based on type, add those
             # extra fields here
@@ -57,7 +65,9 @@ class _EditMode:
         pass
 
     def save(self, override=False, bypass_checks=False):
-        raise NotImplementedError()
+        if (self.orig_obj != self.obj) or override:
+            self.db.vnum[self.vnum] = self.obj
+            self.caller.msg('mob saved')
 
     def summarize(self):
         raise NotImplementedError()

@@ -56,8 +56,10 @@ class MEditMode(_EditMode):
             self.caller.msg('mob saved')
 
     def summarize(self):
-        self.caller.msg(list(self.obj.keys()))
         s = self.obj['stats']
+        dam_min = s['dam_size'] + s['dam_mod']
+        dam_max = s['dam_max'] + s['dam_mod']
+        dam_avg = int(((s['dam_size'] + 1) / 2) * s['dam_num']) + s['dam_mod']
         msg = f"""
 ********Mob Summary*******
 
@@ -80,15 +82,21 @@ class MEditMode(_EditMode):
 |GSize|n: {self.obj['size']:<5}
 |r----------------|rStats|R---------------------|n
 
-Str: {s['str']:<3}  Wp : {s['wp']:<3}    HP: {s['hp']:<3}   
-End: {s['end']:<3}  Prc: {s['prc']:<3}    MP: {s['mp']:<3}   
-Agi: {s['agi']:<3}  Prs: {s['prs']:<3}    SP: {s['sp']:<3}   
-Int: {s['int']:<3}  Lck: {s['lck']:<3}    AR: {s['ar']:<3}
+|GStr|n: {s['str']:<3}  |GWp |n: {s['wp']:<3}    |GHP|n: {s['hp']:<3}   
+|GEnd|n: {s['end']:<3}  |GPrc|n: {s['prc']:<3}    |GMP|n: {s['mp']:<3}   
+|GAgi|n: {s['agi']:<3}  |GPrs|n: {s['prs']:<3}    |GSP|n: {s['sp']:<3}   
+|GInt|n: {s['int']:<3}  |GLck|n: {s['lck']:<3}    |GAR|n: {s['ar']:<3}
 
-dam_num : {s['dam_num']:<5}
-dam_size: {s['dam_size']:<5}
-dam_mod : {s['dam_mod']:<5}
-(range |Y{s['dam_mod']+s['dam_num']}|n to |Y{s['dam_mod']+(s['dam_size']*s['dam_num'])}|n)
+|Ghit_roll |n: {s['hit_roll']:<5}
+
+
+Damage Statistics:
+---------------------------------
+|Gdam_num|n: {s['dam_num']}
+|Gdam_size|n: {s['dam_size']}
+|Gdam_mod |n: {s['dam_mod']:<4} (|Y{dam_min}|n to |Y{dam_max}|n) (|G{dam_avg}|n)
+---------------------------------
+
 """
 
         self.caller.msg(msg)
@@ -160,27 +168,31 @@ class AutoLevel(Command):
 
         base_stats = dice(base_stats)
 
-        mob_level = MobDifficulty.members(return_dict=True)[level]
-
+        members = MobDifficulty.members(return_dict=True)
         seed = {
             "base_mult": self._base_stat_mult,
             "olvl": obj['level'],
-            "diff_mod": self._mob_difficulty**mob_level.value
+            "diff_mult": self._mob_difficulty,
+            "diff": members[level]
         }
 
         for idx, name in enumerate(valid_attrs):
             obj['stats'][name] = base_stats[idx]
 
         seed.update(obj['stats'])
-
-        obj['stats']['hp'] = Hp(**seed).calc()
-        obj['stats']['sp'] = Sp(**seed).calc()
-        obj['stats']['mp'] = Wp(**seed).calc()
+        auto = AutoMobScaling(**seed)
+        obj['stats']['hp'] = auto.calc_hp()
+        obj['stats']['sp'] = auto.calc_sp()
+        obj['stats']['mp'] = auto.calc_mp()
 
         #TODO: find a good wayto auto set dam_roll based on level
         # obj['stats']['dam_num'] = num_dice
-        # obj['stats']['dam_size'] = size_dice
-        # obj['stats']['dam_mod'] = mod_dice
+        num, size, max_ = auto.calc_dam()
+        self.caller.debug_msg(num, size, max_)
+        obj['stats']['dam_num'] = num
+        obj['stats']['dam_max'] = max_
+        obj['stats']['dam_size'] = size
+        obj['stats']['hit_roll'] = auto.calc_hit()
 
         ch.msg(f"mob autoleveled on {level}")
 
@@ -413,12 +425,12 @@ class Exit(MEditCommand):
 
 
 class MobDifficulty(IntEnum):
-    wimpy = -1
-    easy = 0
-    medium = 1
-    hard = 2
-    insane = 3
-    chaotic = 4
+    wimpy = 0
+    easy = 1
+    medium = 2
+    hard = 3
+    insane = 4
+    chaotic = 5
 
     def members(return_dict=False):
         if return_dict:
@@ -428,53 +440,88 @@ class MobDifficulty(IntEnum):
             }
         return list(reversed(MobDifficulty._member_map_.keys()))
 
+    def next(self):
+        value = self.value + 1
+        if value > MobDifficulty.chaotic.value:
+            return self
 
-class ndict(dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for k, v in self.items():
-            setattr(self, k, v)
-
-    def __setattr__(self, k, v):
-        super().__setattr__(k, v)
-        self[k] = v
-
-    def __getattr__(self, k):
-        return self[k]
+        return MobDifficulty(value)
 
 
-class CalcVitals:
+class AutoMobScaling:
     def __init__(self, **kwargs):
-        self.value = None
         for k, v in kwargs.items():
             setattr(self, k, v)
-
-    def calc(self):
-        raise NotImplementedError()
 
     @property
     def base(self):
         return (self.base_mult * np.log2(self.olvl)) * self.olvl
 
+    @property
+    def diff_mod(self):
+        return self.diff_mult**(self.diff.value - 1)
+
     def __repr__(self):
         return str(self.calc())
 
+    def translate(self, value, leftMin, leftMax, rightMin, rightMax):
+        # Figure out how 'wide' each range is
+        leftSpan = leftMax - leftMin
+        rightSpan = rightMax - rightMin
 
-class Hp(CalcVitals):
-    def calc(self):
+        # Convert the left range into a 0-1 range (float)
+        valueScaled = float(value - leftMin) / float(leftSpan)
+
+        # Convert the 0-1 range into a value in the right range.
+        return rightMin + (valueScaled * rightSpan)
+
+    def calc_hp(self):
         val = int((self.base * np.log(self.end)) * self.diff_mod)
         return max(val, 3)
 
-
-class Wp(CalcVitals):
-    def calc(self):
+    def calc_mp(self):
         val = int((self.base * np.log(
             (self.int + self.wp) / 2)) * self.diff_mod)
         return max(val, 3)
 
-
-class Sp(CalcVitals):
-    def calc(self):
+    def calc_sp(self):
         val = int((self.base * np.log(
             (self.end + self.agi) / 2)) * self.diff_mod)
         return max(val, 3)
+
+    def calc_dam(self):
+        """returns tuple of dice roller
+        num, size, mod, (avg)
+        ex: [num]D[size] + mod
+        """
+        old_min = MobDifficulty.wimpy.value
+        old_max = MobDifficulty.chaotic.value
+        avg = self.calc_hp() / self.translate(
+            self.diff.value, old_min, old_max, old_max + 1, old_min + 1)
+        num = max(1, int(avg * 1.1))
+
+        vals = []
+        threshold = 3
+        while not vals:
+            for x in range(1, 200):  # x
+                for y in range(1, 200):  # y
+                    tavg = int((((y + 1) / 2) * x))
+                    if abs(tavg - num) < threshold:
+                        vals.append((x, y))
+            threshold += 10
+        v = None
+        mwp = len(vals) // 2
+        if vals:
+            v = vals[mwp]
+        if v:
+            dam_num = v[0]
+            dam_size = v[1]
+            dam_max = int(dam_num * dam_size)
+            return dam_num, dam_size, dam_max
+
+    def calc_hit(self):
+        hit_roll = min(
+            99,
+            int(self.translate(self.olvl, 1, 250, 40, 100)) +
+            int(self.translate(self.diff.value, 0, 5, -5, 25)))
+        return hit_roll
