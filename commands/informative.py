@@ -10,8 +10,50 @@ from evennia.contrib import custom_gametime
 from evennia.utils import evmore
 from evennia.utils.utils import inherits_from
 from commands.command import Command
-from world.utils.utils import can_see_obj, capitalize_sentence, is_book, is_container, is_equipped, is_invis, is_npc, is_obj, is_pc, is_pc_npc, is_wielded, is_worn, match_name, parse_dot_notation, rplanguage_parse_string
+from world.utils.utils import can_see_obj, capitalize_sentence, get_name, is_book, is_container, is_equipped, is_invis, is_npc, is_obj, is_pc, is_pc_npc, is_wielded, is_wiz, is_worn, match_name, parse_dot_notation, rplanguage_parse_string
 from evennia.utils.ansi import raw as raw_ansi
+
+
+class CmdPeek(Command):
+    """
+    Attempt to peek into another inventory
+
+    Usage:
+        peek <target>
+
+    """
+
+    key = 'peek'
+
+    def func(self):
+        ch = self.caller
+        args = self.args.strip()
+        table = self.styled_table("Contents")
+
+        if not args:
+            ch.msg("You peek at yourself")
+            for obj in ch.contents:
+                table.add_row(obj.db.sdesc)
+
+            ch.msg(table)
+            return
+        for obj in ch.location.contents:
+            if is_pc_npc(obj) and match_name(args, obj):
+                items = list(obj.contents)
+                items.sort(key=lambda x: x.db.sdesc.lower())
+
+                for item in items:
+                    if is_worn(item) or is_wielded(item):
+                        continue
+
+                    if not can_see_obj(ch, item):
+                        continue
+
+                    table.add_row(raw_ansi(item.obj_desc()))
+                ch.msg(f"You peek into {get_name(obj)}'s inventory")
+                ch.msg(table)
+                return
+        ch.msg("You couldn't find anyone like that.")
 
 
 class CmdWho(Command):

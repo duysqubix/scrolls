@@ -75,6 +75,7 @@ DEFAULT_ROOM_STRUCT = {
         'down': -1
     },
     'edesc': {},  # key/contents
+    "load_list": "",
     "extra": {}
 }
 

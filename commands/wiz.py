@@ -2,6 +2,7 @@ import sys, time
 import json
 import pathlib
 import traceback
+from typeclasses.rooms.rooms import get_room
 
 from evennia.utils.dbserialize import deserialize
 from typeclasses.characters import Character
@@ -27,6 +28,34 @@ from world.conditions import HolyLight, get_condition
 from world.utils.act import Announce, act
 from commands.command import Command
 from world.globals import BUILDER_LVL, GOD_LVL, WIZ_LVL, IMM_LVL
+
+
+class CmdZReset(Command):
+    """
+    Manually resets rooms in current zone.
+
+    Each reset `recreates` each room and loads
+    objects and mobs based on 
+    """
+
+    key = 'zreset'
+
+    def func(self):
+        ch = self.caller
+
+        zone = ch.location.db.zone
+        # get rooms for current zone
+        rooms = search_roomdb(zone=zone, return_keys=True)
+        if not rooms:
+            raise Exception('Current room does not have a zone assigned')
+
+        for rvnum in rooms:
+            room_obj = get_room(rvnum)
+            if not room_obj:
+                ch.msg(f"Room object doesn't exist, skipping {rvnum}")
+
+            room_obj.reset()
+        ch.msg(f"zone reset complete for {zone}")
 
 
 class CmdForce(Command):

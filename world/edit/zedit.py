@@ -2,15 +2,35 @@
 online editting of zones
 restricted to wiz levels and up
 """
+from django.utils.translation import override
+from typeclasses.rooms.rooms import get_room
 import evennia
+from evennia import TICKER_HANDLER as tickerhandler
+
 from world.globals import BUILDER_LVL, DEFAULT_ZONE_STRUCT
 from world.utils.utils import is_builder, is_online, is_pc, match_string
-from evennia import CmdSet, Command, GLOBAL_SCRIPTS
+from evennia import CmdSet, Command, GLOBAL_SCRIPTS, create_script
 from evennia.utils import wrap
 from evennia.commands.default.help import CmdHelp
+from world.utils.db import search_roomdb
+
 from .model import _EditMode
 
 _ZEDIT_PROMPT = "(|gzedit|n)"
+
+
+def zone_reset(**kwargs):
+    # get all rooms
+    rooms = search_roomdb(zone=kwargs['name'], return_keys=True)
+    if not rooms:
+        return
+
+    for vnum in rooms:
+        room_obj = get_room(vnum)
+        if not room_obj:
+            continue
+        room_obj.reset()
+        room_obj.announce(kwargs['reset_msg'])
 
 
 class ZEditMode(_EditMode):
@@ -21,9 +41,24 @@ class ZEditMode(_EditMode):
 
     def save(self, override=False):
         if (self.orig_obj != self.obj) or override:
-            # here assign zone_attributes to builders
-
+            reset_min = int(self.orig_obj['lifespan'])
+            reset_seconds = reset_min * 60
+            tickerhandler.remove(
+                reset_seconds,
+                zone_reset,
+                idstring=f"zone_{self.orig_obj['name']}_reset")
+            self.caller.msg("removed ticker")
             self.db.vnum[self.vnum] = self.obj
+            # update and/or create the RoomReset Script on all
+            # rooms that exist within the saved zone.
+            reset_min = int(self.obj['lifespan'])
+            reset_seconds = reset_min * 60
+            tickerhandler.add(reset_seconds,
+                              zone_reset,
+                              f"zone_{self.obj['name']}_reset",
+                              persistent=True,
+                              **self.obj)
+            self.caller.msg("added ticker")
             self.caller.msg("zone saved.")
 
     def summarize(self):
@@ -132,7 +167,18 @@ class Set(ZEditCommand):
                     ch.msg(
                         f"removing `{builder.name.capitalize()}` as builder")
             return
+        elif match_string(keyword, 'lifespan'):
+            if not args:
+                obj['lifespan'] = -1
+            else:
+                try:
+                    ls = int(args[1])
+                except ValueError:
+                    ch.msg("Unable to parse lifespan into an integer")
+                    return
 
+                obj['lifespan'] = ls
+            ch.msg(set_str.format(keyword='lifespan'))
         else:
             ch.msg("That isn't a valid keyword")
             return
@@ -165,5 +211,5 @@ class Exit(ZEditCommand):
     def func(self):
         ch = self.caller
         ch.cmdset.remove('world.edit.zedit.ZEditCmdSet')
-        ch.ndb._zedit.save()
+        ch.ndb._zedit.save(override=True)
         del ch.ndb._zedit
