@@ -41,24 +41,26 @@ class ZEditMode(_EditMode):
 
     def save(self, override=False):
         if (self.orig_obj != self.obj) or override:
-            reset_min = int(self.orig_obj['lifespan'])
-            reset_seconds = reset_min * 60
-            tickerhandler.remove(
-                reset_seconds,
-                zone_reset,
-                idstring=f"zone_{self.orig_obj['name']}_reset")
-            self.caller.msg("removed ticker")
+            try:
+                reset_min = int(self.orig_obj['lifespan'])
+                tickerhandler.remove(
+                    reset_min * 60,
+                    zone_reset,
+                    idstring=f"zone_{self.orig_obj['name']}_reset")
+                # self.caller.msg("removed ticker")
+            except:
+                pass
+
             self.db.vnum[self.vnum] = self.obj
             # update and/or create the RoomReset Script on all
             # rooms that exist within the saved zone.
             reset_min = int(self.obj['lifespan'])
-            reset_seconds = reset_min * 60
-            tickerhandler.add(reset_seconds,
+            tickerhandler.add(reset_min * 60,
                               zone_reset,
                               f"zone_{self.obj['name']}_reset",
                               persistent=True,
                               **self.obj)
-            self.caller.msg("added ticker")
+            # self.caller.msg("added ticker")
             self.caller.msg("zone saved.")
 
     def summarize(self):
