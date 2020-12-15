@@ -50,6 +50,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(info.CmdEquipment())
         self.add(info.CmdTime())
         self.add(info.CmdWho())
+        self.add(info.CmdPeek())
 
         self.add(act_item.CmdPut())
         self.add(act_item.CmdGet())
@@ -99,6 +100,7 @@ class ImmCmdSet(CmdSet):
         self.add(wiz.CmdPurge())
         self.add(wiz.CmdZoneSet())
         self.add(wiz.CmdRestore())
+        self.add(wiz.CmdZReset())
 
 
 class WizCmdSet(CmdSet):

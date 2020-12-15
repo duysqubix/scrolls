@@ -72,6 +72,8 @@ class REditMode(_EditMode):
 
         status = "(|rCAN NOT EDIT|n)" if self.obj['zone'] != has_zone(
             self.caller) else ""
+
+        load_list = self.obj['load_list']
         msg = f"""
 ********Room Summary*******
         {status}
@@ -88,7 +90,8 @@ class REditMode(_EditMode):
 
 |Gedesc|n   : 
 {edesc_msg}
-----------------Extras---------------------
+----------------Load List---------------------
+{load_list}
 """
         for efield, evalue in self.obj['extra'].items():
             msg += f"{efield:<7}: {crop(evalue, width=50)}\n"
@@ -292,6 +295,20 @@ class Set(REditCommand):
             else:
                 ch.msg("Must provide a vnum to the exit")
                 return
+        elif match_string(keyword, 'load_list'):
+            if len(args) > 1:
+                obj['load_list'] = " ".join(args[1:]).strip()
+                ch.msg(set_str)
+            else:
+
+                def save_func(_caller, buffer):
+                    obj['load_list'] = buffer
+                    ch.msg(set_str)
+
+                _ = EvEditor(ch,
+                             loadfunc=(lambda _: obj['load_list']),
+                             savefunc=save_func)
+            return
         else:
             ch.msg("That isn't a valid keyword")
             return

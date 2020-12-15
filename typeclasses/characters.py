@@ -21,7 +21,7 @@ from world.gender import Gender
 from world.races import NoRace
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
-from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, Positions, START_LOCATION_VNUM, WIZ_LVL, WEAR_LOCATIONS
+from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, Positions, START_LOCATION_VNUM, TICK_HEAL_CHAR, TICK_SAVE_CHAR, WIZ_LVL, WEAR_LOCATIONS
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
 from world.storagehandler import StorageHandler
@@ -498,14 +498,14 @@ class Character(DefaultCharacter):
             self.attributes.remove('new_character')
 
         ############### Non-Persistent Tickers ####################
-        TICKER_HANDLER.add(interval=10,
+        TICKER_HANDLER.add(interval=TICK_HEAL_CHAR,
                            callback=self.tick_heal_player,
-                           idstring="tick_heal_char",
+                           idstring=f"tick_heal_{self.name}",
                            persistent=False)
 
-        TICKER_HANDLER.add(interval=60,
+        TICKER_HANDLER.add(interval=TICK_SAVE_CHAR,
                            callback=self.save_character,
-                           idstring='tick_save_char',
+                           idstring=f"tick_save_{self.name}",
                            persistent=False)
         ###########################################################
         self.msg(f"\nYou become |c{self.name.capitalize()}|n")

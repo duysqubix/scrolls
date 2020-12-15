@@ -1,19 +1,92 @@
 import random
 import re
 from functools import reduce
-import numpy as np
+import yaml
+try:
+    from yaml import CLoader as Loader, CDumper as Dumper
+except ImportError:
+    from yaml import Loader, Dumper
+
 from evennia import GLOBAL_SCRIPTS, create_object
 from evennia.contrib.rplanguage import obfuscate_language
 from evennia.utils import make_iter
+from evennia.utils.utils import inherits_from, string_partial_matching
 
 from typeclasses.objs.object import VALID_OBJ_APPLIES
+from typeclasses.objs.custom import CUSTOM_OBJS
 from world.globals import BUILDER_LVL, BOOK_CATEGORIES
 from world.utils.db import search_objdb
-from evennia.utils.utils import inherits_from, string_partial_matching
 from world.conditions import DetectHidden, DetectInvis, Hidden, HolyLight, Invisible, Sleeping, get_condition
 
 _CAP_PATTERN = re.compile(r'((?<=[\.\?!\n]\s)(\w+)|(^\w+))')
 _LANG_TAGS = re.compile('\>(.*?)\<', re.I)
+
+
+class EntityLoader:
+    """
+    handels dynamically loading entities, the caller of this class
+    should be location
+    """
+    def __init__(self, caller, parent, children, amount=1):
+        self.type, self.vnum = parent.split(' ')
+        self.caller = caller
+        self.amount = amount
+        _children_list = []
+        if children:
+            for child in children:
+                type_, vnum = child.split(' ')
+                _children_list.append([type_, vnum])
+        self.children = _children_list
+
+    def load(self):
+
+        for _ in range(self.amount):
+            if self.type == 'mob':
+                mob = create_object("typeclasses.mobs.mob.Mob", key=self.vnum)
+                for ctype, cvnum in self.children:
+                    if ctype != 'obj':
+                        continue
+                    obj_bp = search_objdb(cvnum)
+                    if not obj_bp:
+                        continue
+                    obj_bp = obj_bp[int(cvnum)]
+                    obj = create_object(CUSTOM_OBJS[obj_bp['type']],
+                                        key=int(cvnum))
+                    obj.move_to(mob, quiet=True)
+
+                mob.move_to(self.caller, quiet=True)
+
+            elif self.type == 'obj':
+                obj_bp = search_objdb(self.vnum)
+                if not obj_bp:
+                    return
+                obj_bp = obj_bp[int(self.vnum)]
+                obj = create_object(CUSTOM_OBJS[obj_bp['type']],
+                                    key=int(self.vnum))
+                obj.move_to(self.caller, quiet=True)
+
+    def read(caller, yaml_str):
+        data = yaml.load(yaml_str, Loader=Loader)
+        parsed = []
+        for parent, children in data.items():
+            amount = 1
+            obj = parent.split(' ')
+            if len(obj) != 2:
+                continue
+            if children:
+                for child in children:
+                    obj = child.split(' ')
+                    if len(obj) != 2:
+                        continue
+                    if obj[0] == 'num':
+                        amount = int(obj[1])
+
+
+#             parsed[parent] = children
+            parsed.append(EntityLoader(caller, parent, children,
+                                       amount=amount))
+
+        return parsed
 
 
 def factors(n):
@@ -189,15 +262,36 @@ def next_available_rvnum():
     return max(GLOBAL_SCRIPTS.roomdb.vnum.keys()) + 1
 
 
+def get_name(obj):
+    if is_pc(obj):
+        return obj.name
+
+    elif is_npc(obj):
+        return obj.db.sdesc
+
+    elif is_obj(obj):
+        return obj.db.name
+
+
 def match_string(criteria, string):
     string = make_iter(string)
     return True if string_partial_matching(string, criteria) else False
 
 
 def match_name(name, obj):
-    if not is_obj(obj):
-        raise ValueError("obj must be object type")
-    return True if string_partial_matching(obj.db.name, name) else False
+    name = name.lower()
+
+    matched = False
+    if is_obj(obj) and string_partial_matching(obj.db.name, name):
+        matched = True
+
+    elif is_pc(obj) and string_partial_matching(make_iter(obj.name.lower()),
+                                                name):
+        matched = True
+
+    elif is_npc(obj) and string_partial_matching(make_iter(obj.db.key), name):
+        matched = True
+    return matched
 
 
 def delete_contents(obj, exclude=[], do_not_delete_chars=True):

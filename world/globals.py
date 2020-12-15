@@ -11,7 +11,8 @@ BUILDER_LVL = 202
 HERO_LVL = 201
 
 START_LOCATION_VNUM = 2
-
+TICK_SAVE_CHAR = 60  #seconds
+TICK_HEAL_CHAR = 10  #
 DEFAULT_MOB_STRUCT = {
     "key": "mob unfinished",
     "sdesc": "the unfinished mob",
@@ -75,6 +76,7 @@ DEFAULT_ROOM_STRUCT = {
         'down': -1
     },
     'edesc': {},  # key/contents
+    "load_list": "",
     "extra": {}
 }
 

@@ -5,9 +5,10 @@ Rooms are simple containers that has no location of their own.
 
 """
 
+from world.utils.db import search_roomdb
 from world.globals import DEFAULT_ROOM_STRUCT
 from evennia import DefaultRoom, GLOBAL_SCRIPTS, search_object
-from world.utils.utils import is_pc
+from world.utils.utils import delete_contents, is_pc, EntityLoader
 
 
 class Room(DefaultRoom):
@@ -30,10 +31,27 @@ class Room(DefaultRoom):
             if is_pc(obj) and obj not in exclude:
                 obj.msg(msg)
 
+    def reset(self, populate=True):
+        """resets room and populates based on load_list"""
+        self.at_object_creation()
+
+        if populate:
+            # clear room first
+            delete_contents(self)
+            yaml_str = self.db.load_list
+            if not yaml_str:
+                return
+
+            for obj in EntityLoader.read(self, yaml_str):
+                obj.load()
+
+            self.announce("reset complete")
+
     def at_object_creation(self):
 
         # this is built-in Limbo id, #1 is superuser
-        self.db.is_room = True
+        if not self.attributes.has('is_room'):
+            self.db.is_room = True
 
         if self.key == "Limbo":
             key = 1
@@ -56,9 +74,14 @@ class Room(DefaultRoom):
                 "extra": {}
             }
             GLOBAL_SCRIPTS.roomdb.vnum[1] = room
-        key = self.key
-        room = dict(GLOBAL_SCRIPTS.roomdb.vnum[int(key)])
-
+        key = int(self.key)
+        # room = dict(GLOBAL_SCRIPTS.roomdb.vnum[int(key)])
+        room = search_roomdb(vnum=key)
+        if not room:
+            raise NotImplementedError(
+                "attempting to create a room that doesn't exist in blueprint database"
+            )
+        room = room[key]
         # set fields that didn't exist before, mostly used
         # if future fields are added and old already created objs
         # don't know about them.
@@ -76,6 +99,7 @@ class Room(DefaultRoom):
         self.db.exits = room['exits']
         self.db.edesc = room['edesc']
         self.db.extra = room['extra']
+        self.db.load_list = room['load_list']
 
         for efield, evalue in self.__specific_fields__.items():
             if efield in self.db.extra.keys():
