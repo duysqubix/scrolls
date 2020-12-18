@@ -1,6 +1,9 @@
+from json import JSONEncoder
+import numpy as np
 import random
 import re
 from functools import reduce
+from numpy.lib.arraysetops import isin
 import yaml
 try:
     from yaml import CLoader as Loader, CDumper as Dumper
@@ -20,6 +23,18 @@ from world.conditions import DetectHidden, DetectInvis, Hidden, HolyLight, Invis
 
 _CAP_PATTERN = re.compile(r'((?<=[\.\?!\n]\s)(\w+)|(^\w+))')
 _LANG_TAGS = re.compile('\>(.*?)\<', re.I)
+
+
+class DBDumpEncoder(JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            super().default(obj)
 
 
 class EntityLoader:

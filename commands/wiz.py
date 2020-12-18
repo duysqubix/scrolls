@@ -23,7 +23,7 @@ from world.edit.zedit import ZEditMode
 from world.edit.redit import REditMode
 from typeclasses.objs.custom import CUSTOM_OBJS
 from world.edit.oedit import OEditMode
-from world.utils.utils import delete_contents, has_zone, is_invis, is_npc, is_pc, is_wiz, match_string
+from world.utils.utils import DBDumpEncoder, delete_contents, has_zone, is_invis, is_npc, is_pc, is_wiz, match_string
 from world.conditions import HolyLight, get_condition
 from world.utils.act import Announce, act
 from commands.command import Command
@@ -202,13 +202,13 @@ class CmdDBDump(Command):
                         books.append(book_details.copy())
                         del obj[vnum]
             with open(dump_ground / f"{fname}.json", "w") as f:
-                js = json.dumps(obj, indent=2)
+                js = json.dumps(obj, indent=2, cls=DBDumpEncoder)
                 f.write(js)
                 ch.msg(f"Wrote {fname} to file.")
 
         # store books now
         with open(dump_ground / "books.json", 'w') as f:
-            js = json.dumps(books, indent=2)
+            js = json.dumps(books, indent=2, cls=DBDumpEncoder)
             f.write(js)
             ch.msg("Wrote books to file")
 

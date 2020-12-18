@@ -38,7 +38,8 @@
       "down": -1
     },
     "edesc": {},
-    "extra": {}
+    "extra": {},
+    "load_list": "mob 1: null"
   },
   "3": {
     "name": "Black Room",
@@ -60,7 +61,8 @@
     "edesc": {
       "bookshelves": "Large and black and night, these book shelves all contain books\nwith no covers or any sort of identification. Along the edges of the shelves\nlarge figures sit motionless almost like drawn to the eternal life of\nresearch."
     },
-    "extra": {}
+    "extra": {},
+    "load_list": "mob 2:\n- obj 1\n- obj 3\n- obj 4\n\nmob 3:\n- num 3\n- obj 5\n- obj 6\n\nobj 11: "
   },
   "4": {
     "name": "an unfinished room",
@@ -77,6 +79,7 @@
       "down": -1
     },
     "edesc": {},
-    "extra": {}
+    "extra": {},
+    "load_list": ""
   }
 }
