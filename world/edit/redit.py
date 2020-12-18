@@ -3,16 +3,19 @@ online editting of room
 """
 
 import re, copy
+from evennia import GLOBAL_SCRIPTS, EvTable
+from evennia.commands.default.help import CmdHelp
 from evennia.utils.utils import wrap
-from typeclasses.rooms.rooms import VALID_ROOM_FLAGS, VALID_ROOM_SECTORS, get_room
-from world.utils.utils import clear_terminal, has_zone, match_name, match_string, mxp_string, next_available_rvnum, room_exists
 from evennia import CmdSet, Command, EvEditor, search_object, create_object
 from evennia.utils import crop, list_to_string
+
 from typeclasses.rooms.custom import CUSTOM_ROOMS
 from world.globals import DEFAULT_ROOM_STRUCT, OPPOSITE_DIRECTION, VALID_DIRECTIONS
+
+from typeclasses.rooms.rooms import VALID_ROOM_FLAGS, VALID_ROOM_SECTORS, get_room
+from world.utils.utils import clear_terminal, has_zone, match_string, mxp_string, next_available_rvnum, room_exists, EntityLoader
 from .model import _EditMode
-from evennia import GLOBAL_SCRIPTS
-from evennia.commands.default.help import CmdHelp
+
 _REDIT_PROMPT = "(|rredit|n)"
 
 
@@ -72,8 +75,19 @@ class REditMode(_EditMode):
 
         status = "(|rCAN NOT EDIT|n)" if self.obj['zone'] != has_zone(
             self.caller) else ""
+        self.caller.msg(self.obj['load_list'])
 
-        load_list = self.obj['load_list']
+        table = "empty"
+        if self.obj.get('load_list', None):
+            objs = EntityLoader.read(None, self.obj['load_list'])
+            table = EvTable("Parent", "Attached", border='incols')
+            for obj in objs:
+                children = obj.children_names()
+                table.add_row(
+                    f"(|r{obj.vnum}|n) {obj.name} [|G{obj.amount}x|n]", "")
+                for child in children:
+                    table.add_row("", child)
+
         msg = f"""
 ********Room Summary*******
         {status}
@@ -90,8 +104,8 @@ class REditMode(_EditMode):
 
 |Gedesc|n   : 
 {edesc_msg}
-----------------Load List---------------------
-{load_list}
+----------------Load List-------------------------------
+{table}
 """
         for efield, evalue in self.obj['extra'].items():
             msg += f"{efield:<7}: {crop(evalue, width=50)}\n"
