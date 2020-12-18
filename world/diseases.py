@@ -486,10 +486,78 @@ class TunnelCough(Disease):
     pass
 
 
-class Shakes(Disease):
+class Witbane(Disease):
     """
+    Witbane is an acute disease that affects the victim's memory
+    and magicka. Its symptoms are largely varied in their exact
+    execution, but minor memory loss and confusion are common
+    across all cases. It is not degenerative.
+
+    Symptoms
+    --------
+    Temporary loss of intelligence, magicka and the ability to perform
+    Lore related tasks.
+
+    Prognosis
+    ---------
+    Symptoms remain stable until cured.
     """
-    __obj_name___ =  "shakes"
+    __obj_name___ =  "witbane"
     pass
 
-ALL_DISEASES = (Ataxia(), BrainRot(), BoneBreak(),  )
+
+class YellowTick(Disease):
+    """
+    Yellow Tick is a parasite that burrows deep into the victim's
+    skin. It is a relatively mild disease, but its symptoms include
+    dark, bruised and painfully sensitive and itchy swellings where
+    the ticks bury themselves. The Yellow Tick causes anemia and
+    muscle atrophy as they feed on the victim's life forces. Yellow
+    Tick is notably contagious during skin contact.
+
+    Symptoms
+    --------
+    Loss of strength and speed, victim remains infectious until 
+    cured.
+
+    Carriers
+    --------
+    Bears; Zombies; Kagouti; Wolves; Dogs
+
+    Prognosis
+    ---------
+    Symptoms remain stable until cured.
+    """
+    __obj_name___ =  "yellow tick"
+    pass
+
+class CoronaVirus(Disease)
+    """
+    This easter egg disease has yet to be seen in Tamriel thanks 
+    entirely to the Emperor's strict policy prohibiting visitors
+    from twenty-first century Earth. However if it arrives it 
+    may have a devastating impact. Adventurers are advised to 
+    "work from home" and avoid taverns and churches unless masked.
+
+    Symptoms
+    --------
+    Mild respiratory impairment or death. Exacerbation of political 
+    turmoil.
+
+    Carriers
+    --------
+    Other people - especially those you disagree with;
+    Cliff Racers
+
+    Prognosis
+    ---------
+    Not good. Either you get better, or you die, and/or get evicted. 
+    """
+    __obj_name__ = "corona virus"
+    pass
+
+ALL_DISEASES = (Ataxia(), BrainRot(), BoneBreak(), BloodLung(), BlackHeart(), 
+        Chills(), Collywobbles(), Dampworm(), Droops(), Frostlimb(), 
+        Greenspore(), Helljoint(), Rattles(), RedFever(), Rockjoint(),
+        RustChancre(), Shakes(), SwampFever(), TunnelCough(), Witbane(),
+        YellowTick(), CoronaVirus())
