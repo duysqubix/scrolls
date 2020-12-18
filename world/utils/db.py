@@ -5,8 +5,6 @@ script databases (objdb, roomdb, zonedb, mobdb, etc...)
 import re
 from evennia import GLOBAL_SCRIPTS, logger
 from evennia.utils.dbserialize import deserialize
-from evennia.utils.utils import inherits_from, is_iter, make_iter
-from typeclasses.objs.custom import CUSTOM_OBJS
 
 _RE_COMPARATOR_PATTERN = re.compile(r"(<[>=]?|>=?|!)")
 
