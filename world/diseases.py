@@ -461,7 +461,7 @@ class SwampFever(Disease):
     ---------
     After one week, the Swamp Fever subsides.
     """
-    __obj_name___ =  "swamp_fever"
+    __obj_name__ =  "swamp_fever"
     pass
 
 
@@ -504,7 +504,7 @@ class Witbane(Disease):
     ---------
     Symptoms remain stable until cured.
     """
-    __obj_name___ =  "witbane"
+    __obj_name__ =  "witbane"
     pass
 
 
@@ -530,7 +530,7 @@ class YellowTick(Disease):
     ---------
     Symptoms remain stable until cured.
     """
-    __obj_name___ =  "yellow_tick"
+    __obj_name__ =  "yellow_tick"
     pass
 
 class CoronaVirus(Disease)
