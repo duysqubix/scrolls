@@ -1,6 +1,6 @@
 class Disease:
     __obj_name__ = ""
-
+    __help_category__ = "diseases"
     @property
     def name(self):
         return self.__obj_name__
@@ -30,7 +30,6 @@ class Ataxia(Disease):
     in severity any time after seven days. 
     """
     __obj_name__ = "ataxia"
-    pass
 
 
 class BrainRot(Disease):
@@ -58,7 +57,6 @@ class BrainRot(Disease):
     loss of Personality as well, unless cured.
     """
     __obj_name__ = "brain_rot"
-    pass
 
 
 class BoneBreak(Disease):
@@ -84,7 +82,6 @@ class BoneBreak(Disease):
     After a week late stage may develop.
     """
     __obj_name__ = "bone_break_fever"
-    pass
 
 
 class BloodLung(Disease):
@@ -111,7 +108,6 @@ class BloodLung(Disease):
     unil cured.
     """
     __obj_name__ = "blood_lung"
-    pass
 
 
 class  BlackHeart(Disease):
@@ -141,7 +137,6 @@ class  BlackHeart(Disease):
     after three days.
     """
     __obj_name__ = "black_heart_blight"
-    pass
 
 
 class  Chills(Disease):
@@ -169,7 +164,6 @@ class  Chills(Disease):
     the victim and all symptoms occur at once.
     """
     __obj_name__ = "chills"
-    pass
 
 
 class  Collywobbles(Disease):
@@ -193,7 +187,6 @@ class  Collywobbles(Disease):
     Secondary symptoms may start occuring anytime after the first week.
     """
     __obj_name__ = "collywobbles"
-    pass
 
 
 class  Dampworm(Disease):
@@ -217,7 +210,6 @@ class  Dampworm(Disease):
     Dampworm symptoms remain stable over time.
     """
     __obj_name__ = "dampworm"
-    pass
 
 
 class  Droops(Disease):
@@ -239,7 +231,6 @@ class  Droops(Disease):
     Symptoms remain stable over time. 
     """
     __obj_name__ = "the_droops"
-    pass
 
 
 class  Frostlimb(Disease):
@@ -262,7 +253,6 @@ class  Frostlimb(Disease):
     Symptoms remain stable over time.
     """
     __obj_name__ = "frostlimb"
-    pass
 
 
 class  Greenspore(Disease):
@@ -285,7 +275,6 @@ class  Greenspore(Disease):
     After a week personality damage may begin to deteriorate very rapidly.
     """
     __obj_name__ = "greenspore"
-    pass
 
 
 class  Helljoint(Disease):
@@ -308,7 +297,6 @@ class  Helljoint(Disease):
     Symptoms remain stable over time.
     """
     __obj_name__ = "helljoint"
-    pass
 
 
 class  Rattles(Disease):
@@ -332,7 +320,6 @@ class  Rattles(Disease):
     Symptoms remain stable over time.
     """
     __obj_name__ = "the_rattles"
-    pass
 
 
 class  RedFever(Disease):
@@ -358,7 +345,6 @@ class  RedFever(Disease):
     which the disease "cures" itself.
     """
     __obj_name__ = "red_fever"
-    pass
 
 
 class  Rockjoint(Disease):
@@ -388,7 +374,6 @@ class  Rockjoint(Disease):
     becomes possible to reach the final stage.
     """
     __obj_name__ = "rockjoint"
-    pass
 
 
 class  RustChancre(Disease):
@@ -414,7 +399,6 @@ class  RustChancre(Disease):
     go. After being cured, the disease leaves permanent ugly scars.
     """
     __obj_name__ = "rust_chancre"
-    pass
 
 
 class Shakes(Disease):
@@ -436,7 +420,6 @@ class Shakes(Disease):
     Symptoms remain stable until cured.
     """
     __obj_name__ =  "the_shakes"
-    pass
 
 
 class SwampFever(Disease):
@@ -462,7 +445,6 @@ class SwampFever(Disease):
     After one week, the Swamp Fever subsides.
     """
     __obj_name__ =  "swamp_fever"
-    pass
 
 
 class TunnelCough(Disease):
@@ -485,7 +467,6 @@ class TunnelCough(Disease):
     Symptoms remain stable until cured.
     """
     __obj_name__ =  "tunnel_cough"
-    pass
 
 
 class Witbane(Disease):
@@ -505,7 +486,6 @@ class Witbane(Disease):
     Symptoms remain stable until cured.
     """
     __obj_name__ =  "witbane"
-    pass
 
 
 class YellowTick(Disease):
@@ -531,9 +511,8 @@ class YellowTick(Disease):
     Symptoms remain stable until cured.
     """
     __obj_name__ =  "yellow_tick"
-    pass
 
-class CoronaVirus(Disease)
+class CoronaVirus(Disease):
     """
     This easter egg disease has yet to be seen in Tamriel thanks 
     entirely to the Emperor's strict policy prohibiting visitors
@@ -556,7 +535,6 @@ class CoronaVirus(Disease)
     Not good. Either you get better, or you die, and/or get evicted. 
     """
     __obj_name__ = "corona_virus"
-    pass
 
 ALL_DISEASES = (Ataxia(), BrainRot(), BoneBreak(), BloodLung(), BlackHeart(), 
         Chills(), Collywobbles(), Dampworm(), Droops(), Frostlimb(), 

@@ -17,7 +17,7 @@ from resources.help_entries.help_entry_wrapper import HelpEntryWrapper
 HELP_CATEGORY = 'disease'
 
 
-class RaceSignHelpEntry(HelpEntryWrapper):
+class DiseaseHelpEntry(HelpEntryWrapper):
     __help_category__ = HELP_CATEGORY
 
 
