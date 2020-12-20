@@ -1,7 +1,9 @@
 class Disease:
     __obj_name__ = ""
-    pass
 
+    @property
+    def name(self):
+        return self.__obj_name__
 
 class Ataxia(Disease):
     """
@@ -55,7 +57,7 @@ class BrainRot(Disease):
     that occurs then after a further week it is possible to suffer the
     loss of Personality as well, unless cured.
     """
-    __obj_name__ = "brain rot"
+    __obj_name__ = "brain_rot"
     pass
 
 
@@ -81,7 +83,7 @@ class BoneBreak(Disease):
     After a three day incubation period, early stage symptoms appear. 
     After a week late stage may develop.
     """
-    __obj_name__ = "bone break fever"
+    __obj_name__ = "bone_break_fever"
     pass
 
 
@@ -108,7 +110,7 @@ class BloodLung(Disease):
     Symptoms take effect after a three day incubation stage and persist 
     unil cured.
     """
-    __obj_name__ = "blood lung"
+    __obj_name__ = "blood_lung"
     pass
 
 
@@ -138,7 +140,7 @@ class  BlackHeart(Disease):
     Symptoms occur imediately after infection and worsen (enter late stage)
     after three days.
     """
-    __obj_name__ = "black heart blight"
+    __obj_name__ = "black_heart_blight"
     pass
 
 
@@ -236,7 +238,7 @@ class  Droops(Disease):
     ---------
     Symptoms remain stable over time. 
     """
-    __obj_name__ = "the droops"
+    __obj_name__ = "the_droops"
     pass
 
 
@@ -329,7 +331,7 @@ class  Rattles(Disease):
     ---------
     Symptoms remain stable over time.
     """
-    __obj_name__ = "the rattles"
+    __obj_name__ = "the_rattles"
     pass
 
 
@@ -355,7 +357,7 @@ class  RedFever(Disease):
     Incubates for one day, then accute phase lasts for three days after
     which the disease "cures" itself.
     """
-    __obj_name__ = "red fever"
+    __obj_name__ = "red_fever"
     pass
 
 
@@ -411,7 +413,7 @@ class  RustChancre(Disease):
     Rust Chancre symptoms remain stable, though breakouts may come and
     go. After being cured, the disease leaves permanent ugly scars.
     """
-    __obj_name__ = "rust chancre"
+    __obj_name__ = "rust_chancre"
     pass
 
 
@@ -433,7 +435,7 @@ class Shakes(Disease):
     ---------
     Symptoms remain stable until cured.
     """
-    __obj_name___ =  "shakes"
+    __obj_name__ =  "the_shakes"
     pass
 
 
@@ -459,7 +461,7 @@ class SwampFever(Disease):
     ---------
     After one week, the Swamp Fever subsides.
     """
-    __obj_name___ =  "swamp fever"
+    __obj_name___ =  "swamp_fever"
     pass
 
 
@@ -482,7 +484,7 @@ class TunnelCough(Disease):
     ---------
     Symptoms remain stable until cured.
     """
-    __obj_name___ =  "tunnel cough"
+    __obj_name__ =  "tunnel_cough"
     pass
 
 
@@ -528,7 +530,7 @@ class YellowTick(Disease):
     ---------
     Symptoms remain stable until cured.
     """
-    __obj_name___ =  "yellow tick"
+    __obj_name___ =  "yellow_tick"
     pass
 
 class CoronaVirus(Disease)
@@ -553,7 +555,7 @@ class CoronaVirus(Disease)
     ---------
     Not good. Either you get better, or you die, and/or get evicted. 
     """
-    __obj_name__ = "corona virus"
+    __obj_name__ = "corona_virus"
     pass
 
 ALL_DISEASES = (Ataxia(), BrainRot(), BoneBreak(), BloodLung(), BlackHeart(), 
