@@ -3,11 +3,27 @@ utility functions related to queries things from internal
 script databases (objdb, roomdb, zonedb, mobdb, etc...)
 """
 import re
+from tinydb import TinyDB, Query
+from tinydb.storages import MemoryStorage
+from tinydb.middlewares import CachingMiddleware
 from evennia import GLOBAL_SCRIPTS, logger
 from evennia.utils.dbserialize import deserialize
 
 _RE_COMPARATOR_PATTERN = re.compile(r"(<[>=]?|>=?|!)")
 
+DB = None
+
+def _cachedb_init():
+    global DB
+    DB = TinyDB(storage=CachingMiddleware(MemoryStorage))
+    dbs = {'mobdb': GLOBAL_SCRIPTS.mobdb.vnum, 'objdb': GLOBAL_SCRIPTS.objdb.vnum}
+    for name, db in dbs.items():
+        table = DB.table(name)
+        for vnum, data in db.items():
+            table.insert({'vnum': vnum, **data})
+
+if not DB:
+    cachedb_init()
 
 def _search_db(db, vnum=None, return_keys=False, **kwargs):
     """
