@@ -54,7 +54,7 @@ class MEditMode(_EditMode):
                 pass
 
             self.db.vnum[self.vnum] = self.obj
-            cachedb_init(db='mobdb')  # save changes to cachedb
+            cachedb_init(dbname='mobdb')  # save changes to cachedb
             self.caller.msg('mob saved')
 
     def summarize(self):

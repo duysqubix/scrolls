@@ -61,7 +61,7 @@ class OEditMode(_EditMode):
                     self.obj['extra']['limit'] = int(limit)
 
             self.db.vnum[self.vnum] = self.obj
-            cachedb_init(db='objdb')  # save changes to cachedb
+            cachedb_init(dbname='objdb')  # save changes to cachedb
 
             self.caller.msg("object saved.")
 

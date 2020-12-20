@@ -11,22 +11,21 @@ from evennia.utils.dbserialize import deserialize
 
 _RE_COMPARATOR_PATTERN = re.compile(r"(<[>=]?|>=?|!)")
 
-DB = None
+DB = TinyDB(storage=CachingMiddleware(MemoryStorage))
 
 
-def cachedb_init(db=None):
+def cachedb_init(dbname=None):
     global DB
-    DB = TinyDB(storage=CachingMiddleware(MemoryStorage))
     dbs = None
-    if not db:
+    if not dbname:
         dbs = {
-            'mobdb': GLOBAL_SCRIPTS.mobdb.vnum,
-            'objdb': GLOBAL_SCRIPTS.objdb.vnum,
-            'zonedb': GLOBAL_SCRIPTS.zonedb.vnum,
-            'roomdb': GLOBAL_SCRIPTS.roomdb.vnum
+            'mobdb': GLOBAL_SCRIPTS.mobdb,
+            'objdb': GLOBAL_SCRIPTS.objdb,
+            'zonedb': GLOBAL_SCRIPTS.zonedb,
+            'roomdb': GLOBAL_SCRIPTS.roomdb
         }
     else:
-        dbs = {db: GLOBAL_SCRIPTS.get(db).vnum}
+        dbs = {dbname: GLOBAL_SCRIPTS.get(dbname)}
 
     ## i am too lazy right now to make this more exact
     # drop the damn thing and recreate it.
@@ -35,12 +34,12 @@ def cachedb_init(db=None):
             DB.drop_table(name)
 
         table = DB.table(name)
-        for vnum, data in db.items():
+        for vnum, data in db.vnum.items():
             table.insert({'vnum': vnum, **data})
 
 
-if not DB:
-    cachedb_init()
+# init cache db
+cachedb_init()
 
 
 def like(val, cmp):

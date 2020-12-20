@@ -743,7 +743,6 @@ class CmdREdit(Command):
             CmdUp(),
             CmdDown()
         ])
-
         ch.execute_cmd("look")
 
 

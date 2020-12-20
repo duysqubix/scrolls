@@ -50,7 +50,7 @@ class REditMode(_EditMode):
         if (self.orig_obj != self.obj) or override:
             # custom object checks here
             self.db.vnum[self.vnum] = self.obj
-            cachedb_init(db='roomdb')  # save changes to cachedb
+            cachedb_init(dbname='roomdb')  # save changes to cachedb
 
             #if room actually exists, update that too by calling its
             # appropriate method

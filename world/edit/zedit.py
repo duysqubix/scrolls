@@ -53,7 +53,7 @@ class ZEditMode(_EditMode):
                 pass
 
             self.db.vnum[self.vnum] = self.obj
-            cachedb_init(db='zonedb')  # save changes to cachedb
+            cachedb_init(dbname='zonedb')  # save changes to cachedb
 
             if int(self.obj['lifespan']) > 0:
                 # update and/or create the RoomReset Script on all
