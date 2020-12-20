@@ -13,7 +13,7 @@ _RE_COMPARATOR_PATTERN = re.compile(r"(<[>=]?|>=?|!)")
 
 DB = None
 
-def _cachedb_init():
+def cachedb_init():
     global DB
     DB = TinyDB(storage=CachingMiddleware(MemoryStorage))
     dbs = {'mobdb': GLOBAL_SCRIPTS.mobdb.vnum, 'objdb': GLOBAL_SCRIPTS.objdb.vnum}
@@ -24,6 +24,8 @@ def _cachedb_init():
 
 if not DB:
     cachedb_init()
+
+
 
 def _search_db(db, vnum=None, return_keys=False, **kwargs):
     """
