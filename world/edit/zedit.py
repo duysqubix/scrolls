@@ -12,7 +12,7 @@ from world.utils.utils import is_builder, is_online, is_pc, match_string
 from evennia import CmdSet, Command, GLOBAL_SCRIPTS, create_script
 from evennia.utils import wrap
 from evennia.commands.default.help import CmdHelp
-from world.utils.db import search_roomdb
+from world.utils.db import cachedb_init, search_roomdb
 
 from .model import _EditMode
 
@@ -41,6 +41,7 @@ class ZEditMode(_EditMode):
 
     def save(self, override=False):
         if (self.orig_obj != self.obj) or override:
+
             try:
                 reset_min = int(self.orig_obj['lifespan'])
                 tickerhandler.remove(
@@ -52,15 +53,18 @@ class ZEditMode(_EditMode):
                 pass
 
             self.db.vnum[self.vnum] = self.obj
-            # update and/or create the RoomReset Script on all
-            # rooms that exist within the saved zone.
-            reset_min = int(self.obj['lifespan'])
-            tickerhandler.add(reset_min * 60,
-                              zone_reset,
-                              f"zone_{self.obj['name']}_reset",
-                              persistent=True,
-                              **self.obj)
-            # self.caller.msg("added ticker")
+            cachedb_init(db='zonedb')  # save changes to cachedb
+
+            if int(self.obj['lifespan']) > 0:
+                # update and/or create the RoomReset Script on all
+                # rooms that exist within the saved zone.
+                reset_min = int(self.obj['lifespan'])
+                tickerhandler.add(reset_min * 60,
+                                  zone_reset,
+                                  f"zone_{self.obj['name']}_reset",
+                                  persistent=True,
+                                  **self.obj)
+                # self.caller.msg("added ticker")
             self.caller.msg("zone saved.")
 
     def summarize(self):

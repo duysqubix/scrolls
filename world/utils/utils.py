@@ -54,11 +54,9 @@ class EntityLoader:
         self.children = _children_list
 
         if self.type == 'mob':
-            self.name = search_mobdb(vnum=int(self.vnum))[int(
-                self.vnum)]['sdesc']
+            self.name = search_mobdb(vnum=int(self.vnum))[0]['sdesc']
         elif self.type == 'obj':
-            self.name = search_objdb(vnum=int(self.vnum))[int(
-                self.vnum)]['sdesc']
+            self.name = search_objdb(vnum=int(self.vnum))[0]['sdesc']
         else:
             self.name = "not implemented"
 
@@ -68,11 +66,11 @@ class EntityLoader:
         for type_, vnum in self.children:
             vnum = int(vnum)
             if type_ == 'mob':
-                name = search_mobdb(vnum=vnum)[vnum]['sdesc']
+                name = search_mobdb(vnum=vnum)[0]['sdesc']
                 names.append(n.format(name, vnum))
 
             elif type_ == 'obj':
-                name = search_objdb(vnum=vnum)[vnum]['sdesc']
+                name = search_objdb(vnum=vnum)[0]['sdesc']
                 names.append(n.format(name=name, vnum=vnum))
 
         return names
@@ -85,10 +83,10 @@ class EntityLoader:
                 for ctype, cvnum in self.children:
                     if ctype != 'obj':
                         continue
-                    obj_bp = search_objdb(cvnum)
+                    obj_bp = search_objdb(vnum=cvnum)
                     if not obj_bp:
                         continue
-                    obj_bp = obj_bp[int(cvnum)]
+                    obj_bp = obj_bp[0]
                     obj = create_object(CUSTOM_OBJS[obj_bp['type']],
                                         key=int(cvnum))
                     obj.move_to(mob, quiet=True)
@@ -96,20 +94,20 @@ class EntityLoader:
                 mob.move_to(self.caller, quiet=True)
 
             elif self.type == 'obj':
-                obj_bp = search_objdb(self.vnum)
+                obj_bp = search_objdb(vnum=self.vnum)
                 if not obj_bp:
                     return
-                obj_bp = obj_bp[int(self.vnum)]
+                obj_bp = obj_bp[0]
                 obj = create_object(CUSTOM_OBJS[obj_bp['type']],
                                     key=int(self.vnum))
 
                 for ctype, cvnum in self.children:
                     if ctype != 'obj':
                         continue
-                    obj_bp = search_objdb(cvnum)
+                    obj_bp = search_objdb(vnum=cvnum)
                     if not obj_bp:
                         continue
-                    obj_bp = obj_bp[int(cvnum)]
+                    obj_bp = obj_bp[0]
                     obji = create_object(CUSTOM_OBJS[obj_bp['type']],
                                          key=int(cvnum))
                     obji.move_to(obj, quiet=True)
@@ -288,11 +286,11 @@ def random_book(caller, category=None):
     book will be loaded and put into callers contents
     """
     if category not in BOOK_CATEGORIES:
-        rvnum = random.choice(list(search_objdb('book').keys()))
+        books = search_objdb(type='book')
+        rvnum = random.choice([x['vnum'] for x in books])
     else:
-
-        rvnum = random.choice(
-            list(search_objdb('book', category=category).keys()))
+        books = search_objdb(type='book', extra=f'category {category}')
+        rvnum = random.choice([x['vnum'] for x in books])
 
     book = create_object('typeclasses.objs.custom.Book', key=rvnum)
     book.move_to(caller)

@@ -285,13 +285,11 @@ class CmdGoto(Command):
         # try to find vnum in database
         room = search_object(str(vnum),
                              typeclass='typeclasses.rooms.rooms.Room')
-        roomdb = GLOBAL_SCRIPTS.roomdb
-
+        # roomdb = GLOBAL_SCRIPTS.roomdb
         if not room:
-            # make sure a blueprint of room exists
-            try:
-                _ = roomdb.vnum[vnum]
-            except KeyError:
+
+            # make sure room exists in blueprint database
+            if not search_roomdb(vnum=int(vnum)):
                 ch.msg("That room does not exist")
                 return
             room = create_object('typeclasses.rooms.rooms.Room', key=vnum)
@@ -340,7 +338,7 @@ class CmdZoneSet(Command):
                 ch.msg(f"Zone cleared for {player.name.capitalize()}")
                 return
             # set a valid zone to player
-            zones = [x['name'] for x in GLOBAL_SCRIPTS.zonedb.vnum.values()]
+            zones = [x['name'] for x in search_zonedb('all')]
             if zonename not in zones:
                 ch.msg("That is not a valid zone")
                 return
@@ -397,10 +395,15 @@ class CmdLoad(Command):
 
         if obj_type == 'obj':
             # check to see if vnum exists
-            if vnum not in GLOBAL_SCRIPTS.objdb.vnum.keys():
+            obj_bp = search_objdb(vnum=vnum)
+            if not obj_bp:
+                # if vnum not in GLOBAL_SCRIPTS.objdb.vnum.keys():
                 ch.msg(f"that {obj_type}:{vnum} does not exist")
                 return
-            obj_bp = GLOBAL_SCRIPTS.objdb.vnum[vnum]
+            if len(obj_bp) > 1:
+                raise ValueError("more than one vnum found for object")
+            obj_bp = obj_bp[0]
+            # obj_bp = GLOBAL_SCRIPTS.objdb.vnum[vnum]
             # create instance of object and either put in room
             obj_type = CUSTOM_OBJS[obj_bp['type']]
             obj = create_object(obj_type, key=vnum)
@@ -412,10 +415,14 @@ class CmdLoad(Command):
                 Announce.ToChar)
 
         elif obj_type == 'mob':
-            if vnum not in GLOBAL_SCRIPTS.mobdb.vnum.keys():
+            mob_bp = search_mobdb(vnum=vnum)
+            # if vnum not in GLOBAL_SCRIPTS.mobdb.vnum.keys():
+            if not mob_bp:
                 ch.msg(f"mob: {vnum} does not exist")
                 return
-            mob_bp = GLOBAL_SCRIPTS.mobdb.vnum[vnum]
+            if len(mob_bp) > 1:
+                raise ValueError("more than one vnum found for mob")
+
             mob = create_object(Mob, key=vnum)
             mob.move_to(ch.location)
             act_msg = "$n motions $s hands around and $e creates"\
@@ -447,13 +454,13 @@ class CmdOList(Command):
     def func(self):
         ch = self.caller
 
-        def show_table(dictionary):
+        def show_table(d):
             table = self.styled_table("VNum",
                                       "Description",
                                       "Type",
                                       border='incols')
-            for vnum, data in sorted(dictionary.items()):
-                vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+            for data in sorted(d, key=lambda x: x['vnum']):
+                vnum = raw_ansi(f"[|G{data['vnum']:<4}|n]")
                 desc = crop(raw_ansi(data['sdesc']), width=50) or ''
                 type = data['type']
                 table.add_row(vnum, desc, type)
@@ -461,9 +468,8 @@ class CmdOList(Command):
             ch.msg(table)
 
         args = self.args.strip()
-        objdb = deserialize(GLOBAL_SCRIPTS.objdb.vnum)
 
-        if not objdb:
+        if not search_objdb('all'):
             ch.msg("There are no objects within the game")
             return
 
@@ -545,19 +551,17 @@ class CmdMList(Command):
     def func(self):
         ch = self.caller
         args = self.args.strip()
-        mobdb = dict(GLOBAL_SCRIPTS.mobdb.vnum)
-
-        if not mobdb:
+        if not search_mobdb('all'):
             ch.msg("There are no mobs within the game")
             return
 
-        def show_table(dictionary):
+        def show_table(d):
             table = self.styled_table("VNum",
                                       "Description",
                                       "Level",
                                       border='incols')
-            for vnum, data in sorted(dictionary.items()):
-                vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+            for data in sorted(d, key=lambda x: x['vnum']):
+                vnum = raw_ansi(f"[|G{data['vnum']:<4}|n]")
                 sdesc = crop(raw_ansi(data['sdesc']), width=50) or ''
                 table.add_row(vnum, sdesc, data['level'])
 
@@ -599,13 +603,13 @@ class CmdZList(Command):
     def func(self):
         ch = self.caller
 
-        def show_table(dictionary):
+        def show_table(d):
             table = self.styled_table("VNum",
                                       "Name",
                                       "Builders",
                                       border='incols')
-            for vnum, data in sorted(dictionary.items()):
-                vnum = raw_ansi(f"[|G{vnum:<4}|n]")
+            for data in sorted(d, key=lambda x: x['vnum']):
+                vnum = raw_ansi(f"[|G{data['vnum']:<4}|n]")
                 table.add_row(vnum, data['name'],
                               list_to_string(data['builders']))
 
@@ -764,36 +768,28 @@ class CmdRList(Command):
     def func(self):
         ch = self.caller
 
-        def show_table(dictionary):
+        def show_table(data):
             table = self.styled_table("VNum",
                                       "Name",
                                       "Exits",
                                       "Zone",
                                       border='incols')
-            for vnum, data in sorted(dictionary.items()):
-                vnum = raw_ansi(f"[|G{vnum:<4}|n]")
-                name = data['name']
-                zone = data['zone']
+            for d in sorted(data, key=lambda x: x['vnum']):
+                vnum = raw_ansi(f"[|G{d['vnum']:<4}|n]")
+                name = d['name']
+                zone = d['zone']
                 exits = [
                     f"{dir[0].capitalize()}[{num}]"
-                    for dir, num in data['exits'].items() if num > 0
+                    for dir, num in d['exits'].items() if num > 0
                 ]
                 table.add_row(vnum, name, list_to_string(exits), zone)
 
             ch.msg(table)
 
         args = self.args.strip()
-        roomdb = dict(GLOBAL_SCRIPTS.roomdb.vnum)
-        if not roomdb:
+        if not search_roomdb('all'):
             ch.msg("There are no rooms within the game")
             return
-
-        try:
-            _ = roomdb[1]
-        except KeyError:
-            ch.msg("No rooms are saved to database, try creating one first")
-            return
-
         if not args:
             ch_zone = has_zone(ch)
 
@@ -917,10 +913,10 @@ class CmdMEdit(Command):
             except ValueError:
                 ch.msg("you must supply a valid vnum")
                 return
-            mob = search_mobdb(vnum)
+            mob = search_mobdb(vnum=vnum)
             if mob:
                 # check if you can edit this mob (has to be in same zone)
-                if mob[vnum]['zone'] != has_zone(ch):
+                if mob[0]['zone'] != has_zone(ch):
                     ch.msg("You don't have permissions to edit this mob. ")
                     return
 
