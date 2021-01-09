@@ -81,7 +81,10 @@ class Room(DefaultRoom):
             raise NotImplementedError(
                 "attempting to create a room that doesn't exist in blueprint database"
             )
-        room = room[key]
+        room = room[0]
+        if room['vnum'] != key:
+            self.delete()
+            raise ValueError("blueprint vnum does not match room key")
         # set fields that didn't exist before, mostly used
         # if future fields are added and old already created objs
         # don't know about them.

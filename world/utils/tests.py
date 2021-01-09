@@ -5,6 +5,9 @@ import numpy as np
 
 from evennia import GLOBAL_SCRIPTS
 from evennia.utils.dbserialize import deserialize
+from tinydb.database import TinyDB
+from tinydb.middlewares import CachingMiddleware
+from tinydb.storages import MemoryStorage
 from world.utils.utils import DBDumpEncoder, capitalize_sentence, _LANG_TAGS, parse_dot_notation, room_exists
 from world.utils.db import _search_db, search_mobdb, search_objdb, search_roomdb, search_zonedb, _RE_COMPARATOR_PATTERN
 
@@ -30,7 +33,8 @@ class TestNumpyToJsonEncoding(unittest.TestCase):
 
 class TestSearchDB(unittest.TestCase):
     def setUp(self) -> None:
-        self.mock_db = {
+        self.db = TinyDB(storage=CachingMiddleware(MemoryStorage))
+        data = {
             1: {
                 'name': 'tavis',
                 'cls': 'cleric',
@@ -63,54 +67,60 @@ class TestSearchDB(unittest.TestCase):
             }
         }
 
+        self.test_table = self.db.table('test')
+        for vnum, d in data.items():
+            self.test_table.insert({'vnum': vnum, **d})
+
+    def tearDown(self) -> None:
+        self.db.drop_tables()
+        self.db.close()
+
     def test_mobdb_return_all(self):
         db = deserialize(GLOBAL_SCRIPTS.mobdb.vnum)
-        self.assertDictEqual(db, search_mobdb('all'))
+        self.assertEqual(len(db), len(search_mobdb('all')))
 
     def test_objdb_return_all(self):
         db = deserialize(GLOBAL_SCRIPTS.objdb.vnum)
-        self.assertDictEqual(db, search_objdb('all'))
+        self.assertEqual(len(db), len(search_objdb('all')))
 
     def test_zonedb_return_all(self):
         db = deserialize(GLOBAL_SCRIPTS.zonedb.vnum)
-        self.assertDictEqual(db, search_zonedb('all'))
+        self.assertEqual(len(db), len(search_zonedb('all')))
 
     def test_roomdb_return_all(self):
         db = deserialize(GLOBAL_SCRIPTS.roomdb.vnum)
-        self.assertDictEqual(db, search_roomdb('all'))
+        self.assertEqual(len(db), len(search_roomdb('all')))
 
     def test_one_keyword(self):
         expected_len = 1
-        records = _search_db(db=self.mock_db, name='tavis')
+        records = _search_db(db=self.test_table, name='tavis')
         self.assertEqual(len(records), expected_len)
 
     def test_two_keyword(self):
-        expected = {3: self.mock_db[3]}
-        records = _search_db(db=self.mock_db, cls='cleric', race='elf')
-        self.assertDictEqual(expected, records)
+        records = _search_db(db=self.test_table, cls='cleric', race='elf')
+        self.assertEqual(1, len(records))
 
     def test_extra_keyword(self):
-        d = {2: self.mock_db[2], 3: self.mock_db[3]}
-        records = _search_db(db=self.mock_db, extra="language elven")
+        records = _search_db(db=self.test_table, extra="language elven")
 
-        self.assertDictEqual(d, records)
+        self.assertEqual(2, len(records))
 
     def test_logical_sign_for_integers(self):
-        d = {2: self.mock_db[2], 3: self.mock_db[3]}
-        records = _search_db(db=self.mock_db, hp=">=15")
-        self.assertDictEqual(d, records)
+        records = _search_db(db=self.test_table, hp=">=15")
+        self.assertEqual(2, len(records))
 
     def test_between_using_logical_signs_for_integers(self):
-        expected_record = {2: self.mock_db[2]}
-        first_set = _search_db(db=self.mock_db, hp=">10")
-        records = _search_db(db=first_set, hp="<20")
-        self.assertDictEqual(expected_record, records)
+        records = _search_db(db=self.test_table, hp='11-18')
+        self.assertEqual(1, len(records))
+
+    def test_between_using_logical_signs_edge_cases(self):
+        records = _search_db(db=self.test_table, hp='10-20')
+        self.assertEqual(3, len(records))
 
     def test_search_by_vnum(self):
         vnum = 2
-        expected_record = self.mock_db[vnum]
-        record = _search_db(db=self.mock_db, vnum=vnum)
-        self.assertDictEqual({vnum: expected_record}, record)
+        record = _search_db(db=self.test_table, vnum=vnum)
+        self.assertEqual(1, len(record))
 
     def test_logical_comparator_pattern(self):
         pattern = _RE_COMPARATOR_PATTERN

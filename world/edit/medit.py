@@ -1,4 +1,5 @@
 from enum import IntEnum
+from world.utils.db import cachedb_init
 import numpy as np
 
 from evennia import CmdSet, Command, EvEditor, GLOBAL_SCRIPTS
@@ -53,6 +54,7 @@ class MEditMode(_EditMode):
                 pass
 
             self.db.vnum[self.vnum] = self.obj
+            cachedb_init(dbname='mobdb')  # save changes to cachedb
             self.caller.msg('mob saved')
 
     def summarize(self):

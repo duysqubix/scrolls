@@ -3,6 +3,7 @@ online editting of room
 """
 
 import re, copy
+from world.utils.db import cachedb_init
 from evennia import GLOBAL_SCRIPTS, EvTable
 from evennia.commands.default.help import CmdHelp
 from evennia.utils.utils import wrap
@@ -49,6 +50,7 @@ class REditMode(_EditMode):
         if (self.orig_obj != self.obj) or override:
             # custom object checks here
             self.db.vnum[self.vnum] = self.obj
+            cachedb_init(dbname='roomdb')  # save changes to cachedb
 
             #if room actually exists, update that too by calling its
             # appropriate method
@@ -526,7 +528,7 @@ class Dig(Command):
 
                     # create and store blueprint of new room
                     ch.ndb._redit.db.vnum[nextvnum] = new_room_info
-
+                    cachedb_init()
                     # create object
                     if not room_exists:  # if not exists
                         room = create_object('typeclasses.rooms.rooms.Room',

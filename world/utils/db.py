@@ -3,10 +3,51 @@ utility functions related to queries things from internal
 script databases (objdb, roomdb, zonedb, mobdb, etc...)
 """
 import re
+from tinydb import TinyDB, Query
+from tinydb.storages import MemoryStorage
+from tinydb.middlewares import CachingMiddleware
 from evennia import GLOBAL_SCRIPTS, logger
 from evennia.utils.dbserialize import deserialize
 
 _RE_COMPARATOR_PATTERN = re.compile(r"(<[>=]?|>=?|!)")
+
+DB = TinyDB(storage=CachingMiddleware(MemoryStorage))
+
+
+def cachedb_init(dbname=None):
+    global DB
+    dbs = None
+    if not dbname:
+        dbs = {
+            'mobdb': GLOBAL_SCRIPTS.mobdb,
+            'objdb': GLOBAL_SCRIPTS.objdb,
+            'zonedb': GLOBAL_SCRIPTS.zonedb,
+            'roomdb': GLOBAL_SCRIPTS.roomdb
+        }
+    else:
+        dbs = {dbname: GLOBAL_SCRIPTS.get(dbname)}
+
+    ## i am too lazy right now to make this more exact
+    # drop the damn thing and recreate it.
+    for name, db in dbs.items():
+        if name in DB.tables():
+            DB.drop_table(name)
+
+        table = DB.table(name)
+        for vnum, data in db.vnum.items():
+            table.insert({'vnum': vnum, **data})
+
+
+# init cache db
+cachedb_init()
+
+
+def like(val, cmp):
+    return cmp in val
+
+
+def between(val, l, h):
+    return l <= val <= h
 
 
 def _search_db(db, vnum=None, return_keys=False, **kwargs):
@@ -70,187 +111,86 @@ def _search_db(db, vnum=None, return_keys=False, **kwargs):
         results = search_objs(db=search_objs(weight=">=2"), weight="<=10")
 
     """
-    results = dict()
-    db = db
 
     # must supply either or
     if not vnum and not kwargs:
         return None
 
+    def make_query(key, value):
+        if key == 'extra':
+            k, v = value.split(' ')
+            return Query()[key][k] == v
+
+        if isinstance(value, str):
+            matches = re.split(_RE_COMPARATOR_PATTERN, value)
+            if matches and len(matches) > 1:
+                matches = matches[1:]
+                condition, value = matches
+                value = int(value)
+                if condition == ">=":
+                    return Query()[key] >= value
+                elif condition == ">":
+                    return Query()[key] > value
+                elif condition == "<=":
+                    return Query()[key] <= value
+                elif condition == "<":
+                    return Query()[key] < value
+
+            matches = value.split('-')
+            if matches and len(matches) == 2:
+                # between range
+                low, high = matches
+                try:
+                    low, high = int(low), int(high)
+                except ValueError:
+                    return Query()
+
+                return Query()[key].test(between, low, high)
+
+            return Query()[key].test(like, value)
+
+        elif isinstance(value, list):
+            return Query()[key].any(value)
+
     if vnum:
-        # try to see if vnum is a valid integer
-        try:
-            vnum = int(vnum)
-            mob = db.get(vnum, None)
-            if not mob:
-                return None
-
-            results[vnum] = mob
-            return results if not return_keys else list(results.keys())
-        except:
-            pass
-
-        # return everything in db
         if vnum == 'all':
-            results.update(dict(db))
-            return results if not return_keys else list(results.keys())
+            records = db.all()
+        else:
+            try:
+                vnum = int(vnum)
+                records = db.search(Query().vnum == vnum)
+            except ValueError:
+                return []
+    else:
+        query = None
+        for key, value in kwargs.items():
+            if not query:
+                query = make_query(key, value)
+            else:
+                query &= make_query(key, value)
 
-    for vnum, data in db.items():
-        if kwargs:
+        records = db.search(query)
 
-            success_matches = 0  # uses a counting system to make sure a specific record matches on ALL supplied kwargs
-            for kfield, kvalue in kwargs.items():
-                dvalue = data.get(kfield, None)
-                dtype = type(dvalue)
-                if not kfield:
-                    break
-
-                # some extra parsing protocols for each
-                # data type depending on what the datatype is for the value in data
-
-                # handle base list type
-                if dtype is list:
-                    # allows matching like so
-                    # "1 2 3" == [1,2,3]
-                    kvalue = dtype(kvalue.split(' '))
-                    matches = all([x in dvalue for x in kvalue])
-                    if not matches:
-                        break
-                    success_matches += 1
-                    continue
-
-                #  parses int types and parses the custom logical operator tags
-                # >=, >, <= <
-                # currently only supports single operators.
-                # This is invalid:
-                #  x = "10<,15>=" or something like that, it expects the format
-                # [operator][value]
-                elif dtype is int:
-                    matches = re.split(_RE_COMPARATOR_PATTERN, kvalue)
-                    if matches and len(matches) > 1:
-                        matches = matches[1:]
-                        condition, value = matches
-                        value = dtype(value)
-                        if condition == ">=" and dvalue >= value:
-                            success_matches += 1
-                        elif condition == ">" and dvalue > value:
-                            success_matches += 1
-                        elif condition == "<=" and dvalue <= value:
-                            success_matches += 1
-                        elif condition == "<" and dvalue < value:
-                            success_matches += 1
-                        continue
-
-                    else:
-                        # cast to type of what dvalue is, this case it is int
-                        kvalue = dtype(kvalue)
-                        if kvalue == dvalue:
-                            # results[vnum] = data
-                            success_matches += 1
-                            continue
-
-                # handle parsing of on extra fields
-                # extra field on data is simply another dictionary
-                # within the dictionary.
-                # allows the following to match:
-                #
-                # "language aldmerish" == {'language': 'aldmerish'}
-                elif dtype is dict and kfield == 'extra':
-                    key, value = kvalue.split(' ')
-                    for k, v, in dvalue.items():
-                        vtype = type(v)
-                        if k == key and v == vtype(value):
-                            success_matches += 1
-                            continue
-
-                # handle str types
-                elif dtype is str:
-                    kvalue = dtype(
-                        kvalue).lower()  # cast to type of what dvalue is
-                    if kvalue in dvalue.lower():
-                        # results[vnum] = data
-                        success_matches += 1
-                        continue
-                else:
-                    logger.log_errmsg(f"not supported data type: {dtype}")
-                    continue
-
-            # if the number of success_matches == len(kwargs)
-            # then each iteration of kwargs.items() found match, meaning
-            # this record passes, and is stored
-            if success_matches == len(kwargs):
-                results[vnum] = data
-
-    # return results, or keys if specified.
-    return results if not return_keys else list(results.keys())
+    if return_keys:
+        return [x['vnum'] for x in records]
+    return records
 
 
 def search_mobdb(vnum=None, db=None, return_keys=False, **kwargs):
-    db = GLOBAL_SCRIPTS.mobdb.vnum if not db else db
+    db = DB.table('mobdb')
     return _search_db(db=db, vnum=vnum, return_keys=return_keys, **kwargs)
 
 
 def search_objdb(vnum=None, db=None, return_keys=False, **kwargs):
-    db = GLOBAL_SCRIPTS.objdb.vnum if not db else db
+    db = DB.table('objdb')
     return _search_db(db=db, vnum=vnum, return_keys=return_keys, **kwargs)
 
 
 def search_zonedb(vnum=None, db=None, return_keys=False, **kwargs):
-    db = GLOBAL_SCRIPTS.zonedb.vnum if not db else db
+    db = DB.table('zonedb')
     return _search_db(db=db, vnum=vnum, return_keys=return_keys, **kwargs)
 
 
 def search_roomdb(vnum=None, db=None, return_keys=False, **kwargs):
-    db = GLOBAL_SCRIPTS.roomdb.vnum if not db else db
+    db = DB.table('roomdb')
     return _search_db(db=db, vnum=vnum, return_keys=return_keys, **kwargs)
-
-
-# def search_objdb(criteria, **kwargs):
-#     """
-#     the criteria can either be name or type of object
-#     first checks to see if it a valid object type before trying names
-
-#     The kwargs if for searching by 'extra' which is specific depending
-#     on object type. If the extras field are not existent, it will ignore the
-#     filter.
-
-#     ex:
-
-#     search_objdb('book', **{'category': 'fiction'})
-#     # will return all objects of books that are in category of fiction.
-
-#     search_objdb('all') # returns all objects in database
-
-#     search_objdb('fire') # returns objects with the name fire
-#     """
-#     results = dict()
-#     objdb = GLOBAL_SCRIPTS.objdb.vnum
-
-#     # try to see if criteria is vnum
-#     try:
-#         vnum = int(criteria)
-#         obj = objdb.get(vnum, None)
-#         if not obj:
-#             return None
-
-#         results[vnum] = obj
-#         return results
-#     except:
-#         pass
-
-#     if criteria == 'all':
-#         results.update(dict(objdb))
-#         return results
-
-#     use_type = True if criteria in CUSTOM_OBJS.keys() else False
-#     for vnum, data in objdb.items():
-
-#         if use_type and data['type'] == criteria:
-#             if not kwargs:
-#                 results[vnum] = data
-#             elif kwargs.items() <= data['extra'].items():
-#                 results[vnum] = data
-
-#         elif criteria in data['key']:
-#             results[vnum] = data
-#     return results

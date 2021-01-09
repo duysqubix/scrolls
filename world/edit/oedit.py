@@ -1,6 +1,7 @@
 """
 on-line editing of objects
 """
+from world.utils.db import cachedb_init
 from typeclasses.objs.object import VALID_OBJ_APPLIES, VALID_OBJ_TAGS
 from evennia.utils.utils import inherits_from
 from typeclasses.objs.custom import CUSTOM_OBJS
@@ -60,6 +61,8 @@ class OEditMode(_EditMode):
                     self.obj['extra']['limit'] = int(limit)
 
             self.db.vnum[self.vnum] = self.obj
+            cachedb_init(dbname='objdb')  # save changes to cachedb
+
             self.caller.msg("object saved.")
 
     def summarize(self):
