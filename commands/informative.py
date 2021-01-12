@@ -5,12 +5,13 @@ from evennia.server.sessionhandler import SESSIONS
 from evennia.contrib.rplanguage import obfuscate_language
 from world.calendar import DAYS, DAYS_IN_WEEK, HOLIDAYS, MONTHS, START_ERA, START_YEAR
 from world.paginator import BookEvMore
+from world.conditions import DarkSight
 from evennia import EvForm, EvTable
 from evennia.contrib import custom_gametime
 from evennia.utils import evmore
 from evennia.utils.utils import inherits_from
 from commands.command import Command
-from world.utils.utils import can_see_obj, capitalize_sentence, get_name, is_book, is_container, is_equipped, is_invis, is_npc, is_obj, is_pc, is_pc_npc, is_wielded, is_wiz, is_worn, match_name, parse_dot_notation, rplanguage_parse_string
+from world.utils.utils import can_see_obj, capitalize_sentence, get_name, has_light, is_book, is_container, is_equipped, is_invis, is_npc, is_obj, is_pc, is_pc_npc, is_wielded, is_wiz, is_worn, match_name, parse_dot_notation, rplanguage_parse_string
 from evennia.utils.ansi import raw as raw_ansi
 
 
@@ -355,6 +356,15 @@ class CmdLook(Command):
     def func(self):
         ch = self.caller
         location = ch.location
+
+        # check to see if current location is 'dark' and
+        # player has either DarkSight Condition or a light source
+
+        if "dark" in location.db.flags:
+            if not ch.conditions.has(DarkSight) and not has_light(ch):
+                ch.msg("You can't see anything")
+                return
+
         if not self.args:
             if not self:
                 ch.msg("You have no location to look at!")

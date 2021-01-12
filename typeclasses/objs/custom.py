@@ -11,6 +11,8 @@ from typeclasses.objs.object import Object
 
 class ObjectDefault(Object):
     __obj_type__ = "default"
+    __apply_on_msg__ = ""
+    __apply_off_msg__ = ""
 
 
 class Book(Object):
@@ -89,10 +91,27 @@ class Equipment(Object):
         self.db.is_worn = False  # identifies that obj is currently worn
 
 
+class LightSource(Equipment):
+    """
+    Special objects that act as a light source
+    """
+    __obj_type__ = "light"
+    __specific_fields__ = {'wear_loc': "", 'AR': 0, 'MAR': 0, 'duration': -1}
+    __help_msg__ = [
+        f"wear_loc: {', '.join([x.name for x in WEAR_LOCATIONS])}",
+        "AR: Armor Rating (damaged reduced by physical attacks base on AR)",
+        "MAR: Magic Armor Rating (damaged reduced by magical attacks based on Magic AR"
+        "Duration: Amount of hours in-game that this object provides light, -1 for inf."
+    ]
+    __apply_on_msg__ = "Your surroundings suddenly |ybrighten|n"
+    __apply_off_msg__ = "Your light is extinguished."
+
+
 CUSTOM_OBJS = {
     Book.__obj_type__: Book,
     Container.__obj_type__: Container,
     Equipment.__obj_type__: Equipment,
+    LightSource.__obj_type__: LightSource,
     ObjectDefault.__obj_type__: ObjectDefault,
     Staff.__obj_type__: Staff,
     Weapon.__obj_type__: Weapon,

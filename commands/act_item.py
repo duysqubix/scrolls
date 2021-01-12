@@ -507,6 +507,8 @@ class CmdWear(Command):
                     ch.equipment.add(obj)
             return
         for obj in ch.contents:
+            # ch.debug_msg(obj.db.sdesc, is_equippable(obj), not is_worn(obj),
+            #              not is_weapon(obj))
             if is_equippable(obj) and not is_worn(obj) and not is_weapon(obj):
                 # this object is a potential candidate
                 if match_name(args, obj):

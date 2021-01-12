@@ -225,6 +225,10 @@ def apply_obj_effects(ch, obj):
     if not is_pc_npc(ch) or not is_obj(obj):
         return
 
+    # handle any messages here to ch when worn
+    if obj.__apply_on_msg__:
+        ch.msg(obj.__apply_on_msg__)
+
     # handle applies (conditions set on items)
     applies = list(obj.db.applies)
     if applies:
@@ -256,6 +260,10 @@ def remove_obj_effects(ch, obj):
     """
     if not is_pc_npc(ch) or not is_obj(obj):
         return
+
+    # handle any messages here to ch when worn
+    if obj.__apply_off_msg__:
+        ch.msg(obj.__apply_off_msg__)
 
     applies = list(obj.db.applies)
     if applies:
@@ -397,6 +405,19 @@ def has_zone(obj):
     return obj.db.assigned_zone
 
 
+def has_light(ch):
+    """ 
+    checks to see if npc/pc has a light 
+    object equipped
+    """
+    if not is_pc_npc(ch):
+        return False
+
+    if not ch.equipment.location['light']:
+        return False
+    return True
+
+
 def is_wiz(obj):
     """ checks to see if player is immortal """
 
@@ -535,6 +556,11 @@ def is_equipment(obj):
     return is_obj(obj) and obj.__obj_type__ == 'equipment'
 
 
+def is_light(obj):
+    """ checks if obj is a light source"""
+    return is_obj(obj) and obj.__obj_type__ == 'light'
+
+
 def is_weapon(obj):
     """ checks if obj is of weapon type"""
     return is_obj(obj) and obj.__obj_type__ == 'weapon'
@@ -597,7 +623,7 @@ def is_equippable(obj):
     """
     # both these attributes are unique and is not set to None
     # on Equipment Objects
-    return is_equipment(obj) and obj.db.equippable
+    return (is_equipment(obj) or is_light(obj)) and obj.db.equippable
 
 
 def is_wieldable(obj):
@@ -613,7 +639,7 @@ def is_wielded(obj):
 
 def is_worn(obj):
     """ tests if object is currently set as worn """
-    if not is_equipment(obj):
+    if not is_equippable(obj):
         return False
     return obj.db.is_worn
 

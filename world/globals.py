@@ -178,21 +178,17 @@ class _WearLocation:
         self.display_msg = display_msg if display_msg else f"[|GWorn on {name.capitalize():<10}|n]"
 
 
-WEAR_LOCATIONS = {
-    _WearLocation("light", display_msg=f"[|GUsed as {'Light':<10}|n]"),
-    _WearLocation("wield", display_msg=f"[|GWielded {'':<10}|n]"),
-    _WearLocation("off-hand", display_msg=f"[|GOff-Hand {'':<9}|n]"),
-    _WearLocation("head"),
-    _WearLocation("back"),
-    _WearLocation("shoulders"),
-    _WearLocation("chest"),
-    _WearLocation("arms"),
-    _WearLocation("hands"),
-    _WearLocation("l-finger"),
-    _WearLocation("r-finger"),
-    _WearLocation("legs"),
-    _WearLocation("feet")
-}
+WEAR_LOCATIONS = (_WearLocation("light",
+                                display_msg=f"[|GUsed as {'Light':<10}|n]"),
+                  _WearLocation("wield",
+                                display_msg=f"[|GWielded {'':<10}|n]"),
+                  _WearLocation("off-hand",
+                                display_msg=f"[|GOff-Hand {'':<9}|n]"),
+                  _WearLocation("head"), _WearLocation("back"),
+                  _WearLocation("shoulders"), _WearLocation("chest"),
+                  _WearLocation("arms"), _WearLocation("hands"),
+                  _WearLocation("l-finger"), _WearLocation("r-finger"),
+                  _WearLocation("legs"), _WearLocation("feet"))
 
 
 class _Proficiency:
