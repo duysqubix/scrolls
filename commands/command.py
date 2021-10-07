@@ -34,7 +34,8 @@ class Command(BaseCommand):
     """
     def at_post_cmd(self):
         "called after self.func()."
-        self.caller.msg(prompt=self.caller.get_prompt())
+        if not self.key == 'look':
+            self.caller.msg(prompt=self.caller.get_prompt())
 
 
 class CmdFrenzied(Command):
