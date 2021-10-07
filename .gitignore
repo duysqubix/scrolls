@@ -1,0 +1,8 @@
+*.pyc
+*.log
+*.pid
+*.db
+*.db3
+*.sqlite
+.venv
+.vscode
