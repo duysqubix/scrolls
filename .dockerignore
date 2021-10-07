@@ -1,0 +1,4 @@
+*.db3
+.venv
+.vscode
+*.pyc
