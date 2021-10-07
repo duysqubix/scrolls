@@ -1,14 +1,4 @@
 *.pyc
-<<<<<<< HEAD
-*.pid
-.venv
-.vscode
-*.db
-*.db3
-*.sqlite
-*.log
-web/
-=======
 *.log
 *.pid
 *.db
@@ -16,4 +6,3 @@ web/
 *.sqlite
 .venv
 .vscode
->>>>>>> fix-master-restoring-web
