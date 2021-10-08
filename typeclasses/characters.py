@@ -517,7 +517,7 @@ class Character(DefaultCharacter):
         self.db.conditions = dict(self.db.conditions)
         self.db.traits = dict(self.db.traits)
         self.db.attrs = dict(self.db.attrs)
-        self.msg('saved.')
+        self.msg(prompt=self.get_prompt())
 
     def at_pre_unpuppet(self):
         self.save_character()
@@ -599,7 +599,7 @@ class Character(DefaultCharacter):
         if is_wiz(self) and self.conditions.has(HolyLight):
             prompt += "(|wholy|ylight|n)"
 
-        prompt += f" HP:{hp.cur}/{hp.max} MG:{mg.cur}/{mg.max} ST:{st.cur}/{st.max} SP:{sp.cur}/{sp.max} CR:{ca.cur}/{ca.max} > "
+        prompt += f"HP:{hp.cur}/{hp.max} MG:{mg.cur}/{mg.max} ST:{st.cur}/{st.max} SP:{sp.cur}/{sp.max} CR:{ca.cur}/{ca.max} > "
 
         return prompt
 
