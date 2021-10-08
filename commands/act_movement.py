@@ -24,6 +24,8 @@ class _CmdMove(Command):
 
     def func(self):
         ch = self.caller
+
+        ch.msg("GUESS WHAT? YOU ARE MOVING!!!")
         cur_room = ch.location
         exit = cur_room.db.exits[self.key]
         if exit < 0:
