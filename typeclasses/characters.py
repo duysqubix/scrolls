@@ -517,7 +517,11 @@ class Character(DefaultCharacter):
         self.db.conditions = dict(self.db.conditions)
         self.db.traits = dict(self.db.traits)
         self.db.attrs = dict(self.db.attrs)
-        self.msg(prompt=self.get_prompt())
+
+        try:
+            self.msg(prompt=self.get_prompt())
+        except:
+            pass
 
     def at_pre_unpuppet(self):
         self.save_character()

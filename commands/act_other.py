@@ -1,4 +1,5 @@
 from commands.command import Command
+from world.map import Wormy
 
 
 class CmdTitle(Command):
@@ -26,3 +27,22 @@ class CmdTitle(Command):
         else:
             ch.attrs.title.value = args
         ch.msg("Title set.")
+
+
+class CmdMap(Command):
+    """
+    Displays a map of your surroundings.
+
+    Usage:
+        map
+    """
+
+    key = "map"
+
+    def func(self):
+        ch = self.caller
+
+        wormy = Wormy(ch, debug=False)
+
+        map_string = wormy.generate_map()
+        ch.msg(map_string)
