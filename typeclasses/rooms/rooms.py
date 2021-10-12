@@ -121,7 +121,7 @@ VALID_ROOM_FLAGS = {
 }
 
 VALID_ROOM_SECTORS = {
-    'inside': RoomSector('inside', '.'),
+    'inside': RoomSector('inside', '|n.|n'),
     'city': RoomSector('city', '|xC|n'),
     'field': RoomSector('field', '|g,|n'),
     'forest': RoomSector('forest', '|GY|n'),

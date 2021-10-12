@@ -55,14 +55,15 @@ class Wormy:
 
         # determine map size, either default or user supplied
         if (map_size_x is None) or (map_size_y is None):
-            map_size: tuple = _DEFAULT_MAP_SIZE
+            map_size_x = _DEFAULT_MAP_SIZE[0]
+            map_size_y = _DEFAULT_MAP_SIZE[1]
         else:
             if map_size_x % 2 == 0:
                 map_size_x += 1
             if map_size_y % 2 == 0:
                 map_size_y += 1
 
-            map_size: Tuple[int, int] = (map_size_x, map_size_y)
+        map_size: Tuple[int, int] = (map_size_x, map_size_y)
 
         # get center coords based on map size
         center_coords: Tuple[int, int] = tuple(map(lambda x: x // 2, map_size))
@@ -71,7 +72,12 @@ class Wormy:
         self.cur_location: Room = caller_obj.location
 
         # initalize empty map for drawing
-        self._grid_map: np.ndarray = np.empty(map_size, dtype='<U8')
+        self._grid_map = list()
+        for _ in range(map_size_x):
+            tmp_row = list()
+            for _ in range(map_size_y):
+                tmp_row.append({'symbol': '', 'up': False, 'down': False})
+            self._grid_map.append(tmp_row)
 
         # initalize starting coordinates
         self.current_coords: np.ndarray = np.array(center_coords)
@@ -119,6 +125,13 @@ class Wormy:
 
             # wormy can't traverse up or down right now :(
             if exit_name in ('up', 'down'):
+                self.debug_msg(("FOUND A INVLAID EXIT: ", exit_name,
+                                self.cur_x, self.cur_y))
+                if exit_name == 'up':
+                    self._grid_map[self.cur_x][self.cur_y]['up'] = True
+                if exit_name == 'down':
+                    self._grid_map[self.cur_x][self.cur_y]['down'] = True
+
                 continue
 
             # update current coords based on exit name for next room
@@ -141,12 +154,12 @@ class Wormy:
 
             ######## do any drawing of the map below here #################
 
-            self._grid_map[self.cur_x][self.cur_y] = VALID_ROOM_SECTORS[
-                next_room['type']].symbol
-                
+            self._grid_map[self.cur_x][self.cur_y][
+                'symbol'] = VALID_ROOM_SECTORS[next_room['type']].symbol
+
             ############## do any drawing of the map above here ################
             debug_msg = {
-                exit_name :{
+                exit_name: {
                     "next_room": next_room['name'],
                     "rvnum": rvnum,
                     "previous_coordinates": {
@@ -158,20 +171,24 @@ class Wormy:
                         "x": self.cur_x,
                         "y": self.cur_y
                     },
-                    "next_room_type": next_room['type'],\
+                    "next_room_type": next_room['type'],
+                    "symbol": VALID_ROOM_SECTORS[next_room['type']].symbol
                 }
             }
-            self.debug_msg(("******"*_debug_indent)+json.dumps(debug_msg, cls=DBDumpEncoder))
+            self.debug_msg(("******" * _debug_indent) +
+                           json.dumps(debug_msg, cls=DBDumpEncoder))
 
             self.traverse(
                 next_room['exits'],
                 previous_current_coordinates=previous_current_coordinates,
                 previous_exit_name=OPPOSITE_DIRECTION[exit_name],
-                _debug_indent=(_debug_indent+1))
+                _debug_indent=(_debug_indent + 1))
 
             # returning from recursion means we finished worming through a particular
             # path.. resetting current_coords to starting point so the math aligns
-            self.debug_msg(f"Path complete, resetting coordinates back to room {rvnum} at {previous_current_coordinates}")
+            self.debug_msg(
+                f"Path complete, resetting coordinates back to room {rvnum} at {previous_current_coordinates}"
+            )
             self.current_coords = previous_current_coordinates.copy()
             _debug_indent = 0
 
@@ -188,8 +205,8 @@ class Wormy:
 
     def generate_map(self) -> str:
         # update center location
-        self._grid_map[self.cur_x][self.cur_y] = "|M@|n"
-
+        self._grid_map[self.cur_x][self.cur_y]['symbol'] = "|M@|n"
+        self.debug_msg(self._grid_map)
         # begin traversing rooms
         self.traverse(self.cur_location.db.exits)
 
@@ -197,14 +214,15 @@ class Wormy:
         map_string = ""
         map_size = self.center_coords * 2
 
-        self.debug_msg(self._grid_map)
         for x in range(map_size[0] + 1):
             for y in range(map_size[1] + 1):
                 grid_val = self._grid_map[x][y]
+                down = '|r[' if grid_val['down'] else '['
+                up = '|r]' if grid_val['up'] else ']'
 
-                if not grid_val:
+                if grid_val['symbol'] == '':
                     map_string += f"{'':5}"
                 else:
-                    map_string += f"|c[{grid_val:1}|c]|n{'':2}"
+                    map_string += f"|c{down}{grid_val['symbol']:1}|c{up}|n{'':2}"
             map_string += "\n\n"
         return map_string

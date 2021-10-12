@@ -2,6 +2,7 @@ from commands.command import Command
 from world.map import Wormy
 from world.utils.utils import is_wiz
 
+
 class CmdTitle(Command):
     """
     Set your title to whatever you would like.
@@ -56,15 +57,15 @@ class CmdMap(Command):
         else:
             if len(args) == 2 and is_wiz(ch):
                 debug = True if eval(args[1].capitalize()) is True else False
-                
+
             try:
                 size = int(args[0])
             except ValueError:
                 ch.msg("Invalid map size")
                 return
 
-            if size > 7:
-                ch.msg("Map size too big, stay below 8x8")
+            if size > 10:
+                ch.msg("Map size too big")
                 return
 
             wormy = Wormy(ch, map_size_x=size, map_size_y=size, debug=debug)
