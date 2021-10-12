@@ -2,7 +2,7 @@
 Holds the class to generate a map
 """
 import json
-from typing import Dict, Tuple
+from typing import Any, Dict, Optional, Tuple, List, Dict
 import numpy as np
 
 from typeclasses.rooms.rooms import VALID_ROOM_SECTORS, Room
@@ -11,19 +11,19 @@ from world.utils.db import search_roomdb
 from world.utils.utils import DBDumpEncoder
 from world.globals import OPPOSITE_DIRECTION
 
-_DEFAULT_MAP_SIZE = (5, 5)
+_DEFAULT_MAP_SIZE: Tuple[int, int] = (5, 5)
 
-_DIRECTION_MAPPING = {
+_DIRECTION_MAPPING: Dict[str, np.ndarray] = {
     'north': np.array((0, -2)),
     'south': np.array((0, 2)),
     'east': np.array((2, 0)),
     'west': np.array((-2, 0))
 }
 
-_HORIZONTAL_PATH_ICON = '---'
-_VERTICAL_PATH_ICON = ' | '
-_UP_ICON = '|r+  |n'
-_DOWN_ICON = '|r  ‾|n'
+_HORIZONTAL_PATH_ICON: str = '---'
+_VERTICAL_PATH_ICON: str = ' | '
+_UP_ICON: str = '|r+  |n'
+_DOWN_ICON: str = '|r  ‾|n'
 
 
 class Wormy:
@@ -51,12 +51,12 @@ class Wormy:
     """
     def __init__(self,
                  caller_obj: Character,
-                 map_size_x=None,
-                 map_size_y=None,
+                 map_size_x: Optional[int] = None,
+                 map_size_y: Optional[int] = None,
                  debug=False) -> None:
 
-        self._caller_obj = caller_obj
-        self._debug = debug
+        self._caller_obj: Character = caller_obj
+        self._debug: bool = debug
 
         # determine map size, either default or user supplied
         if (map_size_x is None) or (map_size_y is None):
@@ -80,7 +80,7 @@ class Wormy:
         self.cur_location: Room = caller_obj.location
 
         # initalize empty map for drawing
-        self._grid_map = list()
+        self._grid_map: List[List[Dict[str, Any]]] = list()
         for _ in range(map_size_x):
             tmp_row = list()
             for _ in range(map_size_y):
@@ -96,38 +96,39 @@ class Wormy:
             self._grid_map.append(tmp_row)
 
         # initalize starting coordinates
-        self.current_coords: np.ndarray = np.array(center_coords)
+        self.current_coords: np.ndarray = np.array(center_coords,
+                                                   dtype=np.int32)
 
         # initalize center coordinates in np array form
-        self.center_coords = np.array(center_coords)
+        self.center_coords = np.array(center_coords, dtype=np.int32)
 
-        # store static list of all exits within room
-        self.current_room_exits = [
-            exit_name
-            for exit_name, rvnum in self.cur_location.db.exits.items()
-            if (rvnum > 0) and exit_name not in ("up", "down")
-        ]
-
-        debug_msg = {
-            "map_size_x": map_size_x,
-            "map_size_y": map_size_y,
-            "center_coords": center_coords,
-            "caller_obj": str(caller_obj),
-            "supplied_map_size": map_size
-        }
-        self.debug_msg(json.dumps(debug_msg, cls=DBDumpEncoder))
+        self.debug_msg(
+            json.dumps(
+                {
+                    "map_size_x": map_size_x,
+                    "map_size_y": map_size_y,
+                    "center_coords": center_coords,
+                    "caller_obj": str(caller_obj),
+                    "supplied_map_size": map_size
+                },
+                cls=DBDumpEncoder))
 
     def debug_msg(self, msg):
+        """helper function to send caller_obj debug messages if enabled"""
         if not self._debug:
             return
         self._caller_obj.msg(str(msg))
 
     def traverse(self,
                  exits: Dict[str, int],
-                 previous_current_coordinates=None,
-                 previous_exit_name=None,
-                 _debug_indent=0):
-
+                 previous_current_coordinates: Optional[np.ndarray] = None,
+                 previous_exit_name: Optional[str] = None,
+                 _debug_indent: int = 0) -> None:
+        """
+        Main recursive method that 'crawls' into other rooms and
+        dynamically generates the map, stores initial data in a grid-like
+        data type which is a python-native list of lists of dictionaries
+        """
         for exit_name, rvnum in exits.items():
             # check for exit conditions
 
@@ -154,7 +155,8 @@ class Wormy:
             self._grid_map[self.cur_x][self.cur_y][exit_name] = True
 
             # update current coords based on exit name for next room
-            previous_current_coordinates = self.current_coords.copy()
+            previous_current_coordinates: np.ndarray = self.current_coords.copy(
+            )
             self.current_coords += _DIRECTION_MAPPING[exit_name]
 
             # if any value is below 0, we are out of bounds, ignore and reset coords to last valid position
@@ -169,7 +171,7 @@ class Wormy:
                 self.current_coords = previous_current_coordinates.copy()
                 continue
 
-            next_room = search_roomdb(vnum=rvnum)[rvnum]
+            next_room: Dict[str, Any] = search_roomdb(vnum=rvnum)[rvnum]
 
             ######## do any drawing of the map below here #################
 
@@ -177,25 +179,25 @@ class Wormy:
                 'symbol'] = VALID_ROOM_SECTORS[next_room['type']].symbol
 
             ############## do any drawing of the map above here ################
-            debug_msg = {
-                exit_name: {
-                    "next_room": next_room['name'],
-                    "rvnum": rvnum,
-                    "previous_coordinates": {
-                        "x": previous_current_coordinates[0],
-                        "y": previous_current_coordinates[1]
-                    },
-                    "direction_value": _DIRECTION_MAPPING[exit_name],
-                    "current_coordinates": {
-                        "x": self.cur_x,
-                        "y": self.cur_y
-                    },
-                    "next_room_type": next_room['type'],
-                    "symbol": VALID_ROOM_SECTORS[next_room['type']].symbol
-                }
-            }
-            self.debug_msg(("******" * _debug_indent) +
-                           json.dumps(debug_msg, cls=DBDumpEncoder))
+            self.debug_msg(("******" * _debug_indent) + json.dumps(
+                {
+                    exit_name: {
+                        "next_room": next_room['name'],
+                        "rvnum": rvnum,
+                        "previous_coordinates": {
+                            "x": previous_current_coordinates[0],
+                            "y": previous_current_coordinates[1]
+                        },
+                        "direction_value": _DIRECTION_MAPPING[exit_name],
+                        "current_coordinates": {
+                            "x": self.cur_x,
+                            "y": self.cur_y
+                        },
+                        "next_room_type": next_room['type'],
+                        "symbol": VALID_ROOM_SECTORS[next_room['type']].symbol
+                    }
+                },
+                cls=DBDumpEncoder))
 
             self.traverse(
                 next_room['exits'],
@@ -209,17 +211,16 @@ class Wormy:
                 f"Path complete, resetting coordinates back to room {rvnum} at {previous_current_coordinates}"
             )
             self.current_coords = previous_current_coordinates.copy()
-            _debug_indent = 0
 
         # exhausted all exits in room, roll back
         return
 
     @property
-    def cur_x(self):
+    def cur_x(self) -> np.int32:
         return self.current_coords[1]
 
     @property
-    def cur_y(self):
+    def cur_y(self) -> np.int32:
         return self.current_coords[0]
 
     def generate_map(self) -> str:
@@ -228,20 +229,20 @@ class Wormy:
         # begin traversing rooms
         self.traverse(self.cur_location.db.exits)
 
-        map_string = ""
-        map_size = self.center_coords * 2
+        map_string: str = ""
+        map_size: np.ndarray = self.center_coords * 2
 
         # fill in paths between rooms here based on current grid
         for x in range(map_size[0] + 1):
             for y in range(map_size[1] + 1):
-                grid_val = self._grid_map[x][y]
+                grid_val: Dict[str, Any] = self._grid_map[x][y]
 
                 # ignore empty ones for now
                 if grid_val['symbol'] == '':
                     continue
 
                 # get all exits in that came out positive
-                exits = [
+                exits: List[str] = [
                     exit_name for exit_name, exists in grid_val.items()
                     if exists is True  #and exit_name not in ('up', 'down')
                 ]
@@ -295,7 +296,7 @@ class Wormy:
         # convert grid into prettyness string
         for x in range(map_size[0] + 1):
             for y in range(map_size[1] + 1):
-                grid_val = self._grid_map[x][y]
+                grid_val: Dict[str, Any] = self._grid_map[x][y]
 
                 if grid_val['symbol'] == '':
                     map_string += f"{'':3}"
