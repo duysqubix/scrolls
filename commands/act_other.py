@@ -36,6 +36,8 @@ class CmdMap(Command):
     Map size must be an odd number, if an even number is supplied
     it will round to nearest number up.
 
+    Minimum value is 5
+
     Usage:
         map
         map 5 # create map size of 5x5
@@ -67,6 +69,8 @@ class CmdMap(Command):
             if size > 10:
                 ch.msg("Map size too big")
                 return
+            if size < 5:
+                size = 5
 
             wormy = Wormy(ch, map_size_x=size, map_size_y=size, debug=debug)
 
