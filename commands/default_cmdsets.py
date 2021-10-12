@@ -60,6 +60,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
         self.add(act_item.CmdWield())
 
         self.add(act_other.CmdTitle())
+        self.add(act_other.CmdMap())
 
         # movement commands
         self.add(act_mov.CmdNorth())

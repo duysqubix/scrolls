@@ -12,6 +12,7 @@ from evennia.utils.utils import inherits_from
 from commands.command import Command
 from world.utils.utils import can_see_obj, capitalize_sentence, get_name, is_book, is_container, is_equipped, is_invis, is_npc, is_obj, is_pc, is_pc_npc, is_wielded, is_wiz, is_worn, match_name, parse_dot_notation, rplanguage_parse_string
 from evennia.utils.ansi import raw as raw_ansi
+from world.map import Wormy
 
 
 class CmdPeek(Command):
@@ -355,12 +356,15 @@ class CmdLook(Command):
     def func(self):
         ch = self.caller
         location = ch.location
+        wormy = Wormy(ch, debug=False)
+
         if not self.args:
             if not self:
                 ch.msg("You have no location to look at!")
                 return
 
             room_msg = ""
+            room_msg = wormy.generate_map()
 
             # get room title
             room_msg += f"|c{location.db.name}|n\n"

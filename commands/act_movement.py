@@ -2,6 +2,7 @@ from world.utils.act import Announce, act
 from evennia import search_object, logger
 from commands.command import Command
 from typeclasses.rooms.rooms import Room
+
 _MOVEMENT_HELP = """
 
 Attempt to move in a cardinal direction from
@@ -24,8 +25,6 @@ class _CmdMove(Command):
 
     def func(self):
         ch = self.caller
-
-        ch.msg("GUESS WHAT? YOU ARE MOVING!!!")
         cur_room = ch.location
         exit = cur_room.db.exits[self.key]
         if exit < 0:
