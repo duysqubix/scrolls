@@ -1,6 +1,6 @@
 from commands.command import Command
 from world.map import Wormy
-
+from world.utils.utils import is_wiz
 
 class CmdTitle(Command):
     """
@@ -32,17 +32,42 @@ class CmdTitle(Command):
 class CmdMap(Command):
     """
     Displays a map of your surroundings.
+    Map size must be an odd number, if an even number is supplied
+    it will round to nearest number up.
 
     Usage:
         map
+        map 5 # create map size of 5x5
+        map 7 # create map size of 7x7
+
+    Wizes:
+        map 5 true/false # will display debug information if wiz
     """
 
     key = "map"
 
     def func(self):
         ch = self.caller
+        args = self.args.strip().split()
+        debug = False
 
-        wormy = Wormy(ch, debug=False)
+        if len(args) < 1:
+            wormy = Wormy(ch, debug=debug)
+        else:
+            if len(args) == 2 and is_wiz(ch):
+                debug = True if eval(args[1].capitalize()) is True else False
+                
+            try:
+                size = int(args[0])
+            except ValueError:
+                ch.msg("Invalid map size")
+                return
+
+            if size > 7:
+                ch.msg("Map size too big, stay below 8x8")
+                return
+
+            wormy = Wormy(ch, map_size_x=size, map_size_y=size, debug=debug)
 
         map_string = wormy.generate_map()
         ch.msg(map_string)

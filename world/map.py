@@ -1,12 +1,14 @@
 """
 Holds the class to generate a map
 """
+import json
 from typing import Dict, Tuple
 import numpy as np
 
 from typeclasses.rooms.rooms import VALID_ROOM_SECTORS, Room
 from typeclasses.characters import Character
 from world.utils.db import search_roomdb
+from world.utils.utils import DBDumpEncoder
 from world.globals import OPPOSITE_DIRECTION
 
 _DEFAULT_MAP_SIZE = (5, 5)
@@ -65,10 +67,6 @@ class Wormy:
         # get center coords based on map size
         center_coords: Tuple[int, int] = tuple(map(lambda x: x // 2, map_size))
 
-        # calculate space until edge of map
-        self.edge_x: int = center_coords[0]
-        self.edge_y: int = center_coords[1]
-
         # get current location object
         self.cur_location: Room = caller_obj.location
 
@@ -88,15 +86,25 @@ class Wormy:
             if (rvnum > 0) and exit_name not in ("up", "down")
         ]
 
-    def debug_msg(self, *args):
+        debug_msg = {
+            "map_size_x": map_size_x,
+            "map_size_y": map_size_y,
+            "center_coords": center_coords,
+            "caller_obj": str(caller_obj),
+            "supplied_map_size": map_size
+        }
+        self.debug_msg(json.dumps(debug_msg, cls=DBDumpEncoder))
+
+    def debug_msg(self, msg):
         if not self._debug:
             return
-        self._caller_obj.debug_msg(*args)
+        self._caller_obj.msg(str(msg))
 
     def traverse(self,
                  exits: Dict[str, int],
                  previous_current_coordinates=None,
-                 previous_exit_name=None):
+                 previous_exit_name=None,
+                 _debug_indent=0):
 
         for exit_name, rvnum in exits.items():
             # check for exit conditions
@@ -116,11 +124,10 @@ class Wormy:
             # update current coords based on exit name for next room
             previous_current_coordinates = self.current_coords.copy()
             self.current_coords += _DIRECTION_MAPPING[exit_name]
-            self.debug_msg(self.cur_x, self.cur_y, exit_name)
 
             # if any value is below 0, we are out of bounds, ignore and reset coords to last valid position
             if np.any(self.current_coords < 0):
-                self.debug_msg("triggered coords less than 0")
+                self.debug_msg("triggered coords less than 0; off map")
                 self.current_coords = previous_current_coordinates.copy()
                 continue
 
@@ -136,22 +143,37 @@ class Wormy:
 
             self._grid_map[self.cur_x][self.cur_y] = VALID_ROOM_SECTORS[
                 next_room['type']].symbol
+                
             ############## do any drawing of the map above here ################
-
-            self.debug_msg(exit_name, next_room['name'], rvnum,
-                           self.current_coords, previous_current_coordinates,
-                           next_room['type'])
+            debug_msg = {
+                exit_name :{
+                    "next_room": next_room['name'],
+                    "rvnum": rvnum,
+                    "previous_coordinates": {
+                        "x": previous_current_coordinates[0],
+                        "y": previous_current_coordinates[1]
+                    },
+                    "direction_value": _DIRECTION_MAPPING[exit_name],
+                    "current_coordinates": {
+                        "x": self.cur_x,
+                        "y": self.cur_y
+                    },
+                    "next_room_type": next_room['type'],\
+                }
+            }
+            self.debug_msg(("******"*_debug_indent)+json.dumps(debug_msg, cls=DBDumpEncoder))
 
             self.traverse(
                 next_room['exits'],
                 previous_current_coordinates=previous_current_coordinates,
-                previous_exit_name=OPPOSITE_DIRECTION[exit_name])
+                previous_exit_name=OPPOSITE_DIRECTION[exit_name],
+                _debug_indent=(_debug_indent+1))
 
             # returning from recursion means we finished worming through a particular
             # path.. resetting current_coords to starting point so the math aligns
-            self.debug_msg("setting previous coordinates now...",
-                           previous_current_coordinates)
+            self.debug_msg(f"Path complete, resetting coordinates back to room {rvnum} at {previous_current_coordinates}")
             self.current_coords = previous_current_coordinates.copy()
+            _debug_indent = 0
 
         # exhausted all exits in room, roll back
         return
