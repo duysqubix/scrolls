@@ -1,3 +1,5 @@
+[![Build Status](https://app.travis-ci.com/duysqubix/scrolls.svg?branch=master)](https://app.travis-ci.com/duysqubix/scrolls)
+
 # The Unofficial Elder Scrolls Mud
 
 
