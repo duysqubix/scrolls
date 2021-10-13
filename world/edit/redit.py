@@ -125,11 +125,27 @@ class REditCmdSet(CmdSet):
         self.add(Dig())
         self.add(Delete())
         self.add(New())
+        self.add(Save())
 
 
 class REditCommand(Command):
     def at_post_cmd(self):
         self.caller.msg(prompt=_REDIT_PROMPT)
+
+
+class Save(REditCommand):
+    """
+    Saves the current room.
+
+    Usage:
+        save
+    """
+
+    key = 'save'
+
+    def func(self):
+        ch = self.caller
+        ch.ndb._redit.save(override=True)
 
 
 class New(REditCommand):
@@ -172,6 +188,9 @@ class Set(REditCommand):
         args = self.args.strip().split()
         obj = ch.ndb._redit.obj
 
+        def _save_room():
+            ch.ndb._redit.save(override=True)
+
         if has_zone(ch) != obj['zone']:
             ch.msg("You do not have permission to edit this zones room")
             return
@@ -191,6 +210,7 @@ class Set(REditCommand):
                 return
             obj['name'] = " ".join(args[1:]).strip()
             ch.msg(set_str)
+            _save_room()
             return
 
         elif match_string(keyword, 'desc'):
@@ -206,6 +226,7 @@ class Set(REditCommand):
                 _ = EvEditor(ch,
                              loadfunc=(lambda _: obj['desc']),
                              savefunc=save_func)
+            _save_room()
             return
         elif match_string(keyword, 'sector'):
             if len(args) > 1:
@@ -214,12 +235,14 @@ class Set(REditCommand):
                     ch.msg("not a valid room sector")
                     return
                 obj['type'] = sector
+                _save_room()
                 return
             else:
                 # show all sectors
                 sectors = ", ".join(VALID_ROOM_SECTORS.keys())
                 msg = f"Sectors:\n{wrap(sectors)}"
                 ch.msg(msg)
+                _save_room()
                 return
         elif match_string(keyword, 'edesc'):
             if len(args) > 1:
@@ -258,9 +281,12 @@ class Set(REditCommand):
                 _ = EvEditor(ch,
                              loadfunc=(lambda _: edesc),
                              savefunc=save_func)
+            _save_room()
+
         elif keyword == 'zone':
             ch.msg("You can't set zone this way")
             return
+
         elif keyword == 'flags':
             if len(args) > 1:
                 flag = args[1].strip()
@@ -277,6 +303,7 @@ class Set(REditCommand):
                 else:
                     obj['flags'].append(flag)
                     ch.msg(f"{flag} flag applied")
+                _save_room()
 
             else:
                 # show all foom flags
@@ -284,6 +311,7 @@ class Set(REditCommand):
                 msg = f"Room Flags:\n{flags}"
                 ch.msg(msg)
                 return
+
         elif match_string(keyword, 'exits'):
             if len(args) > 1:
                 exit_name = args[1]
@@ -305,10 +333,10 @@ class Set(REditCommand):
                         return
                     obj['exits'][exit_name] = exit_vnum
                     ch.msg(set_str)
-
             else:
                 ch.msg("Must provide a vnum to the exit")
-                return
+            _save_room()
+            return
         elif match_string(keyword, 'load_list'):
             if len(args) > 1:
                 obj['load_list'] = " ".join(args[1:]).strip()
@@ -322,6 +350,7 @@ class Set(REditCommand):
                 _ = EvEditor(ch,
                              loadfunc=(lambda _: obj['load_list']),
                              savefunc=save_func)
+            _save_room()
             return
         else:
             ch.msg("That isn't a valid keyword")
