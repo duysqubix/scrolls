@@ -168,7 +168,3 @@ class TestBasicUtils(unittest.TestCase):
     def test_dot_notation_all(self):
         obj = "all.book"
         self.assertEqual(('all', "book"), parse_dot_notation(obj))
-
-    def test_room_exists(self):
-        vnum = 1
-        self.assertEqual(room_exists(vnum), True)
