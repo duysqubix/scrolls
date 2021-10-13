@@ -49,15 +49,8 @@ class Wormy:
         ```
     
     """
-    def __init__(self,
-                 caller_obj: Character,
-                 map_size_x: Optional[int] = None,
-                 map_size_y: Optional[int] = None,
-                 debug=False) -> None:
-
-        self._caller_obj: Character = caller_obj
-        self._debug: bool = debug
-
+    @staticmethod
+    def calculate_map_size(map_size_x, map_size_y) -> Tuple[int, int]:
         # determine map size, either default or user supplied
         if (map_size_x is None) or (map_size_y is None):
             map_size_x = _DEFAULT_MAP_SIZE[0]
@@ -71,19 +64,27 @@ class Wormy:
         map_size_x += 4
         map_size_y += 4
 
-        map_size: Tuple[int, int] = (map_size_x, map_size_y)
+        return (map_size_x, map_size_y)
 
-        # get center coords based on map size
-        center_coords: Tuple[int, int] = tuple(map(lambda x: x // 2, map_size))
+    @staticmethod
+    def calculate_center_coordinates(map_size_x,
+                                     map_size_y) -> Tuple[int, int]:
+        """calculates center coordinates based on map_size"""
 
-        # get current location object
-        self.cur_location: Room = caller_obj.location
+        if map_size_x != map_size_y:
+            raise ValueError("map_size_x and map_size_y are different, %s" %
+                             str((map_size_x, map_size_y)))
 
+        return tuple(map(lambda x: x // 2, (map_size_x, map_size_y)))
+
+    @staticmethod
+    def initialize_grid_map(max_x, max_y) -> List[List[Dict[str, Any]]]:
         # initalize empty map for drawing
-        self._grid_map: List[List[Dict[str, Any]]] = list()
-        for _ in range(map_size_x):
+        grid_map: List[List[Dict[str, Any]]] = list()
+
+        for _ in range(max_x):
             tmp_row = list()
-            for _ in range(map_size_y):
+            for _ in range(max_y):
                 tmp_row.append({
                     'symbol': '',
                     'up': False,
@@ -93,7 +94,31 @@ class Wormy:
                     'west': False,
                     'north': False
                 })
-            self._grid_map.append(tmp_row)
+            grid_map.append(tmp_row)
+        return grid_map
+
+    def __init__(self,
+                 caller_obj: Character,
+                 map_size_x: Optional[int] = None,
+                 map_size_y: Optional[int] = None,
+                 debug=False) -> None:
+
+        self._caller_obj: Character = caller_obj
+        self._debug: bool = debug
+
+        map_size: Tuple[int, int] = Wormy.calculate_map_size(
+            map_size_x, map_size_y)
+
+        # get center coords based on map size
+        center_coords: Tuple[int, int] = Wormy.calculate_center_coordinates(
+            map_size[0], map_size[1])
+
+        # get current location object
+        self.cur_location: Room = caller_obj.location
+
+        # initalize empty map for drawing
+        self._grid_map: List[List[Dict[str, Any]]] = Wormy.initialize_grid_map(
+            map_size[0], map_size[1])
 
         # initalize starting coordinates
         self.current_coords: np.ndarray = np.array(center_coords,
