@@ -1,5 +1,6 @@
-*.db3
 .venv
 .vscode
 *.pyc
-Dockerfile
+server/portal.pid
+server/server.pid
+server/log/*.log
