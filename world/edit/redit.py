@@ -125,11 +125,27 @@ class REditCmdSet(CmdSet):
         self.add(Dig())
         self.add(Delete())
         self.add(New())
+        self.add(Save())
 
 
 class REditCommand(Command):
     def at_post_cmd(self):
         self.caller.msg(prompt=_REDIT_PROMPT)
+
+
+class Save(REditCommand):
+    """
+    Saves the current room.
+
+    Usage:
+        save
+    """
+
+    key = 'save'
+
+    def func(self):
+        ch = self.caller
+        ch.ndb._redit.save(override=True)
 
 
 class New(REditCommand):
