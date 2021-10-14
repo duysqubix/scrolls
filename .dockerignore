@@ -1,5 +1,6 @@
 .venv
 .vscode
+.github
 *.pyc
 server/portal.pid
 server/server.pid

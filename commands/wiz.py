@@ -27,7 +27,7 @@ from world.utils.utils import DBDumpEncoder, delete_contents, has_zone, is_invis
 from world.conditions import HolyLight, get_condition
 from world.utils.act import Announce, act
 from commands.command import Command
-from world.globals import BUILDER_LVL, GOD_LVL, WIZ_LVL, IMM_LVL
+from world.globals import BUILDER_LVL, DEFAULT_ZONE, GOD_LVL, WIZ_LVL, IMM_LVL
 
 
 class CmdZReset(Command):
@@ -201,6 +201,11 @@ class CmdDBDump(Command):
                             book_details[x] = obj_value[x]
                         books.append(book_details.copy())
                         del obj[vnum]
+
+                # for backward compatibilty assign zone to object if not assigned
+                    if not obj_value.get('zone'):
+                        obj[vnum]['zone'] = DEFAULT_ZONE
+
             with open(dump_ground / f"{fname}.json", "w") as f:
                 js = json.dumps(obj, indent=2, cls=DBDumpEncoder)
                 f.write(js)
@@ -1051,11 +1056,15 @@ class CmdDBLoad(Command):
         def load_db(name):
             dbname = name + 'db'
             GLOBAL_SCRIPTS.get(dbname).vnum.clear()
-            with open(dumping_ground / f"{name}s.json", "r") as f:
-                data = json.load(f)
-                for vnum, data in data.items():
-                    GLOBAL_SCRIPTS.get(dbname).vnum[int(vnum)] = data
-            ch.msg(f"loaded {name}")
+
+            fobj = dumping_ground / f"{name}s.json"
+
+            if fobj.exists():
+                with open(fobj, "r") as f:
+                    data = json.load(f)
+                    for vnum, data in data.items():
+                        GLOBAL_SCRIPTS.get(dbname).vnum[int(vnum)] = data
+                ch.msg(f"loaded {name}")
 
         if not self.args:
             names = [f"|c{x.name[:-2]}|n"

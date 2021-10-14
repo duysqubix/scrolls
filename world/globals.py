@@ -2,6 +2,7 @@
 Global variables and constants used in mud
 """
 from enum import IntEnum
+
 MAX_LEVEL = 250
 MIN_LEVEL = 1
 GOD_LVL = 205
@@ -13,6 +14,9 @@ HERO_LVL = 201
 START_LOCATION_VNUM = 2
 TICK_SAVE_CHAR = 60  #seconds
 TICK_HEAL_CHAR = 10  #
+
+DEFAULT_ZONE = "void"
+
 DEFAULT_MOB_STRUCT = {
     "key": "mob unfinished",
     "sdesc": "the unfinished mob",
@@ -58,7 +62,8 @@ DEFAULT_OBJ_STRUCT = {
     "level": 0,  # minimum level that can use this object
     "applies": [],  # affects object has on user (stat change, health, etc...)
     "tags": [],  # unique meta information about object itself
-    "extra": {}  # holds special fields relatd to a special object
+    "extra": {},  # holds special fields relatd to a special object
+    "zone": None  # zone assignment
 }
 
 DEFAULT_ROOM_STRUCT = {

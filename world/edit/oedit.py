@@ -11,6 +11,7 @@ from evennia.commands.default.help import CmdHelp
 from .model import _EditMode
 
 from world.globals import DEFAULT_OBJ_STRUCT
+
 _OEDIT_PROMPT = "(|goedit|n) > "
 
 
@@ -51,14 +52,19 @@ class OEditMode(_EditMode):
                             "AR/MAR of equipment is not valid integers")
                         return
 
-                # if self.obj['type'] == 'weapon':
-                #     dual_wield = self.obj['extra']['dual_wield']
-                #     self.obj['extra']['dual_wield'] = bool(dual_wield)
-
                 if self.obj['type'] == 'container':
                     limit = self.obj['extra']['limit']
                     self.obj['extra']['limit'] = int(limit)
 
+            # temporarily store zone information on object
+            # zone flag is used when dumping game objects to file
+            if self.caller.db.assigned_zone is None:
+                self.caller.msg(
+                    "You are not assigned a zone, can't save object. Contact admin"
+                )
+                return
+
+            self.obj['zone'] = self.caller.db.assigned_zone
             self.db.vnum[self.vnum] = self.obj
             self.caller.msg("object saved.")
 
