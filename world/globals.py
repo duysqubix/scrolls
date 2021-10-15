@@ -90,7 +90,8 @@ DEFAULT_ZONE_STRUCT = {
     'builders': [],
     'lifespan': -1,
     'level_range': [-1, -1],
-    'reset_msg': "zone has reset"
+    'reset_msg': "zone has reset",
+    "vnums": [-1, -1]
 }
 
 DEFAULT_TRIG_STRUCT = {
