@@ -389,6 +389,25 @@ def parse_dot_notation(string):
     return pos, string
 
 
+def range_intersects(x1, y1, x2, y2):
+    """
+    tests if range of x1, y1 intersects with x2, y2.
+
+    ex: range_intersect(3, 7, 2, 9) == True
+    ex: range_intersect(3, 7, 7, 9) == True
+    ex: range_intersect(3, 7, 9, 12) == False
+    ex: range_intersect(1, 2, 3, 12) == False
+
+
+    range(in)
+    """
+    xset = set(range(x1, y1))
+    yset = set(range(x2 - 1, y2 + 1))
+    iset = xset & yset
+
+    return True if len(iset) > 0 else False
+
+
 def room_exists(vnum):
     roomdb = GLOBAL_SCRIPTS.roomdb
     return vnum in roomdb.vnum.keys()

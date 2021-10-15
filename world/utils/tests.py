@@ -5,7 +5,7 @@ import numpy as np
 
 from evennia import GLOBAL_SCRIPTS
 from evennia.utils.dbserialize import deserialize
-from world.utils.utils import DBDumpEncoder, capitalize_sentence, _LANG_TAGS, parse_dot_notation, room_exists
+from world.utils.utils import DBDumpEncoder, capitalize_sentence, _LANG_TAGS, parse_dot_notation, range_intersects
 from world.utils.db import _search_db, search_mobdb, search_objdb, search_roomdb, search_zonedb, _RE_COMPARATOR_PATTERN
 
 
@@ -168,3 +168,21 @@ class TestBasicUtils(unittest.TestCase):
     def test_dot_notation_all(self):
         obj = "all.book"
         self.assertEqual(('all', "book"), parse_dot_notation(obj))
+
+    def test_range_intersect_true(self):
+        sample_x, sample_y = (7, 12)
+        test_x_1, test_y_1 = (5, 10)
+        test_x_2, test_y_2 = (4, 10)
+        self.assertTrue(
+            range_intersects(sample_x, sample_y, test_x_1, test_y_1))
+        self.assertTrue(
+            range_intersects(sample_x, sample_y, test_x_2, test_y_2))
+
+    def test_range_intersect_true_edge_case(self):
+        sample_x, sample_y = (3, 5)
+        test_x, test_y = (5, 10)
+        self.assertTrue(range_intersects(sample_x, sample_y, test_x, test_y))
+
+        sample_x, sample_y = (10, 12)
+        test_x, test_y = (5, 10)
+        self.assertTrue(range_intersects(sample_x, sample_y, test_x, test_y))
