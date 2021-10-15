@@ -1,7 +1,7 @@
 .venv
 .vscode
 .github
-*.pyc
-server/portal.pid
-server/server.pid
-server/log/*.log
+**/*.pyc
+**/*.pid
+**/*.log
+**/*.db3

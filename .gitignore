@@ -11,4 +11,5 @@ resources/json/objs.json
 resources/json/rooms.json
 resources/json/trigs.json
 resources/json/zones.json
+docker-compose*
 
