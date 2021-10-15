@@ -6,10 +6,6 @@
 *.sqlite
 .venv
 .vscode
-resources/json/mobs.json
-resources/json/objs.json
-resources/json/rooms.json
-resources/json/trigs.json
-resources/json/zones.json
+resources/json/
 docker-compose*
 

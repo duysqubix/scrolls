@@ -5,3 +5,4 @@
 **/*.pid
 **/*.log
 **/*.db3
+resources/json
