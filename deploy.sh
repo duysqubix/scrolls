@@ -16,6 +16,8 @@ elif [[ "$1" = "prod" ]]; then
     git checkout master
     echo "building production image and deploying to docker, , ${IMAGE_NAME_PROD}"
     docker build -t $IMAGE_NAME_PROD . && docker push $IMAGE_NAME_PROD
+    docker push $IMAGE_NAME_PROD
+
 else
     echo "not a valid option"
 fi

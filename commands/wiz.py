@@ -1115,6 +1115,7 @@ class CmdBookLoad(Command):
         for book in books:
             obj = deepcopy(DEFAULT_OBJ_STRUCT)
             obj.update(book)
+            obj['type'] = 'book'
             GLOBAL_SCRIPTS.objdb.vnum[book_vnum] = obj
             book_vnum += 1
 
