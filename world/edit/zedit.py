@@ -2,7 +2,6 @@
 online editting of zones
 restricted to wiz levels and up
 """
-from django.utils.translation import override
 from typeclasses.rooms.rooms import get_room
 import evennia
 from evennia import TICKER_HANDLER as tickerhandler
@@ -67,6 +66,9 @@ class ZEditMode(_EditMode):
         builders = wrap(", ".join(self.obj['builders']))
         min_, max_ = self.obj['level_range']
         lvl_range = f"Min: {min_} Max: {max_}"
+
+        vnum_range = self.obj['vnums']
+        vnums = f"|R{vnum_range[0]}|n to {vnum_range[1]}|R"
         msg = f"""
 
 ********Zone Summary*******
@@ -78,9 +80,10 @@ class ZEditMode(_EditMode):
 
 |Glifespan|n    : |y{self.obj['lifespan']}|n
 |Glevel_range|n : |m{lvl_range}|n
+|Gvnums|n       : {vnums}
 |Greset_msg|n   : 
 |c{self.obj['reset_msg']}|n
-        """
+"""
 
         self.caller.msg(msg)
 
@@ -171,7 +174,7 @@ class Set(ZEditCommand):
             return
         elif match_string(keyword, 'lifespan'):
             if not args:
-                obj['lifespan'] = -1
+                obj['lifespan'] = 10
             else:
                 try:
                     ls = int(args[1])
@@ -181,6 +184,37 @@ class Set(ZEditCommand):
 
                 obj['lifespan'] = ls
             ch.msg(set_str.format(keyword='lifespan'))
+
+        elif match_string(keyword, "vnums"):
+            if not args:
+                obj['vnums'] = [-1, -1]
+
+            if len(args) != 3:
+                ch.msg("provide a low and high vnum limit")
+                return
+
+            try:
+                low = int(args[1])
+                high = int(args[2])
+            except ValueError:
+                ch.msg("vnums are not valid numbers")
+                return
+
+            vnum_ranges = [(x, y['vnums'])
+                           for x, y in ch.ndb._zedit.db.vnum.items()]
+
+            for zone_vnum, range_ in vnum_ranges:
+                new_range = set(range(low, high))
+                cur_range = set(range(range_[0] - 1, range_[1] + 1))
+                intersect = new_range & cur_range
+
+                if len(intersect) > 0 and zone_vnum != ch.ndb._zedit.vnum:
+                    ch.msg(
+                        f"Invalid vnum range, vnums already taken, {range_[0], range_[1]}"
+                    )
+                    return
+                obj['vnums'] = [low, high]
+                ch.msg(set_str.format(keyword="vnums"))
         else:
             ch.msg("That isn't a valid keyword")
             return
