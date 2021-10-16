@@ -28,5 +28,6 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-EXPOSE 4040
 ENTRYPOINT [ "./entrypoint.sh" ]
+
+EXPOSE 4040

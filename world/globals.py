@@ -1,6 +1,7 @@
 """
 Global variables and constants used in mud
 """
+import pathlib
 from enum import IntEnum
 
 MAX_LEVEL = 250
@@ -11,6 +12,7 @@ IMM_LVL = 203
 BUILDER_LVL = 202
 HERO_LVL = 201
 
+BOOK_START_VNUM = 10000000
 START_LOCATION_VNUM = 2
 TICK_SAVE_CHAR = 60  #seconds
 TICK_HEAL_CHAR = 10  #
@@ -63,7 +65,7 @@ DEFAULT_OBJ_STRUCT = {
     "applies": [],  # affects object has on user (stat change, health, etc...)
     "tags": [],  # unique meta information about object itself
     "extra": {},  # holds special fields relatd to a special object
-    "zone": None  # zone assignment
+    "zone": "void"  # zone assignment
 }
 
 DEFAULT_ROOM_STRUCT = {
@@ -145,6 +147,12 @@ OPPOSITE_DIRECTION = {
     'down': 'up'
 }
 
+PROTOTYPES_FOLDER = pathlib.Path(__file__).parent.parent / "resources/json"
+BOOKS_JSON = PROTOTYPES_FOLDER / "books.json"
+MOBS_JSON = PROTOTYPES_FOLDER / "mobs.json"
+OBJS_JSON = PROTOTYPES_FOLDER / "objs.json"
+ZONES_JSON = PROTOTYPES_FOLDER / "zones.json"
+ROOMS_JSON = PROTOTYPES_FOLDER / "rooms.json"
 
 class Positions(IntEnum):
     Dead = 0

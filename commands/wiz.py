@@ -2,6 +2,8 @@ import sys, time
 import json
 import pathlib
 import traceback
+from copy import deepcopy
+
 from typeclasses.rooms.rooms import get_room
 
 from evennia.utils.dbserialize import deserialize
@@ -27,7 +29,7 @@ from world.utils.utils import DBDumpEncoder, delete_contents, has_zone, is_invis
 from world.conditions import HolyLight, get_condition
 from world.utils.act import Announce, act
 from commands.command import Command
-from world.globals import BUILDER_LVL, DEFAULT_ZONE, GOD_LVL, WIZ_LVL, IMM_LVL
+from world.globals import BOOK_START_VNUM, BOOKS_JSON, BUILDER_LVL, DEFAULT_OBJ_STRUCT, DEFAULT_ZONE, GOD_LVL, PROTOTYPES_FOLDER, WIZ_LVL, IMM_LVL
 
 
 class CmdZReset(Command):
@@ -180,38 +182,39 @@ class CmdDBDump(Command):
 
     def func(self):
         ch = self.caller
-        dump_ground = pathlib.Path(
-            __file__).parent.parent / "resources" / "json"
+        
+        zones = {y['name']: y['vnums'] for _, y in GLOBAL_SCRIPTS.get('zonedb').vnum.items()}
+
+        if not ch.db.assigned_zone:
+            ch.msg("Assign zone first before dumping")
+            return
+        
+        vnum_low, vnum_high = zones[ch.db.assigned_zone]
+
+        dump_ground = PROTOTYPES_FOLDER
         from evennia.utils.dbserialize import deserialize
         #zones
         zonedb = deserialize(GLOBAL_SCRIPTS.zonedb.vnum)
-        objdb = deserialize(GLOBAL_SCRIPTS.objdb.vnum)
-        roomdb = deserialize(GLOBAL_SCRIPTS.roomdb.vnum)
-        mobdb = deserialize(GLOBAL_SCRIPTS.mobdb.vnum)
-        books = []
+        objdb = {key: value for key, value in deserialize(GLOBAL_SCRIPTS.objdb.vnum).items() if (vnum_low <= key <= vnum_high)}
+        roomdb = {key: value for key, value in deserialize(GLOBAL_SCRIPTS.roomdb.vnum).items() if (vnum_low <= key <= vnum_high)}
+        mobdb = {key: value for key, value in deserialize(GLOBAL_SCRIPTS.mobdb.vnum).items() if (vnum_low <= key <= vnum_high)}
 
+        books = [value for key, value in deserialize(GLOBAL_SCRIPTS.objdb.vnum).items() if ((value['type']=='book') and key >= BOOK_START_VNUM)]
         objs = {'zones': zonedb, 'rooms': roomdb, 'objs': objdb, 'mobs': mobdb}
         for fname, obj in sorted(objs.items()):
-            if fname == 'objs':
-                # remove books from dict
-                for vnum, obj_value in tuple(obj.items()):
-                    if obj_value['type'] == 'book':
-                        book_details = dict()
-                        for x in ('key', 'sdesc', 'ldesc', 'extra'):
-                            book_details[x] = obj_value[x]
-                        books.append(book_details.copy())
-                        del obj[vnum]
-
-                # for backward compatibilty assign zone to object if not assigned
-                    if not obj_value.get('zone'):
-                        obj[vnum]['zone'] = DEFAULT_ZONE
-
             with open(dump_ground / f"{fname}.json", "w") as f:
                 js = json.dumps(obj, indent=2, cls=DBDumpEncoder)
                 f.write(js)
                 ch.msg(f"Wrote {fname} to file.")
 
         # store books now
+        books.sort(key=lambda x: x['sdesc'])
+
+        # remove fields that will be applied upon load anyways
+        for book in books:
+            for field in ('edesc', 'adesc', 'weight', 'cost', 'level', 'applies', 'tags'):
+                del book[field]
+
         with open(dump_ground / "books.json", 'w') as f:
             js = json.dumps(books, indent=2, cls=DBDumpEncoder)
             f.write(js)
@@ -346,6 +349,7 @@ class CmdZoneSet(Command):
                 return
             # set a valid zone to player
             zones = [x['name'] for x in GLOBAL_SCRIPTS.zonedb.vnum.values()]
+
             if zonename not in zones:
                 ch.msg("That is not a valid zone")
                 return
@@ -1049,9 +1053,8 @@ class CmdDBLoad(Command):
 
     def func(self):
         ch = self.caller
-
-        dumping_ground = pathlib.Path(
-            __file__).parent.parent / "resources" / "json"
+        
+        dumping_ground = PROTOTYPES_FOLDER
 
         def load_db(name):
             dbname = name + 'db'
@@ -1104,50 +1107,16 @@ class CmdBookLoad(Command):
     def func(self):
         ch = self.caller
 
-        file = pathlib.Path(
-            __file__).parent.parent / "resources" / "json" / "books.json"
-        with open(file) as b:
+        with open(BOOKS_JSON, 'r') as b:
             books = json.load(b)
-        # delete all books in db
-        for k, v in dict(GLOBAL_SCRIPTS.objdb.vnum).items():
-            if v['type'] == 'book':
-                del GLOBAL_SCRIPTS.objdb.vnum[k]
 
-        current_vnums = list(GLOBAL_SCRIPTS.objdb.vnum.keys())
-        book_idx = 0
-        obj_info = {
-            'edesc': "",
-            'adesc': "",
-            'type': 'book',
-            'weight': 1,
-            'cost': 0,
-            'level': 1,
-            'applies': [],
-            'tags': []
-        }
+        book_vnum = BOOK_START_VNUM
 
-        next_vnum = 1
-        if current_vnums:
-            # find missing vnums
-            a = list(range(1, current_vnums[-1] + 1))
-
-            missing_vnums = list(set(current_vnums) ^ set(a))
-
-            # fill in missing vnums first
-            for vnum in missing_vnums:
-
-                books[book_idx].update(obj_info)
-                GLOBAL_SCRIPTS.objdb.vnum[vnum] = books[book_idx]
-                book_idx += 1
-
-            next_vnum = max(GLOBAL_SCRIPTS.objdb.vnum.keys()) + 1
-        # create new ones
-        # ch.msg(str((len(books), book_idx, next_vnum)))
-        for book in books[book_idx:]:
-            # ch.msg("adding book")
-            book.update(obj_info)
-            GLOBAL_SCRIPTS.objdb.vnum[next_vnum] = book
-            next_vnum += 1
+        for book in books:
+            obj = deepcopy(DEFAULT_OBJ_STRUCT)
+            obj.update(book)
+            GLOBAL_SCRIPTS.objdb.vnum[book_vnum] = obj
+            book_vnum += 1
 
         ch.msg("loaded books")
 
