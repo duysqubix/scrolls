@@ -6,6 +6,6 @@
 *.sqlite
 .venv
 .vscode
-resources/json/
+resources/json/*.json
 docker-compose*
 
