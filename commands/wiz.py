@@ -612,16 +612,17 @@ class CmdZList(Command):
             table = self.styled_table("VNum",
                                       "Name",
                                       "Builders",
+                                      "Vnum Range",
                                       border='incols')
             for vnum, data in sorted(dictionary.items()):
+
                 vnum = raw_ansi(f"[|G{vnum:<4}|n]")
                 table.add_row(vnum, data['name'],
-                              list_to_string(data['builders']))
+                              list_to_string(data['builders']), list_to_string(data['vnums'], endsep="to"))
 
             ch.msg(table)
 
         args = self.args.strip()
-        search_criteria = "all" if not args else args.strip()
         if not args:
             zones = search_zonedb('all')
 
@@ -1218,20 +1219,6 @@ class CmdPy(COMMAND_DEFAULT_CLASS):
         pycode = self.args
 
         noecho = "noecho" in self.switches
-
-        if "edit" in self.switches:
-            caller.db._py_measure_time = "time" in self.switches
-            caller.db._py_clientraw = "clientraw" in self.switches
-            EvEditor(
-                self.caller,
-                loadfunc=_py_load,
-                savefunc=_py_code,
-                quitfunc=_py_quit,
-                key="Python exec: :w  or :!",
-                persistent=True,
-                codefunc=_py_code,
-            )
-            return
 
         if not pycode:
             # Run in interactive mode
