@@ -21,7 +21,7 @@ from world.gender import Gender
 from world.races import NoRace
 from world.attributes import Attribute, VitalAttribute
 from world.birthsigns import NoSign
-from world.globals import BUILDER_LVL, GOD_LVL, IMM_LVL, Positions, START_LOCATION_VNUM, TICK_HEAL_CHAR, TICK_SAVE_CHAR, WIZ_LVL, WEAR_LOCATIONS
+from world.globals import BUILDER_LVL, DEFAULT_PROMPT_STRING, GOD_LVL, IMM_LVL, PROMPT_TOKEN_MAP, Positions, START_LOCATION_VNUM, TICK_HEAL_CHAR, TICK_SAVE_CHAR, WIZ_LVL, WEAR_LOCATIONS
 from world.characteristics import CHARACTERISTICS
 from world.skills import Skill
 from world.storagehandler import StorageHandler
@@ -589,22 +589,25 @@ class Character(DefaultCharacter):
         return LanguageHandler(self)
 
     def full_title(self):
-        return f"{self.name.capitalize()}{self.attrs.title.value}"
+        return f"{self.name.capitalize()}{self.attrs.title.value}"        
 
     def get_prompt(self):
+
+        if not self.db.prompt:
+            self.db.prompt = DEFAULT_PROMPT_STRING
+
         self.attrs.update()
-        hp = self.attrs.health
-        mg = self.attrs.magicka
-        st = self.attrs.stamina
-        sp = self.attrs.speed
-        ca = self.attrs.carry
-        prompt = "\n\n"
+        prompt = f"\n\n{self.db.prompt}"
 
         if is_wiz(self) and self.conditions.has(HolyLight):
             prompt += "(|wholy|ylight|n)"
 
-        prompt += f"HP:{hp.cur}/{hp.max} MG:{mg.cur}/{mg.max} ST:{st.cur}/{st.max} SP:{sp.cur}/{sp.max} CR:{ca.cur}/{ca.max} > "
 
+        for token, py_statement in PROMPT_TOKEN_MAP.items():
+            prompt = prompt.replace(token, str(eval(py_statement)))
+
+        prompt += " >"
+        #prompt += f"HP:{hp.cur}/{hp.max} MG:{mg.cur}/{mg.max} ST:{st.cur}/{st.max} SP:{sp.cur}/{sp.max} CR:{ca.cur}/{ca.max} > "
         return prompt
 
     def full_restore(self):

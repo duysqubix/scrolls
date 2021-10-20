@@ -61,6 +61,7 @@ class CharacterCmdSet(default_cmds.CharacterCmdSet):
 
         self.add(act_other.CmdTitle())
         self.add(act_other.CmdMap())
+        self.add(act_other.CmdPrompt())
 
         # movement commands
         self.add(act_mov.CmdNorth())
