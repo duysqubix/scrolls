@@ -18,6 +18,20 @@ TICK_SAVE_CHAR = 60  #seconds
 TICK_HEAL_CHAR = 10  #
 
 DEFAULT_ZONE = "void"
+DEFAULT_PROMPT_STRING = r"HP:|r%h/%H |bMG:%m/%M |yST:%s/%S|n"
+
+PROMPT_TOKEN_MAP = {
+    r"%h": "self.attrs.health.cur",    
+    r"%H": "self.attrs.health.max",
+    r"%m": "self.attrs.magicka.cur",
+    r"%M": "self.attrs.magicka.max",
+    r"%s": "self.attrs.stamina.cur",
+    r"%S": "self.attrs.stamina.max",
+    r"%c": "self.attrs.carry.cur",
+    r"%C": "self.attrs.carry.max",
+    r"%x": "self.attrs.speed.cur",
+    r"%X": "self.attrs.speed.max", 
+}
 
 DEFAULT_MOB_STRUCT = {
     "key": "mob unfinished",

@@ -1,7 +1,46 @@
 from commands.command import Command
+from world.globals import DEFAULT_PROMPT_STRING
 from world.map import Wormy
 from world.utils.utils import is_wiz
 
+
+class CmdPrompt(Command):
+    """
+    Customize your prompt
+
+    Usage:
+        prompt # displays current prompt
+        prompt [prompt_string]
+
+    [prompt_string] will parse the following tokens:
+
+    %h - current health
+    %H - max health
+    %m - current magicka
+    %M - current magicka
+    %s - current stamina
+    %S - max stamina
+    %c - current carried weight
+    %C - max carry weight
+    %x - current speed
+    %X - max speed
+    """
+
+    key = "prompt"
+
+    def func(self):
+        ch = self.caller
+        args = self.args.strip()
+
+        if not args:
+            ch.msg(f"Your prompt is: {ch.db.prompt}")
+            return
+
+        if args.lower() == 'default':
+            ch.db.prompt = DEFAULT_PROMPT_STRING
+        else:
+            ch.db.prompt = args
+        ch.msg("prompt set")
 
 class CmdTitle(Command):
     """
