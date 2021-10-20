@@ -597,11 +597,6 @@ class Character(DefaultCharacter):
             self.db.prompt = DEFAULT_PROMPT_STRING
 
         self.attrs.update()
-        hp = self.attrs.health
-        mg = self.attrs.magicka
-        st = self.attrs.stamina
-        sp = self.attrs.speed
-        ca = self.attrs.carry
         prompt = f"\n\n{self.db.prompt}"
 
         if is_wiz(self) and self.conditions.has(HolyLight):
